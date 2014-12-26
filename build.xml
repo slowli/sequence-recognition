@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Build file for bio.seq library -->
+<project name="bio.seq library" default="build-all" basedir=".">
+
+  <!-- Project settings -->
+  <property name="version" value="0.8.1"/>
+
+  <!-- Compiler settings -->
+  <property name="javac.debug" value="source,lines,vars"/>
+  <property name="javac.target" value="1.6"/>
+  <property name="javac.source" value="1.6"/>
+
+  <path id="basedir-os">
+    <pathelement location="${basedir}" />
+  </path>
+  <pathconvert property="bio.seq.dir" refid="basedir-os" targetos="unix"/>
+
+  <!-- Source directories -->
+  <property name="src.main" value="${bio.seq.dir}/bio.seq/src"/>
+  <property name="src.io" value="${bio.seq.dir}/bio.seq.io/src"/>
+  <property name="lib.dir" value="${bio.seq.dir}/lib"/>
+
+  <!-- Output directories -->
+  <property name="build.dir" value="${bio.seq.dir}/build"/>
+  <property name="build.src.main" value="${build.dir}/bio.seq/src"/>
+  <property name="build.src.io" value="${build.dir}/bio.seq.io/src"/>
+  <property name="build.dest" value="${build.dir}/classes"/>
+  <property name="build.dest.main" value="${build.dest}/bio.seq"/>
+  <property name="build.dest.io" value="${build.dest}/bio.seq.io"/>
+  <property name="build.javadoc" value="${build.dir}/docs"/>
+  <property name="build.deps" value="${build.dir}/deps"/>
+
+  <!-- JAR files -->
+  <property name="jar.main" value="bio.seq-${version}.jar"/>
+  <property name="jar.io" value="bio.seq.io-${version}.jar"/>
+  <property name="jar.deps" value="bio.seq-${version}-deps.jar"/>
+  <property name="jar.javadoc" value="bio.seq-${version}-javadoc.jar"/>
+
+  <tstamp>
+    <format property="build.time" pattern="yyyy-MM-dd HH:mm:ss" />
+    <format property="build.year" pattern="yyyy"/>
+  </tstamp>
+
+  <target name="env" description="Prints build parameters">
+     <echo>
+  Input Directories:
+    Source (main):  ${src.main}
+    Source (I/O):   ${src.io}
+    Libraries:      ${lib.dir}
+  Output Directories:
+    Source:         ${build.src}
+    Classes:        ${build.dest}
+    Javadoc:        ${build.javadoc}
+     </echo>
+  </target>
+
+  <target name="copy-src" description="Copies soruce files of the library">
+    <mkdir dir="${build.src.main}"/>
+    <mkdir dir="${build.src.io}"/>
+    <copy todir="${build.src.main}">
+      <fileset dir="${src.main}">
+      </fileset>
+    </copy>
+    <copy todir="${build.src.io}">
+      <fileset dir="${src.io}">
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="compile-init" description="Initializes compilation" depends="copy-src">
+     <mkdir dir="${build.dest.main}"/>
+     <mkdir dir="${build.dest.io}"/>
+     <copy todir="${build.dest.main}" includeemptydirs="false">
+       <fileset dir="${build.src.main}">
+         <exclude name="**/*.launch"/>
+         <exclude name="**/*.java"/>
+       </fileset>
+     </copy>
+     <copy todir="${build.dest.io}" includeemptydirs="false">
+       <fileset dir="${build.src.io}">
+         <exclude name="**/*.launch"/>
+         <exclude name="**/*.java"/>
+       </fileset>
+     </copy>
+  </target>
+
+  <target name="compile-main" description="Compiles main library" depends="compile-init">
+    <path id="cp.main">
+      <pathelement location="${build.dest.main}"/>
+    </path>
+
+    <javac debug="true" 
+        debuglevel="${javac.debug}" 
+        destdir="${build.dest.main}" 
+        includeantruntime="false" 
+        source="${javac.source}"
+        target="${javac.target}">
+      <src path="${build.src.main}"/>
+      <classpath refid="cp.main"/>
+    </javac>
+  </target>
+
+  <target name="compile-io" description="Compiles I/O library" depends="compile-main">
+    <path id="cp.io">
+      <pathelement location="${build.dest.io}"/>
+      <path refid="cp.main"/>
+      <pathelement location="${lib.dir}/bytecode-1.8.1.jar"/>
+      <pathelement location="${lib.dir}/core-1.8.1.jar"/>
+    </path>
+
+    <javac debug="true" 
+        debuglevel="${javac.debug}" 
+        destdir="${build.dest.io}" 
+        includeantruntime="false" 
+        source="${javac.source}"
+        target="${javac.target}">
+      <src path="${build.src.io}"/>
+      <classpath refid="cp.io"/>
+    </javac>
+  </target>
+
+  <target name="compile" description="Compiles all files" depends="compile-io">
+  </target>
+
+  <!-- JAR-related targets -->
+
+  <target name="jar-main" description="Creates JAR file for main library" depends="compile-main">
+    <jar jarfile="${build.dir}/${jar.main}">
+      <fileset dir="${build.dest.main}"/>
+      <manifest>
+        <attribute name="Created-By" value="Apache Ant"/>
+        <attribute name="Build-Jdk" value="${java.version}"/>
+        <attribute name="Bundle-Version" value="${version}"/>
+        <attribute name="Class-Path" value="."/>
+        <attribute name="Main-Class" value="ua.kiev.icyb.bio.TaskRunner"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="jar-io" description="Creates JAR file for I/O tools" depends="compile-io">
+    <jar jarfile="${build.dir}/${jar.io}">
+      <fileset dir="${build.dest.io}"/>
+      <manifest>
+        <attribute name="Created-By" value="Apache Ant"/>
+        <attribute name="Build-Jdk" value="${java.version}"/>
+        <attribute name="Bundle-Version" value="${version}"/>
+        <attribute name="Class-Path" value="."/>
+        <attribute name="Main-Class" value="ua.kiev.icyb.bio.io.IOTools"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="copy-deps" description="Copies dependency classes">
+    <mkdir dir="${build.deps}"/>
+    <unzip src="${lib.dir}/bytecode-1.8.1.jar" dest="${build.deps}">
+      <patternset>
+        <include name="org/biojava/**" />
+      </patternset>
+    </unzip>
+    <unzip src="${lib.dir}/core-1.8.1.jar" dest="${build.deps}">
+      <patternset>
+        <include name="org/biojava/**" />
+        <!-- exclude unneeded algorithms -->
+        <exclude name="org/biojava/bio/dp/**" />
+        <exclude name="org/biojava/bio/program/**" />
+        <include name="org/biojavax/**" />
+      </patternset>
+    </unzip>
+  </target>
+
+  <target name="jar-deps" description="Creates JAR file for library with I/O tools and included dependencies"
+      depends="compile,copy-deps">
+
+    <jar jarfile="${build.dir}/${jar.deps}">
+      <fileset dir="${build.dest.main}"/>
+      <fileset dir="${build.dest.io}"/>
+      <fileset dir="${build.deps}"/>
+      <manifest>
+        <attribute name="Created-By" value="Apache Ant"/>
+        <attribute name="Build-Jdk" value="${java.version}"/>
+        <attribute name="Bundle-Version" value="${version}"/>
+        <attribute name="Class-Path" value="."/>
+        <attribute name="Main-Class" value="ua.kiev.icyb.bio.io.IOTasks"/>
+      </manifest>
+    </jar>
+
+    <antcall target="clean-deps" />
+  </target>
+
+  <target name="jar" description="Creates all JAR files" depends="jar-main,jar-io,jar-deps">
+  </target>
+
+  <target name="javadoc" description="Builds Java documentation for the library" depends="compile">
+    <mkdir dir="${build.javadoc}"/>
+
+    <javadoc sourcepath="${build.src.main}:${build.src.io}"
+        packagenames="ua.kiev.icyb.bio.*"
+        destdir="${build.javadoc}"
+        use="true"
+        windowtitle="bio.seq API"
+        doctitle="bio.seq API"
+        locale="ru"
+        encoding="UTF-8"
+        docencoding="UTF-8"
+        charset="UTF-8"
+        classpathref="cp.io"
+        bottom="&#169;2011-${build.year} Alexei Ostrovski">
+
+      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+      <link href="http://www.biojava.org/docs/api1.9.0/"/>
+    </javadoc>
+
+    <jar jarfile="${build.dir}/${jar.javadoc}">
+      <fileset dir="${build.javadoc}"/>
+      <manifest>
+        <attribute name="Created-By" value="Apache Ant"/>
+        <attribute name="Build-Jdk" value="${java.version}"/>
+        <attribute name="Bundle-Version" value="${version}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="build-aux" description="Creates auxiliary files" depends="copy-src,jar-deps">
+    <copy file="${build.src.main}/ua/kiev/icyb/bio/res/default.conf" tofile="${build.dir}/main.conf" />
+
+    <echo file="${build.dir}/datasets.conf">###########################################
+# Dataset configuration file
+# Java properties file, containing mapping of dataset names to files, for example
+# elegans=dna/elegans.gz
+# where dna/elegans.gz is a file created with bio.seq.io package.
+#
+# Файл конфигурации выборок
+# Файл свойств Java, определяющий связи между названиями выборок и соответствующими
+# файлами, например
+# elegans=dna/elegans.gz
+# где файл dna/elegans.gz получен при помощи утилит пакета bio.seq.io.
+###########################################
+</echo>
+
+    <echo file="${build.dir}/task">#!/bin/sh
+java -Xms512m -Xmx4g -jar ${jar.deps} "$$@"
+</echo>
+    <chmod file="${build.dir}/task" perm="a+rx"/>
+
+    <echo file="${build.dir}/task.bat">@echo off
+java -Xms512m -Xmx4g -jar ${jar.deps} %1 %2 %3 %4 %5 %6 %7 %8 %9
+</echo>
+  </target>
+
+  <!-- Clean targets -->
+
+  <target name="clean" description="Cleans after compilation">
+    <delete dir="${build.dest}"/>
+  </target>
+
+  <target name="clean-jar" description="Cleans after creating JAR files" depends="clean-deps">
+    <delete file="${build.dir}/${jar.main}"/>
+    <delete file="${build.dir}/${jar.io}"/>
+    <delete file="${build.dir}/${jar.deps}"/>
+  </target>
+
+  <target name="clean-deps" description="Cleans dependency folder">
+    <delete dir="${build.deps}"/>
+  </target>
+
+  <target name="clean-doc" description="Cleans after generating documentation">
+    <delete dir="${build.javadoc}"/>
+  </target>
+
+  <target name="clean-aux" description="Cleans auxiliary files">
+    <delete file="${build.dir}/main.conf" />
+    <delete file="${build.dir}/datasets.conf" />
+    <delete file="${build.dir}/task.sh" />
+    <delete file="${build.dir}/task.bat" />
+  </target>
+
+  <target name="clean-all" description="Cleans all build files" depends="clean,clean-doc,clean-jar,clean-aux">
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <!-- Default target -->
+
+  <target name="build-all" description="Builds library, jars, and documentation" depends="env,compile,jar,javadoc,build-aux">
+  </target>
+</project>
