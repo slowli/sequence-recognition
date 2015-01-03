@@ -8,14 +8,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ua.kiev.icyb.bio.res.Messages;
+
 /**
  * Класс, позволяющий читать и изменять значения всех полей объекта 
  * (включая частные и определенные в суперклассах).
+ * Реализован в виде обертки вокруг объекта.
  */
 public class FieldAccessor implements Representable {
 	
+	/** Объект, вокруг которого создана обертка. */
 	private final Object obj;
 	
+	/** 
+	 * Таблица полей объекта с полными именами (полное имя класса, в котором
+	 * задекларировано поле + '.' + имя поля). 
+	 */
 	private final Map<String, Field> objFields = new HashMap<String, Field>();
 	
 	/**
@@ -23,13 +31,22 @@ public class FieldAccessor implements Representable {
 	 * значения его полей.
 	 *  
 	 * @param obj
-	 * 		объект, для которого создается обертка
+	 *    объект, для которого создается обертка
 	 */
 	public FieldAccessor(Object obj) {
 		this.obj = obj;
 		fillFields(obj);
 	}
 	
+	/**
+	 * Проверяет, разумно ли предоставлять к полю доступ. Статические и несохраняющиеся ({@code transient})
+	 * поля менять не имеет смысла.
+	 * 
+	 * @param field
+	 *    поле
+	 * @return
+	 * 	  {@code true}, если поле доступно для изменения
+	 */
 	private boolean isModifiable(Field field) {
 		int modifiers = field.getModifiers();
 		return !field.isSynthetic() 
@@ -37,6 +54,12 @@ public class FieldAccessor implements Representable {
 				&& !Modifier.isTransient(modifiers);
 	};
 	
+	/**
+	 * Создает таблицу полей для конкретного объекта. 
+	 * 
+	 * @param obj
+	 *    объект, для которого требуется создать таблицу полей
+	 */
 	private void fillFields(Object obj) {
 		List<Field> fields = new ArrayList<Field>();
 		Class<?> cls = obj.getClass();
@@ -61,7 +84,7 @@ public class FieldAccessor implements Representable {
 	 * Возвращает допустимые поля объекта.
 	 * 
 	 * @return
-	 * 		коллекция, состоящая из полей объекта, значения которых можно изменять
+	 *    коллекция, состоящая из полей объекта, значения которых можно изменять
 	 */
 	public Collection<Field> getFields() {
 		return objFields.values();
@@ -71,12 +94,12 @@ public class FieldAccessor implements Representable {
 	 * Конвертирует строковое представление поля в соответствующий полю объект. 
 	 * 
 	 * @param fieldToSet
-	 * 		поле, для которого необходимо установить значение
+	 *    поле, для которого необходимо установить значение
 	 * @param value
-	 * 		строковое представление значения
+	 * 	  строковое представление значения
 	 * @return
-	 * 		объект, который соответствует значению поля, или {@code null}, если
-	 * 		тип поля не позволяет создать объект
+	 * 	  объект, который соответствует значению поля, или {@code null}, если
+	 * 	  тип поля не позволяет создать объект
 	 */
 	private Object convertField(Class<?> type, String value) {
 		Object objValue = null;
@@ -128,15 +151,15 @@ public class FieldAccessor implements Representable {
 	 * Устанавливает значение определенного поля объекта. 
 	 * 
 	 * @param name
-	 * 		название поля. Может включать в себя название класса, в котором задекларировано
-	 * 		поле (для избежания неоднозначностей).
+	 * 	  название поля. Может включать в себя название класса, в котором задекларировано
+	 * 	  поле (для избежания неоднозначностей).
 	 * @param value
-	 * 		строковое представление нового значения поля
+	 * 	  строковое представление нового значения поля
 	 * 
 	 * @throws IllegalArgumentException
-	 * 		если имя поля не позволяет установить его однозначно
+	 * 	  если имя поля не позволяет установить его однозначно
 	 * @throws UnsupportedOperationException
-	 * 		если тип поля не позволяет получить значение поля из строкового представления
+	 * 	  если тип поля не позволяет получить значение поля из строкового представления
 	 */
 	public void setField(String name, String value) {
 		Field fieldToSet = null;
@@ -145,7 +168,7 @@ public class FieldAccessor implements Representable {
 			String fieldName = entry.getKey();
 			if (fieldName.equals(name) || fieldName.endsWith("." + name)) {
 				if (fieldToSet != null) {
-					throw new IllegalArgumentException("Ambiguous field name: " + name);
+					throw new IllegalArgumentException(Messages.format("attr.ambiguous", fieldName));
 				}
 				fieldToSet = entry.getValue();
 			}
@@ -155,8 +178,8 @@ public class FieldAccessor implements Representable {
 			Object objValue = convertField(fieldToSet.getType(), value);
 			
 			if (objValue == null) {
-				throw new UnsupportedOperationException("Field type not supported: "
-						+ fieldToSet.getType());
+				throw new UnsupportedOperationException(Messages.format("attr.not_supported",
+						fieldToSet.getType()));
 			}
 			try {
 				fieldToSet.set(this.obj, objValue);
