@@ -134,9 +134,6 @@ public class PredictionQuality implements Serializable, Representable {
 			return;
 		}
 		assert (refSeq.length == estSeq.length);
-
-		//System.out.println("act: " + Arrays.toString(Chunk.split(actSeq)));
-		//System.out.println("est: " + Arrays.toString(Chunk.split(estSeq)));
 		
 		for (int state = 0; state < hiddenStates.length(); state++) {		
 			// Calculate single state statistics
@@ -174,6 +171,7 @@ public class PredictionQuality implements Serializable, Representable {
 						(estSeq[pos] == state) && ((pos == refSeq.length - 1) || (estSeq[pos + 1] != state))
 						&& // and their starts coincide
 						(actStart == estStart))
+					
 					trueRegion[state]++;
 			}
 		}

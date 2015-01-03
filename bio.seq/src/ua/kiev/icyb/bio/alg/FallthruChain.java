@@ -153,8 +153,7 @@ public class FallthruChain extends MarkovChain {
 				count++;
 			}
 		}
-		if (count > 0)
-			result /= count;
+		if (count > 0) result /= count;
 		
 		return result;
 	}

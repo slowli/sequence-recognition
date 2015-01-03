@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import ua.kiev.icyb.bio.alg.AlgTasks;
-import ua.kiev.icyb.bio.alg.mixture.EMTasks;
+import ua.kiev.icyb.bio.alg.mixture.MixtureTasks;
 import ua.kiev.icyb.bio.alg.tree.TreeTasks;
 import ua.kiev.icyb.bio.res.Messages;
 import ua.kiev.icyb.bio.res.ResourceBundleUtils;
@@ -154,7 +154,7 @@ public class TaskRunner {
 	protected void addTasks() {
 		addTaskHolder(CommonTasks.class);
 		addTaskHolder(AlgTasks.class);
-		addTaskHolder(EMTasks.class);
+		addTaskHolder(MixtureTasks.class);
 		addTaskHolder(TreeTasks.class);
 	}
 	
