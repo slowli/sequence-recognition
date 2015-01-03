@@ -191,7 +191,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 		String repr = "";
 		repr += reprOptions();
 		if (mixture != null) {
-			repr += "\n" + Messages.format("em.mixture", mixture.repr());
+			repr += "\n" + Messages.format("misc.mixture", mixture.repr());
 		}
 		
 		return repr;
