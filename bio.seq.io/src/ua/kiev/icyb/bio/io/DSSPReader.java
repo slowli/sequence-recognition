@@ -18,6 +18,12 @@ import ua.kiev.icyb.bio.io.res.Messages;
  * конкретного белка.
  */
 public class DSSPReader {
+	
+	/**
+	 * Регулярное выражение для извлечения идентификатора белка. Первая группа соответствует имени.
+	 */
+	private static final Pattern ID_REGEX = Pattern.compile("^HEADER.*\\s(\\w+)\\s*.$");
+	
 	/**
 	 * Регулярное выражение для извлечения имени белка. Первая группа соответствует имени.
 	 */
@@ -104,12 +110,18 @@ public class DSSPReader {
 		Env.debug(1, Messages.format("dssp.file", filename));
 		
 		BufferedReader reader = new BufferedReader(new FileReader(filename));
-		String line;
+		String line, proteinId = null;
+		Matcher matcher;
 		boolean header = true;
 		
 		StringBuilder aminoAcids = new StringBuilder(), structures = new StringBuilder();
 		while ((line = reader.readLine()) != null) {
-			Matcher matcher = NAME_REGEX.matcher(line);
+			matcher = ID_REGEX.matcher(line);
+			if (matcher.find()) {
+				proteinId = matcher.group(1);
+			}
+			
+			matcher = NAME_REGEX.matcher(line);
 			if (matcher.find()) {
 				String name = matcher.group(1);
 				
@@ -145,7 +157,7 @@ public class DSSPReader {
 			proteinPrefixes.add(prefix);
 		}
 
-		addSequence(aminoAcids.toString(), structures.toString());
+		addSequence(aminoAcids.toString(), structures.toString(), proteinId);
 	}
 	
 	/**
@@ -155,8 +167,10 @@ public class DSSPReader {
 	 *    строка аминокислот белка
 	 * @param structures
 	 *    строка обозначений вторичных структур, соответствующих аминокислотам
+	 * @param id
+	 *    идентификатор белка
 	 */
-	private void addSequence(String aminoAcids, String structures) {
+	private void addSequence(String aminoAcids, String structures, String id) {
 		int length = aminoAcids.length();
 		if (!this.includeBreaks) {
 			for (int i = 0; i < aminoAcids.length(); i++) {
@@ -190,7 +204,7 @@ public class DSSPReader {
 			}
 			hidden[i] = (byte) pos;
 		}
-		proteins.add(observed, hidden);
+		proteins.add(observed, hidden, id);
 	}
 	
 	/**

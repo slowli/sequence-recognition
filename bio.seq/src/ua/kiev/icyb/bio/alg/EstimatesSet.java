@@ -80,6 +80,11 @@ public final class EstimatesSet implements SequenceSet {
 	public byte[] hidden(int index) {
 		return hidden[index];
 	}
+	
+	@Override
+	public String id(int index) {
+		return baseSet.id(index);
+	}
 
 	@Override
 	public void saveToFile(String fileName) throws IOException {

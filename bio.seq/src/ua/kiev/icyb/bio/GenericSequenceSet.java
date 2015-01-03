@@ -43,6 +43,7 @@ public class GenericSequenceSet implements SequenceSet {
 	
 	private transient List<byte[]> hiddenSeq = new ArrayList<byte[]>();
 	private transient List<byte[]> observedSeq = new ArrayList<byte[]>();
+	private transient List<String> ids = new ArrayList<String>();
 
 	/** Алфавит наблюдаемых состояний. */
 	private String observedStates;
@@ -75,7 +76,9 @@ public class GenericSequenceSet implements SequenceSet {
 	/**
 	 * Последняя почитанная наблюдаемая строка.
 	 */
-	private transient byte[] readObservedSeq;
+	private transient byte[] lastObservedSeq;
+	
+	private transient String lastReadId;
 
 	/**
 	 * Создает новую пустую выборку.
@@ -198,9 +201,11 @@ public class GenericSequenceSet implements SequenceSet {
 		String value = line.substring(line.indexOf(':') + 1).trim();
 
 		if (key.equals("o")) {
-			readObservedSeq = decode(value, observedStates);
+			lastObservedSeq = decode(value, observedStates);
+		} else if (key.equals("i")) {
+			lastReadId = value;
 		} else if (key.equals("h")) {
-			this.add(readObservedSeq, decode(value, hiddenStates));
+			this.add(lastObservedSeq, decode(value, hiddenStates), lastReadId);
 		} else if (key.equals("c")) {
 			byte[] complete = decode(value, completeStates);
 			byte[] observed = new byte[complete.length], hidden = new byte[complete.length];
@@ -210,7 +215,7 @@ public class GenericSequenceSet implements SequenceSet {
 				hidden[pos] = (byte) (complete[pos] / observedStates.length());
 			}
 			
-			this.add(observed, hidden);
+			this.add(observed, hidden, lastReadId);
 		}
 	}
 
@@ -251,6 +256,11 @@ public class GenericSequenceSet implements SequenceSet {
 	public byte[] hidden(int index) {
 		return hiddenSeq.get(index);
 	}
+	
+	@Override
+	public String id(int index) {
+		return ids.get(index);
+	}
 
 	@Override
 	public String observedStates() {
@@ -275,7 +285,7 @@ public class GenericSequenceSet implements SequenceSet {
 
 		for (int i = 0; i < selector.length; i++)
 			if (selector[i]) {
-				filtered.add(observed(i), hidden(i));
+				filtered.add(observed(i), hidden(i), id(i));
 			}
 		return filtered;
 	}
@@ -288,7 +298,7 @@ public class GenericSequenceSet implements SequenceSet {
 
 		for (int i = 0; i < length(); i++)
 			if (filter.pass(i, observed(i), hidden(i))) {
-				filtered.add(observed(i), hidden(i));
+				filtered.add(observed(i), hidden(i), id(i));
 				filtered.selector[i] = true;
 			}
 		return filtered;
@@ -315,6 +325,7 @@ public class GenericSequenceSet implements SequenceSet {
 		byte[] seq, hidden;
 
 		for (int i = 0; i < length(); i++) {
+			writer.write("i: " + id(i) + "\n");
 			builder.setLength(0);
 			if (completeStates == null) {
 				seq = observed(i);
@@ -349,12 +360,13 @@ public class GenericSequenceSet implements SequenceSet {
 	 * @param hidden
 	 *        строка скрытых состояний
 	 */
-	public void add(byte[] observed, byte[] hidden) {
+	public void add(byte[] observed, byte[] hidden, String id) {
 		if (observed.length != hidden.length) {
 			throw new IllegalArgumentException(Messages.getString("dataset.e_length"));
 		}
 		this.observedSeq.add(observed);
 		this.hiddenSeq.add(hidden);
+		this.ids.add(id);
 		this.length = this.hiddenSeq.size();
 	}
 
@@ -373,7 +385,7 @@ public class GenericSequenceSet implements SequenceSet {
 		}
 
 		for (int i = 0; i < set.length(); i++) {
-			this.add(set.observed(i), set.hidden(i));
+			this.add(set.observed(i), set.hidden(i), set.id(i));
 		}
 	}
 

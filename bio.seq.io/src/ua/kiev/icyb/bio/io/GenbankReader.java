@@ -15,6 +15,8 @@ import org.biojava.bio.symbol.IllegalSymbolException;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.SymbolList;
+import org.biojavax.CrossRef;
+import org.biojavax.RankedCrossRef;
 import org.biojavax.bio.seq.RichFeature;
 import org.biojavax.bio.seq.RichLocation;
 import org.biojavax.bio.seq.RichSequence;
@@ -32,6 +34,11 @@ import ua.kiev.icyb.bio.io.res.Messages;
  */
 public class GenbankReader {
 
+	/**
+	 * Имя базы данных, согласно которой последовательностям присваиваются идентификаторы.
+	 */
+	private static final String GENE_DB_NAME = "GeneID";
+	
 	/**
 	 * Создает непрерывную локацию, покрывающую все нуклеотиды из заданной локации.
 	 * 
@@ -207,11 +214,34 @@ public class GenbankReader {
 	 *    позиция кодирующей последовательности гена в ДНК
 	 */
 	private void addGene(GenericSequenceSet set, RichFeature gene, RichFeature cds) {
+		
 		byte[] hidden = getHiddenSequence(cds.getLocation());
 		byte[] observed = getObservedSequence(set.observedStates(), cds.getLocation());
 		
+		Object protId = cds.getRichAnnotation().getProperty("protein_id");
+		if (protId == null) {
+			Env.debug(1, "Missing protein id for the CDS");
+		}
+		
+		String id = null;
+		for (Object obj : gene.getRankedCrossRefs()) {
+			if (obj instanceof RankedCrossRef) {
+				CrossRef ref = ((RankedCrossRef) obj).getCrossRef();
+				if (GENE_DB_NAME.equals(ref.getDbname())) {
+					id = "GI:" + ref.getAccession() + "." + ref.getVersion();
+					if (protId != null) {
+						id += ";prot:" + protId;
+					}
+				}
+			}
+		}
+		
+		if (id == null) {
+			id = "unknown" + set.length();
+		}
+		
 		if (observed != null) {
-			set.add(observed, hidden);
+			set.add(observed, hidden, id);
 		} else {
 			Env.debugInline(2, "?");
 		}
