@@ -152,6 +152,16 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	public int depLength() {
 		return depLength;
 	}
+	
+	/**
+	 * Возвращает фабрику для работы с фрагментами цепочек состояний.
+	 *   
+	 * @return
+	 *    фабрика фрагментов
+	 */
+	public FragmentFactory factory() {
+		return factory;
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -297,8 +307,9 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 *    неотрицательный вес прецедента
 	 */
 	public void digest(byte[] observed, byte[] hidden, double weight) {
-		if (observed.length < order)
-			return;
+		if (observed.length < order) return;
+		if (weight <= 0.0) return;
+		
 		assert(observed.length == hidden.length);
 		doDigest(observed, hidden, weight);
 		nSequences++;

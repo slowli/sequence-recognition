@@ -1,7 +1,5 @@
 package ua.kiev.icyb.bio.alg;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 import ua.kiev.icyb.bio.SequenceSet;
@@ -25,8 +23,13 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 */
 	private static final int MAX_SEQ_LENGTH = 50000;
 	
-	private class Memory {
-		public short[][] pointer = new short[nHiddenTails][MAX_SEQ_LENGTH];
+	private static class Memory {
+		
+		public final short[][] pointer;
+		
+		public Memory(int nHiddenTails) {
+			this.pointer = new short[nHiddenTails][MAX_SEQ_LENGTH];
+		}
 	}
 
 	/**
@@ -37,25 +40,25 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	/**
 	 * Фабрика для фрагментов полных состояний.
 	 */
-	protected transient FragmentFactory factory;
+	/*protected transient FragmentFactory factory;
 	
-	/** Порядок марковской цепи, используемый в алгоритме. */
+	/** Порядок марковской цепи, используемый в алгоритме. *
 	protected transient int order;
 	
-	/** Длина зависимой цепочки состояний, используемая в алгоритме. */
+	/** Длина зависимой цепочки состояний, используемая в алгоритме. *
 	protected transient int depLength;
 	
-	/** Размер алфавита скрытых состояний. */
+	/** Размер алфавита скрытых состояний. *
 	private transient int nHiddenStates;
 	
 	/**
 	 * Число возможных скрытых состояний для цепочки длины {@link #depLength}.
-	 */
-	protected transient int nHiddenHeads;
+	 *
+	protected transient int nHiddenHeads;*/
 	
 	/**
 	 * Число возможных скрытых состояний для цепочки длины {@link #order}.
-	 */
+	 *
 	protected transient int nHiddenTails;
 	
 	/**
@@ -81,10 +84,10 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    марковская цепь, используемая в алгоритме
 	 */
 	public ViterbiAlgorithm(MarkovChain chain) {
-		initialize(chain);
+		this.chain = chain;
 	}
 	
-	private void initialize(MarkovChain chain) {
+	/*private void initialize(MarkovChain chain) {
 		this.chain = chain;
 		this.depLength = chain.depLength();
 		this.order = chain.order();
@@ -98,7 +101,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		nHiddenTails = 1;
 		for (int i = 0; i < order; i++)
 			nHiddenTails *= nHiddenStates;
-	}
+	}*/
 	
 	@Override
 	public void train(byte[] observed, byte[] hidden) {
@@ -117,9 +120,25 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 
 	@Override
 	public byte[] run(byte[] seq) {
-		if (seq.length < order) {
-			return null;
+		return run(seq, this.chain);
+	}
+	
+	protected byte[] run(byte[] seq, MarkovChain chain) {
+		if (seq.length < chain.order()) return null;
+		
+		final int order = chain.order(), 
+			depLength = chain.depLength(),
+			nHiddenStates = chain.hiddenStates().length();
+		int nHiddenHeads = 1;
+		for (int i = 0; i < chain.depLength(); i++) {
+			nHiddenHeads *= nHiddenStates;
 		}
+		int nHiddenTails = 1;
+		for (int i = 0; i < chain.order(); i++) {
+			nHiddenTails *= nHiddenStates;
+		}
+
+		final FragmentFactory factory = chain.factory();
 		
 		Memory mem = (Memory) getMemory();
 		
@@ -130,7 +149,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 
 		// Initialize arrays
 		for (int i = 0; i < nHiddenTails; i++) {
-			Fragment state = factory.fragment(seq, i, 0, order);
+			Fragment state = chain.factory.fragment(seq, i, 0, order);
 			curProb[i] = Math.log(Math.max(chain.getInitialP(state), 0));
 		}
 		
@@ -176,7 +195,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 			maxPtr = pointer[maxPtr][ptrIdx - 1];			
 			ptrIdx--;
 		}
-		insertStates(result, maxPtr, 0, order);
+		insertStates(result, nHiddenStates, maxPtr, 0, order);
 
 		// Restore trimmed sequence to the full one; assume that tailing chars correspond to exon
 		return result;
@@ -188,6 +207,8 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 * 
 	 * @param array
 	 *    массив, куда следует вставлять скрытые состояния
+	 * @param nStates
+	 *    размер множества скрытых состояний
 	 * @param idx
 	 *    индекс последовательности скрытых состояний среди всех последовательностей 
 	 *    фиксированной длины
@@ -196,34 +217,17 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 * @param length
 	 *    длина последовательности
 	 */
-	protected void insertStates(byte[] array, int idx, int start, int length) {
+	protected static void insertStates(byte[] array, int nStates, int idx, int start, int length) {
 		for (int i = 0; i < length; i++) {
-			array[start + length - 1 - i] = (byte)(idx % nHiddenStates);
-			idx /= nHiddenStates;
+			array[start + length - 1 - i] = (byte)(idx % nStates);
+			idx /= nStates;
 		}
-	}
-	
-	/**
-	 * Восстанавливает поля объекта, которые не записываются в поток, 
-	 * на основе сохраненных полей.
-	 * 
-	 * @param stream
-	 *    поток для считывания объекта
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 */
-	private void readObject(ObjectInputStream stream) 
-			throws IOException, ClassNotFoundException {
-		
-		stream.defaultReadObject();
-		initialize(this.chain);
 	}
 	
 	@Override
 	public Object clearClone() {
 		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clearClone();
 		other.chain = (MarkovChain) other.chain.clearClone();
-		other.initialize(other.chain);
 		return other;
 	}
 	
@@ -241,6 +245,11 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	@Override
 	protected Object allocateMemory() {
-		return new Memory();
+		int nHiddenTails = 1;
+		for (int i = 0; i < chain.order(); i++) {
+			nHiddenTails *= chain.hiddenStates().length();
+		}
+		
+		return new Memory(nHiddenTails);
 	}
 }

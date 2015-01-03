@@ -61,7 +61,12 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 	
 	@Override
 	public byte[] run(byte[] sequence) {
-		return run(sequence, validateCds);
+		return run(sequence, validateCds, this.chain);
+	}
+	
+	@Override
+	protected byte[] run(byte[] sequence, MarkovChain chain) {
+		return run(sequence, validateCds, chain);
 	}
 	
 	/**
@@ -76,80 +81,89 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 	 *    последовательность скрытых состояний, соответствующая наблюдаемой строке;
 	 *    {@code null} в случае отказа от распознавания
 	 */
-	public byte[] run(byte[] seq, boolean validateCds) {
-		if (seq.length < order) {
-			return null;
-		}
+	protected byte[] run(byte[] seq, boolean validateCds, MarkovChain chain) {
+		if (seq.length < chain.order()) return null;
 		
-		final int CODON_LENGTH = validateCds ? 3 : 1;
-		double curProb[][] = new double[CODON_LENGTH][nHiddenTails], nextProb[][] = new double[CODON_LENGTH][nHiddenTails]; 
-		short pointer[][][] = new short[CODON_LENGTH][nHiddenTails][seq.length / depLength];
+		final int order = chain.order(), 
+				depLength = chain.depLength(),
+				nHiddenStates = chain.hiddenStates().length();
+		int nHiddenHeads = 1;
+		for (int i = 0; i < chain.depLength(); i++) {
+			nHiddenHeads *= nHiddenStates;
+		}
+		int nHiddenTails = 1;
+		for (int i = 0; i < chain.order(); i++) {
+			nHiddenTails *= nHiddenStates;
+		}
+
+		final FragmentFactory factory = chain.factory();
+		
+		final int codonLength = validateCds ? 3 : 1;
+		double curProb[][] = new double[codonLength][nHiddenTails], nextProb[][] = new double[codonLength][nHiddenTails]; 
+		short pointer[][][] = new short[codonLength][nHiddenTails][seq.length / depLength];
 		// Trim the sequence
 		int trimmedLength = ((seq.length - order) / depLength) * depLength + order; 
 
 		// Initialize arrays
-		for (int rem = 0; rem < CODON_LENGTH; rem++)
+		for (int rem = 0; rem < codonLength; rem++)
 			Arrays.fill(curProb[rem], Double.NEGATIVE_INFINITY);
 		for (int i = 0; i < nHiddenTails; i++) {
-			curProb[exonCharCount(i, order) % CODON_LENGTH][i] = Math.log(chain.getInitialP(
+			curProb[exonCharCount(i, order) % codonLength][i] = Math.log(chain.getInitialP(
 					factory.fragment(seq, i, 0, order)));
 		}
 		
 		int ptrIdx = 0; // position of the current token in the pointer array
 		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength)
 		{
-			for (int rem = 0; rem < CODON_LENGTH; rem++)
+			for (int rem = 0; rem < codonLength; rem++)
 				Arrays.fill(nextProb[rem], Double.NEGATIVE_INFINITY);
 			
 			for (int i = 0; i < nHiddenHeads; i++)
 			{
 				Fragment newState = factory.fragment(seq, i, pos, depLength);
-				int headRem = exonCharCount(i, depLength) % CODON_LENGTH;
+				int headRem = exonCharCount(i, depLength) % codonLength;
 				
 				for (short j = 0; j < nHiddenTails; j++) {
 					Fragment tailState = factory.fragment(seq, j, pos - order, order);
 					double val = Math.log(chain.getTransP(tailState, newState));
 					int idx = factory.shift(tailState, newState);
 					
-					for (int rem = 0; rem < CODON_LENGTH; rem++)
-						if (nextProb[(rem + headRem) % CODON_LENGTH][idx] < val + curProb[rem][j]) {
-							nextProb[(rem + headRem) % CODON_LENGTH][idx] = val + curProb[rem][j];
-							pointer[(rem + headRem) % CODON_LENGTH][idx][ptrIdx] = j;
+					for (int rem = 0; rem < codonLength; rem++)
+						if (nextProb[(rem + headRem) % codonLength][idx] < val + curProb[rem][j]) {
+							nextProb[(rem + headRem) % codonLength][idx] = val + curProb[rem][j];
+							pointer[(rem + headRem) % codonLength][idx][ptrIdx] = j;
 					}
 				}
 			}
 			
-			for (int rem = 0; rem < CODON_LENGTH; rem++)
+			for (int rem = 0; rem < codonLength; rem++)
 				curProb[rem] = Arrays.copyOf(nextProb[rem], nextProb[rem].length);
 			ptrIdx++;
 		}
 		
 		// Reverse propagation
-		int rem = (- seq.length + trimmedLength) % CODON_LENGTH;
-		if (rem < 0) rem += CODON_LENGTH;
+		int rem = (- seq.length + trimmedLength) % codonLength;
+		if (rem < 0) rem += codonLength;
 		double maxProb = Double.NEGATIVE_INFINITY;
-		int maxPtr = -1; // !!!
+		int maxPtr = -1;
 		for (int i = 0; i < nHiddenTails; i++)
 			if (curProb[rem][i] > maxProb) {
 				maxProb = 0;//curProb[rem][i];				
 				maxPtr = i;
 			}
-		if (maxPtr == -1) {
-			return null;
-		}
+		if (maxPtr == -1) return null;
 		
 		byte[] result = new byte[seq.length];
-		for (int pos = trimmedLength; pos > order; pos -= depLength)
-		{
+		for (int pos = trimmedLength; pos > order; pos -= depLength) {
 			result[pos - 1] = (byte)(maxPtr % nHiddenHeads);
 			int headRem = exonCharCount(maxPtr % (1 << depLength), depLength);
 			maxPtr = pointer[rem][maxPtr][ptrIdx - 1];
 			// Calculate new remainder
-			rem = (rem - headRem) % CODON_LENGTH;
-			if (rem < 0) rem += CODON_LENGTH;
+			rem = (rem - headRem) % codonLength;
+			if (rem < 0) rem += codonLength;
 			ptrIdx--;
 		}
-		insertStates(result, maxPtr, 0, order);
+		insertStates(result, nHiddenStates, maxPtr, 0, order);
 
 		// Restore trimmed sequence to the full one; assume that tailing chars correspond to exon
 		return result;
