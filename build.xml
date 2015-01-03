@@ -23,12 +23,10 @@
 
   <!-- Output directories -->
   <property name="build.dir" value="${bio.seq.dir}/build"/>
-  <property name="build.src.main" value="${build.dir}/bio.seq/src"/>
-  <property name="build.src.io" value="${build.dir}/bio.seq.io/src"/>
   <property name="build.dest" value="${build.dir}/classes"/>
   <property name="build.dest.main" value="${build.dest}/bio.seq"/>
   <property name="build.dest.io" value="${build.dest}/bio.seq.io"/>
-  <property name="build.javadoc" value="${build.dir}/docs"/>
+  <property name="build.javadoc" value="${bio.seq.dir}/docs"/>
   <property name="build.deps" value="${build.dir}/deps"/>
 
   <!-- JAR files -->
@@ -49,36 +47,22 @@
     Source (I/O):   ${src.io}
     Libraries:      ${lib.dir}
   Output Directories:
-    Source:         ${build.src}
     Classes:        ${build.dest}
     Javadoc:        ${build.javadoc}
      </echo>
   </target>
 
-  <target name="copy-src" description="Copies soruce files of the library">
-    <mkdir dir="${build.src.main}"/>
-    <mkdir dir="${build.src.io}"/>
-    <copy todir="${build.src.main}">
-      <fileset dir="${src.main}">
-      </fileset>
-    </copy>
-    <copy todir="${build.src.io}">
-      <fileset dir="${src.io}">
-      </fileset>
-    </copy>
-  </target>
-
-  <target name="compile-init" description="Initializes compilation" depends="copy-src">
+  <target name="compile-init" description="Initializes compilation">
      <mkdir dir="${build.dest.main}"/>
      <mkdir dir="${build.dest.io}"/>
      <copy todir="${build.dest.main}" includeemptydirs="false">
-       <fileset dir="${build.src.main}">
+       <fileset dir="${src.main}">
          <exclude name="**/*.launch"/>
          <exclude name="**/*.java"/>
        </fileset>
      </copy>
      <copy todir="${build.dest.io}" includeemptydirs="false">
-       <fileset dir="${build.src.io}">
+       <fileset dir="${src.io}">
          <exclude name="**/*.launch"/>
          <exclude name="**/*.java"/>
        </fileset>
@@ -96,7 +80,7 @@
         includeantruntime="false" 
         source="${javac.source}"
         target="${javac.target}">
-      <src path="${build.src.main}"/>
+      <src path="${src.main}"/>
       <classpath refid="cp.main"/>
     </javac>
   </target>
@@ -115,7 +99,7 @@
         includeantruntime="false" 
         source="${javac.source}"
         target="${javac.target}">
-      <src path="${build.src.io}"/>
+      <src path="${src.io}"/>
       <classpath refid="cp.io"/>
     </javac>
   </target>
@@ -194,7 +178,7 @@
   <target name="javadoc" description="Builds Java documentation for the library" depends="compile">
     <mkdir dir="${build.javadoc}"/>
 
-    <javadoc sourcepath="${build.src.main}:${build.src.io}"
+    <javadoc sourcepath="${src.main}:${src.io}"
         packagenames="ua.kiev.icyb.bio.*"
         destdir="${build.javadoc}"
         use="true"
@@ -221,8 +205,8 @@
     </jar>
   </target>
 
-  <target name="build-aux" description="Creates auxiliary files" depends="copy-src,jar-deps">
-    <copy file="${build.src.main}/ua/kiev/icyb/bio/res/default.conf" tofile="${build.dir}/main.conf" />
+  <target name="build-aux" description="Creates auxiliary files" depends="jar-deps">
+    <copy file="${src.main}/ua/kiev/icyb/bio/res/default.conf" tofile="${build.dir}/main.conf" />
 
     <echo file="${build.dir}/datasets.conf">###########################################
 # Dataset configuration file
