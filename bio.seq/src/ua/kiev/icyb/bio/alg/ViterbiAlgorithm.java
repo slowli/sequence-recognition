@@ -38,30 +38,6 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	protected MarkovChain chain;
 	
 	/**
-	 * Фабрика для фрагментов полных состояний.
-	 */
-	/*protected transient FragmentFactory factory;
-	
-	/** Порядок марковской цепи, используемый в алгоритме. *
-	protected transient int order;
-	
-	/** Длина зависимой цепочки состояний, используемая в алгоритме. *
-	protected transient int depLength;
-	
-	/** Размер алфавита скрытых состояний. *
-	private transient int nHiddenStates;
-	
-	/**
-	 * Число возможных скрытых состояний для цепочки длины {@link #depLength}.
-	 *
-	protected transient int nHiddenHeads;*/
-	
-	/**
-	 * Число возможных скрытых состояний для цепочки длины {@link #order}.
-	 *
-	protected transient int nHiddenTails;
-	
-	/**
 	 * Создает новый алгоритм распознавания с заданными параметрами вероятностной модели.
 	 * 
 	 * @param depLength
@@ -86,22 +62,6 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	public ViterbiAlgorithm(MarkovChain chain) {
 		this.chain = chain;
 	}
-	
-	/*private void initialize(MarkovChain chain) {
-		this.chain = chain;
-		this.depLength = chain.depLength();
-		this.order = chain.order();
-		this.nHiddenStates = chain.hiddenStates().length();
-		this.factory = new FragmentFactory(chain.observedStates(), chain.hiddenStates(), 
-				order + depLength);
-		
-		nHiddenHeads = 1;
-		for (int i = 0; i < depLength; i++)
-			nHiddenHeads *= nHiddenStates;
-		nHiddenTails = 1;
-		for (int i = 0; i < order; i++)
-			nHiddenTails *= nHiddenStates;
-	}*/
 	
 	@Override
 	public void train(byte[] observed, byte[] hidden) {
