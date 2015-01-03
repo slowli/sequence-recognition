@@ -3,14 +3,11 @@ package ua.kiev.icyb.bio.alg.mixture;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.Fragment;
 import ua.kiev.icyb.bio.alg.GeneViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.MarkovChain;
-import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
 
 /**
  * Алгоритм поиска наиболее вероятной последовательности скрытых состояний
@@ -34,27 +31,19 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		private static final long serialVersionUID = 1L;
 		
 		
-		private transient ChainMixture mixture;
-		private transient Map<Thread, double[]> weights;
+		private final ChainMixture mixture;
+		private double[] weights;
 		
 		public MixtureMarkovChain(ChainMixture mixture) {
 			super(mixture.chains[0]);
 			this.mixture = mixture;
 		}
 		
-		public void setMixture(ChainMixture mixture) {
-			this.mixture = mixture;
-		}
-		
 		public void setWeights(double[] weights) {
-			if (this.weights == null) {
-				this.weights = new HashMap<Thread, double[]>();
-			}
-			this.weights.put(Thread.currentThread(), weights);
+			this.weights = weights;
 		}
 		
 		public double getWeight(int index) {
-			double[] weights = this.weights.get(Thread.currentThread());
 			return weights[index];
 		}
 		
@@ -99,7 +88,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	 * 		начальное приближение для используемых смесей распределений
 	 */
 	public MixtureAlgorithm(ChainMixture mixture) {
-		super(new MixtureMarkovChain(mixture), false);
+		super(mixture.chains[0], false);
 		this.baseMixture = mixture;
 	}
 	
@@ -111,17 +100,17 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	@Override
 	public void train(SequenceSet set) {
 		this.currentMixture = (ChainMixture) this.baseMixture.clone();
-		((MixtureMarkovChain) this.chain).setMixture(this.currentMixture);
 		
 		/*EMAlgorithm emAlgorithm = new EMAlgorithm();
 		emAlgorithm.mixture = this.currentMixture;
 		emAlgorithm.set = set;
 		emAlgorithm.saveTemplate = null;
-		emAlgorithm.nIterations = 10;
+		emAlgorithm.nIterations = 5;
 		emAlgorithm.stochastic = true;
 		emAlgorithm.ordinaryRun();
 		
 		this.currentMixture = emAlgorithm.mixture;*/
+		//((MixtureMarkovChain) this.chain).setMixture(this.currentMixture);
 	}
 	
 	@Override
@@ -155,23 +144,36 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		}
 		
 		if (maxIdx < 0) return null;
-		System.out.println("maxIdx = " + maxIdx);
 		return hidden[maxIdx];
 	}
 	
 
+	/**
+	 * Выполняет алгоритм с заданными начальными значениями апостериорных вероятностей марковских моделей,
+	 * входящих в смесь.
+	 * 
+	 * @param sequence
+	 * 		последовательность наблюдаемых состояний
+	 * @param initialWeights
+	 * 		массив апостериорных вероятностей; сумма вероятностей должна быть равна единице
+	 * @return
+	 * 		наиболее вероятная последовательность скрытых состояний, соответствующих наблюдаемой цепочке
+	 */
 	public byte[] run(byte[] sequence, double[] initialWeights) {
 		double[] aposterioriP = initialWeights.clone();
 		
 		double[] oldAposterioriP;
 		byte[] hidden = null;
 		
+		double distance = 1.0;
+		int nIterations = 0;
+		final MixtureMarkovChain chain = new MixtureMarkovChain(this.currentMixture);
+		
 		do {
-			System.out.println("weights: " + Arrays.toString(aposterioriP));
 			oldAposterioriP = aposterioriP.clone();
-			((MixtureMarkovChain) this.chain).setWeights(aposterioriP);
+			chain.setWeights(aposterioriP);
 			
-			hidden = super.run(sequence);
+			hidden = super.run(sequence, chain);
 			if (hidden == null) {
 				return null;
 			}
@@ -185,8 +187,6 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 				}
 			}
 			
-			System.out.println("logP: " + Arrays.toString(aposterioriP));
-			
 			double sum = 0;
 			for (int k = 0; k < currentMixture.size(); k++) {
 				aposterioriP[k] -= maxLogP;
@@ -196,7 +196,10 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			for (int k = 0; k < currentMixture.size(); k++) {
 				aposterioriP[k] /= sum;
 			}
-		} while (distance(aposterioriP, oldAposterioriP) > 1e-4);
+			
+			distance = distance(aposterioriP, oldAposterioriP);
+			nIterations++;
+		} while ((distance > 1e-4) && (nIterations < 10));
 		
 		return hidden;
 	}
