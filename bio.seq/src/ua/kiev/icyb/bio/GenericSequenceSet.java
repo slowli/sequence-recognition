@@ -187,6 +187,7 @@ public class GenericSequenceSet implements SequenceSet {
 		}
 		((ArrayList<byte[]>) observedSeq).trimToSize();
 		((ArrayList<byte[]>) hiddenSeq).trimToSize();
+		((ArrayList<String>) ids).trimToSize();
 	}
 
 	/**
@@ -409,6 +410,7 @@ public class GenericSequenceSet implements SequenceSet {
 		
 		hiddenSeq = new ArrayList<byte[]>(this.length());
 		observedSeq = new ArrayList<byte[]>(this.length());
+		ids = new ArrayList<String>(this.length());
 		
 		if (datasetName != null) {
 			try {
@@ -421,16 +423,19 @@ public class GenericSequenceSet implements SequenceSet {
 				
 				hiddenSeq.clear();
 				observedSeq.clear();
+				ids.clear();
 				
 				for (int i = 0; i < length(); i++) {
 					hiddenSeq.add(new byte[0]);
 					observedSeq.add(new byte[0]);
+					ids.add("" + i);
 				}
 			}
 		} else if (unfilteredSet != null) {
 			GenericSequenceSet filtered = (GenericSequenceSet)unfilteredSet.filter(selector);
 			this.hiddenSeq = filtered.hiddenSeq;
 			this.observedSeq = filtered.observedSeq;
+			this.ids = filtered.ids;
 		}
 	}
 
