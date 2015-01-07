@@ -83,6 +83,19 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		return run(seq, this.chain);
 	}
 	
+	/**
+	 * Определяет наиболее вероятную последовательность скрытых состояний с использованием
+	 * заданного вероятностного распределения.
+	 * 
+	 * @param seq
+	 *    строка наблюдаемых состояний
+	 * @param chain
+	 *    марковская цепь, которая задает начальные и переходные вероятности, используемые в алгоритме
+	 *    оптимизации
+	 * @return
+	 *    цепочка скрытых состояний, наиболее вероятная для заданной вероятностной модели;
+	 *    {@code null} в случае отказа от распознавания
+	 */
 	protected byte[] run(byte[] seq, MarkovChain chain) {
 		if (seq.length < chain.order()) return null;
 		
@@ -104,16 +117,16 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		
 		double curProb[] = new double[nHiddenTails], nextProb[] = new double[nHiddenTails]; 
 		short pointer[][] = mem.pointer; 
-		// Trim the sequence
+		// Обрезать последовательность
 		int trimmedLength = ((seq.length - order) / depLength) * depLength + order; 
 
-		// Initialize arrays
+		// Инициализировать промежуточные массивы
 		for (int i = 0; i < nHiddenTails; i++) {
 			Fragment state = chain.factory.fragment(seq, i, 0, order);
 			curProb[i] = Math.log(Math.max(chain.getInitialP(state), 0));
 		}
 		
-		int ptrIdx = 0; // position of the current token in the pointer array
+		int ptrIdx = 0; // текущая позиция в массиве указателей
 		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength) {
 			Arrays.fill(nextProb, Double.NEGATIVE_INFINITY);
 			
@@ -136,9 +149,9 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 			ptrIdx++;
 		}
 		
-		// Reverse propagation		
+		// Обратный шаг алгоритма	
 		double maxProb = Double.NEGATIVE_INFINITY;
-		int maxPtr = -1; // !!!
+		int maxPtr = -1;
 		
 		for (int i = 0; i < nHiddenTails; i++)
 			if (curProb[i] > maxProb) {
@@ -151,13 +164,13 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		
 		byte[] result = new byte[seq.length];
 		for (int pos = trimmedLength; pos > order; pos -= depLength) {
-			result[pos - 1] = (byte)(maxPtr % nHiddenHeads); //!!!
+			// XXX проверить, работает ли для depLength > 1
+			result[pos - 1] = (byte)(maxPtr % nHiddenHeads); 
 			maxPtr = pointer[maxPtr][ptrIdx - 1];			
 			ptrIdx--;
 		}
 		insertStates(result, nHiddenStates, maxPtr, 0, order);
 
-		// Restore trimmed sequence to the full one; assume that tailing chars correspond to exon
 		return result;
 	}
 	

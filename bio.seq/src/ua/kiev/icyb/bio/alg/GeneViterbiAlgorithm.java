@@ -77,6 +77,9 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 	 * @param validateCds
 	 *    следует ли вводить ограничение на суммарную длину скрытых состояний,
 	 *    соответствующих экзонам, так чтобы она была кратна трем
+	 * @param chain
+	 *    марковская цепь, которая задает начальные и переходные вероятности, используемые в алгоритме
+	 *    оптимизации
 	 * @return 
 	 *    последовательность скрытых состояний, соответствующая наблюдаемой строке;
 	 *    {@code null} в случае отказа от распознавания
@@ -101,10 +104,10 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 		final int codonLength = validateCds ? 3 : 1;
 		double curProb[][] = new double[codonLength][nHiddenTails], nextProb[][] = new double[codonLength][nHiddenTails]; 
 		short pointer[][][] = new short[codonLength][nHiddenTails][seq.length / depLength];
-		// Trim the sequence
+		// Обрезать последовательность
 		int trimmedLength = ((seq.length - order) / depLength) * depLength + order; 
 
-		// Initialize arrays
+		// Инициализировать промежуточные массивы
 		for (int rem = 0; rem < codonLength; rem++)
 			Arrays.fill(curProb[rem], Double.NEGATIVE_INFINITY);
 		for (int i = 0; i < nHiddenTails; i++) {
@@ -112,7 +115,7 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 					factory.fragment(seq, i, 0, order)));
 		}
 		
-		int ptrIdx = 0; // position of the current token in the pointer array
+		int ptrIdx = 0; // текущая позиция в массиве указателей
 		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength)
 		{
 			for (int rem = 0; rem < codonLength; rem++)
@@ -141,7 +144,7 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 			ptrIdx++;
 		}
 		
-		// Reverse propagation
+		// Обратный шаг алгоритма
 		int rem = (- seq.length + trimmedLength) % codonLength;
 		if (rem < 0) rem += codonLength;
 		double maxProb = Double.NEGATIVE_INFINITY;
@@ -158,14 +161,13 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 			result[pos - 1] = (byte)(maxPtr % nHiddenHeads);
 			int headRem = exonCharCount(maxPtr % (1 << depLength), depLength);
 			maxPtr = pointer[rem][maxPtr][ptrIdx - 1];
-			// Calculate new remainder
+			
 			rem = (rem - headRem) % codonLength;
 			if (rem < 0) rem += codonLength;
 			ptrIdx--;
 		}
 		insertStates(result, nHiddenStates, maxPtr, 0, order);
 
-		// Restore trimmed sequence to the full one; assume that tailing chars correspond to exon
 		return result;
 	}
 	
