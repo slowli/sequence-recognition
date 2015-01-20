@@ -368,7 +368,7 @@ public final class MixtureTasks {
 	 * 
 	 * <p><b>Пример.</b> 
 	 * <pre>
-	 * em.classes human "human.3-10" "human-cls-3.dat"
+	 * mix.labels human "human.3-10" "human-cls-3.dat"
 	 * </pre>
 	 * 
 	 * @param args
@@ -376,8 +376,8 @@ public final class MixtureTasks {
 	 * @throws IOException
 	 *    в случае ошибки ввода/вывода
 	 */
-	@Task(id="mix.classes",res=Messages.BUNDLE_NAME)
-	public static void classes(String[] args) throws IOException {
+	@Task(id="mix.labels",res=Messages.BUNDLE_NAME)
+	public static void labels(String[] args) throws IOException {
 		final String input = args[0];
 		final String mixtureFile = args[1];
 		final String outFile = args[2];
@@ -401,7 +401,7 @@ public final class MixtureTasks {
 					maxChain = chain;
 				}
 			}
-			outStream.print(maxChain + " ");
+			outStream.println(set.get(i).id() + " " + maxChain);
 		}
 		outStream.close();
 	}
