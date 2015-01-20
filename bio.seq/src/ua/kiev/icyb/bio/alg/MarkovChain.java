@@ -3,7 +3,7 @@ package ua.kiev.icyb.bio.alg;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +64,20 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	/** Статистика по начальным состояниям цепочек полных состояний. */
 	private Map<Fragment, Double> initial;
 	
+	/**
+	 * Возворащает статистику по начальным состояниям цепочек полных состояний.
+	 * 
+	 * Для каждой цепочки полных состояний длины {@link #order()} подсчитывается взвешенное количество
+	 * строк, которые с этой цепочки начинаются. Если в таблице нет элемента, соответствующая цепочка не
+	 * начинает ни одной строки из обучающей выборки.
+	 * 
+	 * @return
+	 *    хэш-таблица со статистикой по начальным состояниям 
+	 */
+	public Map<Fragment, Double> getInitialTable() {
+		return Collections.unmodifiableMap(initial);
+	}
+	
 	/** Количество возможных различных зависимых цепочек состояний. */
 	private transient int headsCount;
 	
@@ -78,6 +92,25 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * вычислений).
 	 */
 	protected Map<Fragment, float[]> transitions;
+	
+	/**
+	 * Возвращает статистику по переходам из цепочек полных состояний длины, определяемой порядком
+	 * марковской цепи, в цепочки длины зависимой части. 
+	 * 
+	 * Последовательности длины {@link #order()} в таблице соответствует массив величин, 
+	 * каждая из которых равна взвешенному числу переходов из этой последовательности 
+	 * в одно из возможных зависимых состояний.
+	 * Зависимые состояния упорядочены в алфавитном порядке, определяемом
+	 * методом {@link FragmentFactory#getTotalIndex(Fragment)}.
+	 * Последний элемент массива равен сумме остальных элементов (предназначен для ускорения
+	 * вычислений).
+	 * 
+	 * @return
+	 *    хэш-таблица с статистикой переходов
+	 */
+	public Map<Fragment, float[]> getTransitionTable() {
+		return Collections.unmodifiableMap(transitions);
+	}
 	
 	/** Вероятностное распределение строк по длинам. */
 	protected Distribution lengthDistr;
@@ -414,8 +447,9 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 		
 		// Initialize transient fields
 		headsCount = 1;
-		for (int i = 0; i < depLength; i++)
+		for (int i = 0; i < depLength; i++) {
 			headsCount *= (observedStates.length() * hiddenStates.length());
+		}
 		
 		factory = new FragmentFactory(observedStates, hiddenStates, order + depLength);
 	}
@@ -427,11 +461,6 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	
 	@Override
 	public String toString() {
-		// cagG = 1*64 + 2*4 + 2 = 74; 8 + 4 + 2 = 14
-		Fragment tail = new Fragment(74, 14, 4);
-		System.out.println(factory.toString(tail));
-		System.out.println(Arrays.toString(transitions.get(tail)));
-		
 		return String.format("h=%d, order=%d", depLength, nSequences);
 	}
 }
