@@ -63,7 +63,7 @@ public interface SequenceSet extends Serializable, Representable {
 		 * @return <code>true</code>, если пара последовательностей должна остаться
 		 * в фильтрованном наборе
 		 */
-		boolean pass(int index, byte[] observed, byte[] hidden);
+		boolean pass(Sequence sequence);
 	}
 	
 	/**
@@ -107,6 +107,8 @@ public interface SequenceSet extends Serializable, Representable {
 	 *    строковый идентификатор последовательности; идентификатор может быть равен {@code null}
 	 */
 	String id(int index);
+	
+	Sequence get(int index);
 	
 	/**
 	 * Возвращает алфавит наблюдаемых состояний.

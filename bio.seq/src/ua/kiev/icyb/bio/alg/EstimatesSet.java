@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -86,6 +87,12 @@ public final class EstimatesSet implements SequenceSet {
 		return baseSet.id(index);
 	}
 
+	@Override
+	public Sequence get(int index) {
+		return new Sequence(this, index, id(index), observed(index), hidden(index));
+	}
+
+	
 	@Override
 	public void saveToFile(String fileName) throws IOException {
 		// TODO ???

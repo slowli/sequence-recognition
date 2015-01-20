@@ -159,7 +159,7 @@ public class SequenceUtils {
 		for (int i = 0; i < set.length(); i++) {
 			byte[] observed = translate(set.observed(i), observedStateMap);
 			byte[] hidden = translate(set.hidden(i), hiddenStateMap);
-			trSet.add(observed, hidden, set.id(i));
+			trSet.doAdd(observed, hidden, set.id(i));
 		}
 		
 		return trSet;

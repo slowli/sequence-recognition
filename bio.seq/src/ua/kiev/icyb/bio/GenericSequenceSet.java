@@ -73,6 +73,8 @@ public class GenericSequenceSet implements SequenceSet {
 	 */
 	private boolean[] selector = null;
 	
+	private List<SequenceSet> setParts = null;
+	
 	/**
 	 * Последняя почитанная наблюдаемая строка.
 	 */
@@ -99,67 +101,59 @@ public class GenericSequenceSet implements SequenceSet {
 	/**
 	 * Загружает именованную выборку. Соответствие между именем выборки
 	 * и файлом, в которой она хранится, осуществляется с помощью метода
-	 * {@link IOUtils#resolveDataset(String)}. Если выборок несколько, их имена
-	 * должны быть разделены запятой (например, <code>"human,elegans"</code>); 
-	 * полученная выборка будет равна конкатенации этих
-	 * выборок в порядке их указания.
+	 * {@link IOUtils#resolveDataset(String)}.
 	 * 
 	 * @param datasetName
-	 *        название одной или более выборок
+	 *    название выборки
 	 * @throws IOException
-	 *         если при чтении файлов выборок произошла ошибка ввода/вывода
+	 *    если при чтении файла выборки произошла ошибка ввода/вывода
 	 * @throws IllegalArgumentException
-	 *         если по крайней мере одно из указанных имен выборок не соответствует файлу 
+	 *    если указанное имя выборки не соответствует файлу 
 	 */
-	public GenericSequenceSet(String datasetName) throws IOException, IllegalArgumentException {
+	public GenericSequenceSet(String datasetName) throws IOException {
 		read(datasetName);
 	}
 	
 	/**
-	 * Загружает именованную выборку или выборку из заданного файла.
-	 * Если {@code resolve == true}, загружается именованная выборка; в противном
-	 * случае происходит загрузка из файла.
+	 * Загружает выборку из текстового потока данных.
 	 * 
-	 * @see #GenericSequenceSet(String)
-	 * 
-	 * @param name
-	 *        название одной или более выборок или имя файла
-	 * @param resolve
-	 *        следует ли искать выборку среди именованных выборок
+	 * @param reader
+	 *    поток данных, из которого читается информация о строках выборки
 	 * @throws IOException
-	 *         если при чтении файлов выборок произошла ошибка ввода/вывода
-	 * @throws IllegalArgumentException
-	 *         если по крайней мере одно из указанных имен выборок не соответствует файлу 
+	 *    если при чтении файла выборки произошла ошибка ввода/вывода 
 	 */
-	public GenericSequenceSet(String name, boolean resolve) throws IOException {
-		if (resolve) {
-			read(name);
-		} else {
-			read(IOUtils.getReader(name));
-		}
+	public GenericSequenceSet(BufferedReader reader) throws IOException {
+		read(reader);
 		this.length = hiddenSeq.size();
+	}
+
+	public GenericSequenceSet(SequenceSet... sets) {
+		this(sets[0].observedStates(), sets[0].hiddenStates(), sets[0].completeStates());
+
+		this.setParts = new ArrayList<SequenceSet>();
+		for (SequenceSet set : sets) {
+			this.addSet(set);
+			this.setParts.add(set);
+		}
 	}
 	
 	/**
-	 * Выполняет чтение указанной именованной выборки/выборок.
+	 * Выполняет чтение указанной именованной выборки.
 	 * 
 	 * @param datasetName
-	 *        название одной или более выборок, разделенных запятыми
+	 *    название выборки
 	 * @throws IOException
+	 *    если при чтении файла выборки произошла ошибка ввода/вывода
+	 * @throws IllegalArgumentException
+	 *    если указанное имя выборки не соответствует файлу 
 	 */
 	private void read(String datasetName) throws IOException {
 		this.datasetName = datasetName;
-		String[] datasets = datasetName.split(",");
-		String filename = IOUtils.resolveDataset(datasets[0]);
+		String filename = IOUtils.resolveDataset(datasetName);
 		if (filename == null) {
-			throw new IOException(Messages.format("dataset.e_name", datasets[0]));
+			throw new IllegalArgumentException(Messages.format("dataset.e_name", datasetName));
 		}
 		read(IOUtils.getReader(filename));
-		
-		for (int i = 1; i < datasets.length; i++) {
-			SequenceSet part = new GenericSequenceSet(datasets[i]);
-			this.addSet(part);
-		}
 	}
 
 	/**
@@ -170,7 +164,7 @@ public class GenericSequenceSet implements SequenceSet {
 	 * @throws IOException
 	 */
 	private void read(BufferedReader reader) throws IOException {
-		// Read the header of the file
+		// Заголовок файла
 		String line = reader.readLine();
 		String[] parts = line.split("\\s+");
 		observedStates = parts[0];
@@ -206,7 +200,7 @@ public class GenericSequenceSet implements SequenceSet {
 		} else if (key.equals("i")) {
 			lastReadId = value;
 		} else if (key.equals("h")) {
-			this.add(lastObservedSeq, decode(value, hiddenStates), lastReadId);
+			this.doAdd(lastObservedSeq, decode(value, hiddenStates), lastReadId);
 		} else if (key.equals("c")) {
 			byte[] complete = decode(value, completeStates);
 			byte[] observed = new byte[complete.length], hidden = new byte[complete.length];
@@ -216,7 +210,7 @@ public class GenericSequenceSet implements SequenceSet {
 				hidden[pos] = (byte) (complete[pos] / observedStates.length());
 			}
 			
-			this.add(observed, hidden, lastReadId);
+			this.doAdd(observed, hidden, lastReadId);
 		}
 	}
 
@@ -262,6 +256,10 @@ public class GenericSequenceSet implements SequenceSet {
 	public String id(int index) {
 		return ids.get(index);
 	}
+	
+	public Sequence get(int index) {
+		return new Sequence(this, index, id(index), observed(index), hidden(index));
+	}
 
 	@Override
 	public String observedStates() {
@@ -286,7 +284,7 @@ public class GenericSequenceSet implements SequenceSet {
 
 		for (int i = 0; i < selector.length; i++)
 			if (selector[i]) {
-				filtered.add(observed(i), hidden(i), id(i));
+				filtered.doAdd(observed(i), hidden(i), id(i));
 			}
 		return filtered;
 	}
@@ -298,8 +296,8 @@ public class GenericSequenceSet implements SequenceSet {
 		filtered.selector = new boolean[length()];
 
 		for (int i = 0; i < length(); i++)
-			if (filter.pass(i, observed(i), hidden(i))) {
-				filtered.add(observed(i), hidden(i), id(i));
+			if (filter.pass( this.get(i) )) {
+				filtered.doAdd(observed(i), hidden(i), id(i));
 				filtered.selector[i] = true;
 			}
 		return filtered;
@@ -361,7 +359,7 @@ public class GenericSequenceSet implements SequenceSet {
 	 * @param hidden
 	 *        строка скрытых состояний
 	 */
-	public void add(byte[] observed, byte[] hidden, String id) {
+	protected void doAdd(byte[] observed, byte[] hidden, String id) {
 		if (observed.length != hidden.length) {
 			throw new IllegalArgumentException(Messages.getString("dataset.e_length"));
 		}
@@ -370,6 +368,24 @@ public class GenericSequenceSet implements SequenceSet {
 		this.ids.add(id);
 		this.length = this.hiddenSeq.size();
 	}
+	
+	/**
+	 * Добавляет в коллекцию пару из наблюдаемой и соответстующей скрытой 
+	 * последовательности состояний.
+	 * 
+	 * @param observed
+	 *        строка наблюдаемых состояний
+	 * @param hidden
+	 *        строка скрытых состояний
+	 */
+	public void add(byte[] observed, byte[] hidden, String id) {
+		this.doAdd(observed, hidden, id);
+		
+		this.datasetName = null;
+		this.unfilteredSet = null;
+		this.selector = null;
+		this.setParts = null;
+	}
 
 	/**
 	 * Добавляет все строки из другой выборки в эту выборку. 
@@ -377,7 +393,7 @@ public class GenericSequenceSet implements SequenceSet {
 	 * @param set
 	 *        коллекция последовательностей, которые надо добавить в эту выборку
 	 */
-	public void addSet(SequenceSet set) {
+	private void addSet(SequenceSet set) {
 		if (!set.observedStates().equals(observedStates())) {
 			throw new IllegalArgumentException(Messages.getString("dataset.e_states"));
 		}
@@ -386,7 +402,7 @@ public class GenericSequenceSet implements SequenceSet {
 		}
 
 		for (int i = 0; i < set.length(); i++) {
-			this.add(set.observed(i), set.hidden(i), set.id(i));
+			this.doAdd(set.observed(i), set.hidden(i), set.id(i));
 		}
 	}
 
@@ -436,6 +452,10 @@ public class GenericSequenceSet implements SequenceSet {
 			this.hiddenSeq = filtered.hiddenSeq;
 			this.observedSeq = filtered.observedSeq;
 			this.ids = filtered.ids;
+		} else if (setParts != null) {
+			for (SequenceSet part : setParts) {
+				this.addSet(part);
+			}
 		}
 	}
 
