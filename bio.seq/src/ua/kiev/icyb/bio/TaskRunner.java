@@ -242,8 +242,11 @@ public class TaskRunner {
 		if (method == null) {
 			throw new IllegalArgumentException(Messages.format("tasks.not_found", args[0])); //$NON-NLS-1$
 		}
-		method.invoke(null, (Object) mainArgs);
 		
-		Env.executor().shutdownNow();
+		try {
+			method.invoke(null, (Object) mainArgs);
+		} finally {
+			Env.executor().shutdownNow();
+		}
 	}
 }
