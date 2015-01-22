@@ -5,6 +5,7 @@ import java.util.Map;
 
 import ua.kiev.icyb.bio.JobListener;
 import ua.kiev.icyb.bio.SeqAlgorithm;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -23,24 +24,23 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	private transient Map<Thread, Object> memoryCache;
 	
 	@Override
-	public abstract void train(byte[] observed, byte[] hidden);
+	public abstract void train(Sequence sequence);
 	
 	@Override
 	public void train(SequenceSet set) {
 		for (int i = 0; i < set.length(); i++) {
-			this.train(set.observed(i), set.hidden(i));
+			this.train(set.get(i));
 		}
 	}
 
 	@Override
 	public abstract void reset();
-
-	@Override
-	public abstract byte[] run(byte[] sequence);
+	
+	@Override 
+	public abstract byte[] run(Sequence sequence);
 
 	@Override
 	public SequenceSet runSet(SequenceSet set) {
-		// Default work listener is enough for most applications
 		return runSet(set, new DefaultJobListener());
 	}
 
@@ -50,7 +50,7 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 		for (int i = 0; i < set.length(); i++) {
 			if (Thread.interrupted()) break;
 				
-			est.put(i, run(set.observed(i)));
+			est.put(i, run(set.get(i)));
 			listener.seqCompleted(i, est.hidden(i));
 		}
 		listener.finished();	

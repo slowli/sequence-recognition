@@ -17,7 +17,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 * @param hidden
 	 *        последовательность скрытых состояний, которая соответствует наблюдаемой строке
 	 */
-	void train(byte[] observed, byte[] hidden);
+	void train(Sequence sequence);
 
 	/**
 	 * Обучает алгоритм на выборке, состоящей из набора наблюдаемых и соответствующих им
@@ -37,7 +37,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 *    последовательность скрытых состояний, соответствующая наблюдаемой строке;
 	 *    {@code null} в случае отказа от распознавания
 	 */
-	byte[] run(byte[] sequence);
+	byte[] run(Sequence sequence);
 
 	/**
 	 * Производит распознавание на выборке прецедентов.
