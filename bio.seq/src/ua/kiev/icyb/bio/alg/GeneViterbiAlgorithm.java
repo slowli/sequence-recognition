@@ -2,7 +2,7 @@ package ua.kiev.icyb.bio.alg;
 
 import java.util.Arrays;
 
-import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -40,28 +40,14 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
 	 *    состояний
 	 */
-	public GeneViterbiAlgorithm(int order, boolean validateCds, SequenceSet set) {
-		super(1, order, set);
-		this.validateCds = validateCds;
-	}
-	
-	/**
-	 * Создает новый алгоритм с заданной вероятностной моделью.
-	 * 
-	 * @param chain
-	 *    марковская цепь, используемая в алгоритме
-	 * @param validateCds
-	 *    следует ли вводить ограничение на суммарную длину скрытых состояний,
-	 *    соответствующих экзонам, так чтобы она была кратна трем
-	 */
-	public GeneViterbiAlgorithm(MarkovChain chain, boolean validateCds) {
-		super(chain);
+	public GeneViterbiAlgorithm(int order, boolean validateCds) {
+		super(1, order);
 		this.validateCds = validateCds;
 	}
 	
 	@Override
-	public byte[] run(byte[] sequence) {
-		return run(sequence, validateCds, this.chain);
+	public byte[] run(Sequence sequence) {
+		return run(sequence.observed, validateCds, this.chain);
 	}
 	
 	@Override

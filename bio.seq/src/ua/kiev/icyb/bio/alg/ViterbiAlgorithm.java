@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio.alg;
 
 import java.util.Arrays;
 
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -37,6 +38,10 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 */
 	protected MarkovChain chain;
 	
+	private int depLength;
+	
+	private int order;
+	
 	/**
 	 * Создает новый алгоритм распознавания с заданными параметрами вероятностной модели.
 	 * 
@@ -48,9 +53,9 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
 	 *    состояний
 	 */
-	public ViterbiAlgorithm(int depLength, int order, SequenceSet set) {
-		this(new MarkovChain(depLength, order, 
-				set.observedStates(), set.hiddenStates()));
+	public ViterbiAlgorithm(int depLength, int order) {
+		this.depLength = depLength;
+		this.order = order;
 	}
 	
 	/**
@@ -59,28 +64,38 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 * @param chain
 	 *    марковская цепь, используемая в алгоритме
 	 */
-	public ViterbiAlgorithm(MarkovChain chain) {
-		this.chain = chain;
+	protected ViterbiAlgorithm() {
+	}
+	
+	protected MarkovChain createChain(SequenceSet set) {
+		return new MarkovChain(depLength, order, 
+				set.observedStates(), set.hiddenStates());
 	}
 	
 	@Override
-	public void train(byte[] observed, byte[] hidden) {
-		chain.digest(observed, hidden);
+	public void train(Sequence sequence) {
+		if (chain == null) {
+			chain = createChain(sequence.set);
+		}
+		chain.digest(sequence.observed, sequence.hidden);
 	}
 	
 	@Override
 	public void train(SequenceSet set) {
+		if (chain == null) {
+			chain = createChain(set);
+		}
 		chain.digestSet(set);
 	}
 
 	@Override
 	public void reset() {
-		chain.reset();
+		if (chain != null) chain.reset();
 	}
 
 	@Override
-	public byte[] run(byte[] seq) {
-		return run(seq, this.chain);
+	public byte[] run(Sequence sequence) {
+		return run(sequence.observed, this.chain);
 	}
 	
 	/**
@@ -97,7 +112,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    {@code null} в случае отказа от распознавания
 	 */
 	protected byte[] run(byte[] seq, MarkovChain chain) {
-		if (seq.length < chain.order()) return null;
+		if ((seq.length < chain.order()) || (seq.length > MAX_SEQ_LENGTH)) return null;
 		
 		final int order = chain.order(), 
 			depLength = chain.depLength(),
@@ -200,20 +215,26 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	@Override
 	public Object clearClone() {
 		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clearClone();
-		other.chain = (MarkovChain) other.chain.clearClone();
+		if (other.chain != null) {
+			other.chain = (MarkovChain) other.chain.clearClone();
+		}
 		return other;
 	}
 	
 	@Override
 	public String repr() {
 		String repr = super.repr() + "\n";
-		repr += Messages.format("alg.chain", chain.depLength(), chain.order());
+		repr += Messages.format("alg.chain", this.depLength, this.order);
 		return repr;
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("[%s: %s]", this.getClass().getSimpleName(), chain.toString());
+		if (chain != null) {
+			return String.format("<%s(%s)>", this.getClass().getSimpleName(), chain);
+		} else {
+			return String.format("<%s(%d, %d)>", this.getClass().getSimpleName(), this.depLength, this.order);
+		}
 	}
 	
 	@Override
