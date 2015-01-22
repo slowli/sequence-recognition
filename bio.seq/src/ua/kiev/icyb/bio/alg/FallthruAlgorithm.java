@@ -26,10 +26,15 @@ public class FallthruAlgorithm extends ViterbiAlgorithm {
 	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
 	 *    состояний
 	 */
-	public FallthruAlgorithm(Approximation approx, SequenceSet set) {
-		super(new FallthruChain(approx, 
-				set.observedStates(), set.hiddenStates()));
+	public FallthruAlgorithm(Approximation approx) {
+		super(1, approx.order);
 		this.approx = approx;
+	}
+	
+	@Override
+	protected MarkovChain createChain(SequenceSet set) {
+		return new FallthruChain(approx, 
+				set.observedStates(), set.hiddenStates());
 	}
 	
 	@Override
