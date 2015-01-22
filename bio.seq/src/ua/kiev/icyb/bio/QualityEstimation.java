@@ -92,6 +92,15 @@ public class QualityEstimation extends AbstractLaunchable implements RunCollecti
 	}
 
 	@Override
+	protected void onSave() {
+		if (!interruptedByUser) {
+			Env.debugInline(2, "S");
+		} else {
+			super.onSave();
+		}
+	}
+	
+	@Override
 	public String repr() {
 		String repr = Messages.format("test.repr", 
 				controlSet.length(), run.getProcessedCount()) + "\n";

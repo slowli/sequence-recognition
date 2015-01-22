@@ -45,7 +45,9 @@ public abstract class AbstractLaunchable implements Launchable, Serializable {
 	 * Определяет, был ли остановлен процесс выполнения алгоритма в результате действий
 	 * пользователя (например, он нажал {@code ^C}) или из-за возникшей ошибки.
 	 */
-	private transient boolean interruptedByUser;
+	protected transient boolean interruptedByUser;
+	
+	protected transient boolean interruptedByError;
 	
 	/**
 	 * {@inheritDoc}
@@ -59,21 +61,23 @@ public abstract class AbstractLaunchable implements Launchable, Serializable {
 
 			@Override
 			public void run() {
-				if (interruptedByUser) {
+				if (!interruptedByError) {
+					interruptedByUser = true;
 					save();
 				}
 			}
 		});
-		interruptedByUser = true;
+		interruptedByUser = false;
+		interruptedByError = false;
 		Runtime.getRuntime().addShutdownHook(shutdownThread);
 		
 		try {
 			doRun();
 		} catch (RuntimeException e) {
-			interruptedByUser = false;
+			interruptedByError = true;
 			throw e;
 		} catch (Error e) {
-			interruptedByUser = false;
+			interruptedByError = true;
 			throw e;
 		}
 		
@@ -117,13 +121,17 @@ public abstract class AbstractLaunchable implements Launchable, Serializable {
 				save.renameTo(backup);
 			}
 			
-			Env.debug(1, Messages.format("misc.save", saveFile));
 			try {
 				IOUtils.writeObject(saveFile, this);
 			} catch (IOException e) {
 				Env.error(0, Messages.format("misc.save_error", e));
 				throw new RuntimeException(e);
 			}
+			onSave();
 		}
+	}
+	
+	protected void onSave() {
+		Env.debug(1, Messages.format("misc.save", saveFile));
 	}
 }
