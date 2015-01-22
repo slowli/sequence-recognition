@@ -189,11 +189,16 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 		for (int r = 0; r < runs.length; r++) {
 			Env.debug(1, getRunName(r));
 			Env.debug(1, runs[r].repr());
+			
 			if ((r % 2 == 0) && skipTraining) {
 				Env.debug(1, Messages.getString("test.skip_train") + "\n");
 				continue;
 			}
 			
+			if (runs[r].isComplete()) {
+				continue;
+			}
+				
 			System.gc();
 			final SequenceSet trainingSet = runs[r - (r % 2)].getSet();
 			
@@ -202,6 +207,15 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 			runs[r].run(tAlgorithm);
 			
 			Env.debug(1, Messages.format("test.quality", runs[r].getQuality().repr()));
+		}
+	}
+	
+	@Override
+	protected void onSave() {
+		if (!interruptedByUser) {
+			Env.debugInline(2, "S");
+		} else {
+			super.onSave();
 		}
 	}
 	

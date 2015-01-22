@@ -107,6 +107,16 @@ public class AlgorithmRun implements Serializable, Representable {
 	}
 	
 	/**
+	 * Проверяет, завершилось ли выполнение алгоритма.
+	 * 
+	 * @return
+	 *    {@code true}, если алгоритм закончил распознавание на всех строках
+	 */
+	public boolean isComplete() {
+		return getProcessedCount() == getSet().length();
+	}
+	
+	/**
 	 * Запускает алгоритм распознавания на необработанных последовательностях.
 	 * 
 	 * @param algorithm
@@ -146,12 +156,7 @@ public class AlgorithmRun implements Serializable, Representable {
 				
 				nProcessed++;
 				if (nProcessed % sequencesPerSave == 0) {
-					Env.debugInline(2, "S");
-					// Не выводить стандартное сообщение о сохранении
-					int level = Env.debugLevel();
-					Env.setDebugLevel(0); 
 					parent.save();
-					Env.setDebugLevel(level);
 				}
 			}
 
