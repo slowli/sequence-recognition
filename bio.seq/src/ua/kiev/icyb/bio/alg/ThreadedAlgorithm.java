@@ -8,8 +8,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.JobListener;
 import ua.kiev.icyb.bio.SeqAlgorithm;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -48,8 +50,8 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public void train(byte[] observed, byte[] hidden) {
-		baseAlgorithm.train(observed, hidden);
+	public void train(Sequence sequence) {
+		baseAlgorithm.train(sequence);
 	}
 	
 	@Override
@@ -63,8 +65,8 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	}
 
 	@Override
-	public byte[] run(byte[] sequence) {
-		// Single sequence computations can't be threaded
+	public byte[] run(Sequence sequence) {
+		// Вычисления на отдельных строках не распараллеливаются
 		return baseAlgorithm.run(sequence);
 	}
 	
@@ -82,7 +84,7 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 		
 		@Override
 		public byte[] call() throws Exception {
-			byte[] result = baseAlgorithm.run(set.observed(index));
+			byte[] result = baseAlgorithm.run(set.get(index));
 			if (listener != null)
 				listener.seqCompleted(index, result);
 			return result;
@@ -96,12 +98,14 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 
 	@Override
 	public synchronized SequenceSet runSet(SequenceSet set, final JobListener listener) {
-		// TODO use Env.executor()?
+		// TODO Env.executor()?
 		ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 		List<SequenceTask> tasks = new ArrayList<SequenceTask>();
 		for (int i = 0; i < set.length(); i++)
 			tasks.add(new SequenceTask(set, i, listener));
+		
 		EstimatesSet estimates = new EstimatesSet(set);
+		
 		try {
 			List<Future<byte[]>> results = executor.invokeAll(tasks);
 			for (int i = 0; i < set.length(); i++)
@@ -110,12 +114,15 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 				listener.finished();
 			return estimates;
 		} catch (InterruptedException e) {
-			return estimates;
+			Env.exception(e);
 		} catch (ExecutionException e) {
-			throw new RuntimeException(e);
+			Env.exception(e);
 		} finally {
 			executor.shutdown();
 		}
+		
+		// Недостижимый код
+		return null;
 	}
 
 	@Override

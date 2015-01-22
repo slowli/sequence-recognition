@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg.tree;
 
 import ua.kiev.icyb.bio.SeqAlgorithm;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.AbstractSeqAlgorithm;
 import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
@@ -56,19 +57,19 @@ public class PriorityCompAlgorithm extends AbstractSeqAlgorithm {
 	 * @param set
 	 *    набор прецедентов, который будет далее использоваться с этим алгоритмом
 	 */
-	public PriorityCompAlgorithm(int minOrder, int maxOrder, SequenceSet set) {
+	public PriorityCompAlgorithm(int minOrder, int maxOrder) {
 		algorithms = new SeqAlgorithm[maxOrder - minOrder + 1];
 		for (int i = maxOrder; i >= minOrder; i--)
-			algorithms[maxOrder - i] = new ViterbiAlgorithm(1, i, set);
+			algorithms[maxOrder - i] = new ViterbiAlgorithm(1, i);
 		
 		this.minOrder = minOrder;
 		this.maxOrder = maxOrder;
 	}
 
 	@Override
-	public void train(byte[] observed, byte[] hidden) {
+	public void train(Sequence sequence) {
 		for (SeqAlgorithm m: algorithms)
-			m.train(observed, hidden);
+			m.train(sequence);
 	}
 	
 	@Override
@@ -84,7 +85,7 @@ public class PriorityCompAlgorithm extends AbstractSeqAlgorithm {
 	}
 
 	@Override
-	public byte[] run(byte[] sequence) {
+	public byte[] run(Sequence sequence) {
 		for (SeqAlgorithm m: algorithms) {
 			byte[] result = m.run(sequence);
 			if (result != null) {

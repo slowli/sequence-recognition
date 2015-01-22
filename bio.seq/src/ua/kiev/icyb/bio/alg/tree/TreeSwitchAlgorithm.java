@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg.tree;
 
 import ua.kiev.icyb.bio.SeqAlgorithm;
+import ua.kiev.icyb.bio.Sequence;
 
 /**
  * Подкласс композиций алгоритмов распознавания, в которых области компетентности
@@ -31,7 +32,7 @@ public class TreeSwitchAlgorithm extends SwitchAlgorithm {
 	}
 	
 	@Override
-	public int index(byte[] sequence) {
-		return tree.getPart(sequence);
+	public int index(Sequence sequence) {
+		return tree.getPart(sequence.observed);
 	}
 }
