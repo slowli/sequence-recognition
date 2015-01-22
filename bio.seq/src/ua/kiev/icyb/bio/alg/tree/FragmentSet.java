@@ -3,6 +3,7 @@ package ua.kiev.icyb.bio.alg.tree;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -206,6 +207,27 @@ public class FragmentSet extends HashSet<Integer> {
 	}
 	
 	/**
+	 * Переводит фрагмент из текстового вида в целое число.
+	 * 
+	 * @param str
+	 *    фрагмент
+	 * @return
+	 *    целочисленное представление фрагмента или {@code -1}, если в фрагменте есть символ, 
+	 *    отсутствующий в алфавите состояний {@link #getStates()} 
+	 */
+	private int encode(String str) {
+		int index = 0;
+		for (int i = 0; i < str.length(); i++) {
+			int pos = alphabet.indexOf(str.charAt(i));
+			if (pos < 0) return -1;
+			
+			index = index * alphabet.length() + pos;
+		}
+		
+		return index;
+	}
+	
+	/**
 	 * Переводит отдельный элемент множества в текстовый вид.
 	 * 
 	 * @param index
@@ -213,7 +235,7 @@ public class FragmentSet extends HashSet<Integer> {
 	 * @return
 	 *    текстовое представление элемента
 	 */
-	private String sequence(int index) {
+	private String decode(int index) {
 		String repr = "";
 		int val = index;
 		for (int i = 0; i < fragmentLength; i++) {
@@ -264,6 +286,50 @@ public class FragmentSet extends HashSet<Integer> {
 	}
 	
 	/**
+	 * Создает множество фрагментов с заданными элементами.
+	 * 
+	 * @param alphabet
+	 *    используемый алфавит состояний
+	 * @param fragments
+	 *    коллекция фрагментов
+	 * 
+	 * @throws IllegalArgumentException
+	 *    если выполнено хотя бы одно из условий:
+	 *    <ul>
+	 *    <li>коллекция фрагментов пуста;
+	 *    <li>существуют фрагменты различной длины;
+	 *    <li>в какой-либо из фрагментов входит символ, отстутствующий в алфавите.
+	 *    </ul>
+	 */
+	public FragmentSet(String alphabet, Collection<String> fragments) {
+		super();
+
+		if (fragments.isEmpty()) {
+			throw new IllegalArgumentException("At least 1 fragment needed to initialize set");
+		}
+		
+		this.alphabet = alphabet;
+		int len = -1;
+		for (String fragmentStr : fragments) {
+			if ((len >= 0) && (len != fragmentStr.length())) {
+				throw new IllegalArgumentException("All fragments should have same length");
+			}
+			len = fragmentStr.length();
+			
+			int val = encode(fragmentStr);
+			if (val < 0) throw new IllegalArgumentException("Invalid fragment: " + fragmentStr);
+			this.add(val);
+		}
+
+		this.fragmentLength = len;
+	}
+	
+	
+	public FragmentSet(String alphabet, String fragment) {
+		this(alphabet, Collections.singleton(fragment));
+	}
+	
+	/**
 	 * Копирующий конструктор.
 	 * 
 	 * @param other
@@ -279,7 +345,7 @@ public class FragmentSet extends HashSet<Integer> {
 	public String toString() {
 		String result = "";
 		for (int elem: this)
-			result += (sequence(elem) + ",");
+			result += (decode(elem) + ",");
 		if (result.length() > 0)
 			result = result.substring(0, result.length() - 1);
 		return result;
