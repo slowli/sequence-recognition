@@ -63,7 +63,7 @@ public interface SequenceSet extends Serializable, Representable {
 		 * @return <code>true</code>, если пара последовательностей должна остаться
 		 * в фильтрованном наборе
 		 */
-		boolean pass(Sequence sequence);
+		boolean check(Sequence sequence);
 	}
 	
 	/**
