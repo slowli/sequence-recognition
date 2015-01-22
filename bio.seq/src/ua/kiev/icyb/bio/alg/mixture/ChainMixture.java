@@ -93,6 +93,14 @@ public class ChainMixture implements Serializable, Trainable, Representable {
 	public double[] weights;
 	
 	/**
+	 * Создает пустую композицию.
+	 */
+	public ChainMixture() {
+		chains = new MarkovChain[0];
+		weights = new double[0];
+	}
+	
+	/**
 	 * Создает новую взвешенную композицию с заданным количеством марковских цепей.
 	 * 
 	 * @param count
@@ -189,9 +197,9 @@ public class ChainMixture implements Serializable, Trainable, Representable {
 				future.get();
 			}
 		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+			Env.exception(e);
 		} catch (ExecutionException e) {
-			throw new RuntimeException(e);
+			Env.exception(e);
 		}
 		
 		return weights;
