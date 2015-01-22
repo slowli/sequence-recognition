@@ -75,16 +75,28 @@ public final class Fragment implements Serializable {
 	 * Создает фрагмент с заданными целочисленными параметрами.
 	 * 
 	 * @param observed
-	 *        порядковый номер наблюдаемой цепочки состояний
+	 *    порядковый номер наблюдаемой цепочки состояний
 	 * @param hidden
-	 *        порядковый номер скрытой цепочки состояний
+	 *    порядковый номер скрытой цепочки состояний
 	 * @param length
-	 *        длина цепочки
+	 *    длина цепочки
 	 */
 	public Fragment(int observed, int hidden, int length) {
 		this.observed = observed;
 		this.hidden = hidden;
 		this.length = length;
+	}
+	
+	/**
+	 * Копирующий конструктор.
+	 * 
+	 * @param other
+	 *    фрагмент, который надо скопировать
+	 */
+	public Fragment(Fragment other) {
+		this.observed = other.observed;
+		this.hidden = other.hidden;
+		this.length = other.length;
 	}
 
 	@Override
