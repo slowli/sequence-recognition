@@ -15,17 +15,6 @@ import ua.kiev.icyb.bio.res.Messages;
  * После окончания работы выводится общее количство последовательностей и время их обработки.
  */
 public class DefaultJobListener implements JobListener {
-	/**
-	 * Имя свойства конфигурации, содержащего число обрабатываемых последовательностей,
-	 * соответствующих выводу одной точки.
-	 */
-	public static final String SEQ_PER_DOT_PROPERTY = "joblistener.seqPerDot";
-	
-	/**
-	 * Имя свойства конфигурации, содержащего число выводимых точек, которые приходятся
-	 * на одну строку.
-	 */
-	public static final String DOTS_PER_LINE_PROPERTY = "joblistener.dotsPerLine";
 	
 	private static boolean printedKey = false;
 	
@@ -47,8 +36,7 @@ public class DefaultJobListener implements JobListener {
 	 * Создает обработчик событий с параметрами по умолчанию.
 	 */
 	public DefaultJobListener() {
-		this(Env.intProperty(SEQ_PER_DOT_PROPERTY), 
-				Env.intProperty(DOTS_PER_LINE_PROPERTY));
+		this(20, 50);
 	}
 	/**
 	 * Создает обработчик событий с заданной скоростью вывода информации.
