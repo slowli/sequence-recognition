@@ -1,12 +1,10 @@
 package ua.kiev.icyb.bio.alg.tree;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import ua.kiev.icyb.bio.SeqAlgorithm;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.AbstractSeqAlgorithm;
 import ua.kiev.icyb.bio.res.Messages;
@@ -19,67 +17,18 @@ import ua.kiev.icyb.bio.res.Messages;
  */
 public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 
-	/**
-	 * Класс, представляющий последовательность состояний со сравнением по содержимому.
-	 */
-	private static class Sequence {
-
-		private final byte[] seq;
-		
-		/**
-		 * Создает оболочку для последовательности состояний.
-		 * 
-		 * @param seq
-		 *    массив, представляющий последовательность состояний
-		 */
-		public Sequence(byte[] seq) {
-			this.seq = seq;
-		}
-		
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + Arrays.hashCode(seq);
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj) return true;
-			if (obj == null) return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Sequence other = (Sequence) obj;
-			if (!Arrays.equals(seq, other.seq))
-				return false;
-			return true;
-		}
-	}
-	
 	private static final long serialVersionUID = 1L;
 	
 	/**
 	 * Алгоритмы, использующиеся для распознавания. 
 	 */
 	private SeqAlgorithm algorithms[];
-
-	/** 
-	 * Соответствие между строками наблюдаемых состояний и составляющими алгоритмами,
-	 * которые обрабатывают эти строки.
-	 */
-	private transient Map<Sequence, Integer> classes = new HashMap<Sequence, Integer>();
-	
-	/**
-	 * Выборка, использованная при создании класса.
-	 */
-	private SequenceSet set = null;
 	
 	/**
 	 * Индексы составляющих алгоритмов, которые обрабатывают каждую строку наблюдаемых
 	 * состояний из {@link #set}.
 	 */
-	private byte[] classMarkers = null; 
+	private Map<String, Byte> labels = new HashMap<String, Byte>(); 
 	
 	/**
 	 * Создает новый алгоритм с заданными составляющими. Логика соответствия между 
@@ -105,16 +54,9 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	 * @param algs
 	 *    составляющие алгоритмы распознавания
 	 */
-	public SwitchAlgorithm(byte[] classes, SequenceSet set, SeqAlgorithm[] algs) {
+	public SwitchAlgorithm(Map<String, Byte> labels, SeqAlgorithm[] algs) {
 		this(algs);
-
-		assert(classes.length == set.length());
-		for (int i = 0; i < classes.length; i++) {
-			putIndex(set.observed(i), classes[i]);
-		}
-
-		this.set = set;
-		this.classMarkers = classes;
+		this.labels = labels;
 	}
 	
 	
@@ -134,40 +76,28 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	 * @return 
 	 *    индекс (с отсчетом от нуля) компетентного составляющего алгоритма
 	 */
-	public int index(byte[] sequence) {
-		Integer idx = classes.get(new Sequence(sequence));
+	public int index(Sequence sequence) {
+		Byte idx = labels.get(sequence);
 		if (idx == null) {
 			throw new RuntimeException("Sequence is not in the training set!");
 		}
 		return idx;
 	}
 	
-	/**
-	 * Сохраняет индекс компетентного алгоритма для заданной последовательности
-	 * состояний.
-	 * 
-	 * @param sequence 
-	 *    последовательность наблюдаемых состояний
-	 * @param index 
-	 *    индекс (с отсчетом от нуля) компетентного составляющего алгоритма
-	 */
-	protected void putIndex(byte[] sequence, int index) {
-		classes.put(new Sequence(sequence), index);
-	}
-	
 	@Override
-	public void train(byte[] observed, byte[] hidden) {
-		algorithms[index(observed)].train(observed, hidden);
+	public void train(Sequence sequence) {
+		algorithms[index(sequence)].train(sequence);
 	}
 
 	@Override
 	public void reset() {
-		for (SeqAlgorithm model: algorithms)
+		for (SeqAlgorithm model: algorithms) {
 			model.reset();
+		}
 	}
 
 	@Override
-	public byte[] run(byte[] sequence) {
+	public byte[] run(Sequence sequence) {
 		return algorithms[index(sequence)].run(sequence);
 	}
 	
@@ -183,30 +113,9 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 		for (int i = 0; i < algorithms.length; i++) {
 			other.algorithms[i] = (SeqAlgorithm) algorithms[i].clearClone();
 		}
-		other.classes = new HashMap<Sequence, Integer>();
-		other.classes.putAll(classes);
+		other.labels = new HashMap<String, Byte>();
+		other.labels.putAll(labels);
 		return other;
-	}
-	
-	/**
-	 * Восстанавливает поля объекта, которые не записываются в поток, на основе сохраненных полей.
-	 * 
-	 * @param stream
-	 *    поток для считывания объекта
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 */
-	private void readObject(ObjectInputStream stream) 
-			throws IOException, ClassNotFoundException {
-		
-		stream.defaultReadObject();
-		classes = new HashMap<Sequence, Integer>();
-		if (classMarkers != null) {
-			assert(classMarkers.length == set.length());
-			for (int i = 0; i < classMarkers.length; i++) {
-				putIndex(set.observed(i), classMarkers[i]);
-			}
-		}
 	}
 	
 	@Override

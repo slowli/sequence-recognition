@@ -1,5 +1,8 @@
 package ua.kiev.icyb.bio.alg.tree;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ua.kiev.icyb.bio.SeqAlgorithm;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.mixture.ChainMixture;
@@ -29,9 +32,10 @@ public class MixtureSwitchAlgorithm extends SwitchAlgorithm {
 	 * @return
 	 *    индекс компетентного алгоритма для всех строк в выборке
 	 */
-	private static byte[] calculateClasses(SequenceSet set, ChainMixture mixture) {
+	private static Map<String, Byte> calculateLabels(SequenceSet set, ChainMixture mixture) {
 		double[][] weights = mixture.getWeights(set);
-		byte[] markers = new byte[set.length()];
+		Map<String, Byte> labels = new HashMap<String, Byte>();
+		
 		for (int i = 0; i < set.length(); i++) {
 			double max = 0;
 			int maxChain = -1;
@@ -40,9 +44,11 @@ public class MixtureSwitchAlgorithm extends SwitchAlgorithm {
 					max = weights[chain][i];
 					maxChain = chain;
 				}
-			markers[i] = (byte)maxChain;
+			
+			labels.put(set.id(i), (byte) maxChain);
 		}
-		return markers;
+		
+		return labels;
 	}
 
 	/**
@@ -57,6 +63,6 @@ public class MixtureSwitchAlgorithm extends SwitchAlgorithm {
 	 *    составляющие алгоритмы распознавания 
 	 */
 	public MixtureSwitchAlgorithm(ChainMixture mixture, SequenceSet set, SeqAlgorithm[] algs) {
-		super(calculateClasses(set, mixture), set, algs);
+		super(calculateLabels(set, mixture), algs);
 	}
 }
