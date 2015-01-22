@@ -16,7 +16,7 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 	 * Генерирует случайный набор цепочек состояний.
 	 * 
 	 * @param entropy
-	 *    объект, использующийся для вычисления функционала качества цепочки
+	 *    объект, использующийся для вычисления функционала качества набора
 	 * @param seqLength
 	 *    длина цепочек в наборе
 	 * @return
@@ -32,22 +32,17 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 	}
 	
 	/**
-	 * Объект, использующийся для вычисления функционала качества цепочки.
+	 * Объект, использующийся для вычисления функционала качества набора.
 	 */
 	private final RuleEntropy entropy;
 	
-	/** Number of possible sequences that the set may contain. */
+	/** Максимальный размер множества из цепочек того вида, что входят в этот набор. */
 	private transient int nSequences = 0;
 	
 	public FragmentSetWrapper(FragmentSetWrapper other) {
 		super(other);
 		this.entropy = other.entropy;
 		this.nSequences = other.nSequences;
-	}
-
-	private FragmentSetWrapper(RuleEntropy entropy, int seqLength) {
-		super(entropy.getSet().observedStates(), seqLength);
-		this.entropy = entropy;
 	}
 	
 	/**
@@ -66,11 +61,24 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 		return this.nSequences;
 	}
 	
+	/**
+	 * Создает набор строк по заданному порядковому номеру.
+	 * 
+	 * @param entropy
+	 *    объект, использующийся для вычисления функционала качества набора
+	 * @param seqLength
+	 *    длина строк, входящих в набор
+	 * @param hash
+	 *    порядковый номер набора среди всех множеств, содеражащих цепочки той же длины из того же алфавита, 
+	 *    что и этот набор
+	 */
 	private FragmentSetWrapper(RuleEntropy entropy, int seqLength, long hash) {
-		this(entropy, seqLength);
+		super(entropy.getSet().observedStates(), seqLength);
+		this.entropy = entropy;
+		
 		while (hash == 0) {
-			// We don't want an empty set
-			hash = (long)Math.floor(Math.random() * (1 << nSequences())); 
+			// Пустой набор нас не устраивает; выбираем произвольный другой
+			hash = (long) Math.floor(Math.random() * (1 << nSequences())); 
 		}
 		
 		for (int i = 0; i < nSequences(); i++)
@@ -85,9 +93,9 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 		for (int i = 0; i < nSequences(); i++)
 			if (Math.random() < p) {
 				if ((hash & (1 << i)) > 0)
-					hash &= ~(1 << i); // remove the sequence from the set
+					hash &= ~(1 << i); // убрать строку из набора
 				else
-					hash ^= (1 << i); // add sequence to the set
+					hash ^= (1 << i); // добавить строку в набор
 			}
 			
 		return new FragmentSetWrapper(entropy, getFragmentLength(), hash);
