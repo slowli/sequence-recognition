@@ -74,13 +74,6 @@ public class GenericSequenceSet implements SequenceSet {
 	private boolean[] selector = null;
 	
 	private List<SequenceSet> setParts = null;
-	
-	/**
-	 * Последняя почитанная наблюдаемая строка.
-	 */
-	private transient byte[] lastObservedSeq;
-	
-	private transient String lastReadId;
 
 	/**
 	 * Создает новую пустую выборку.
@@ -127,6 +120,12 @@ public class GenericSequenceSet implements SequenceSet {
 		this.length = hiddenSeq.size();
 	}
 
+	/**
+	 * Создает выборку путем слияния нескольких выборок.
+	 * 
+	 * @param sets
+	 *    множества, которые объединяются в новой выборке
+	 */
 	public GenericSequenceSet(SequenceSet... sets) {
 		this(sets[0].observedStates(), sets[0].hiddenStates(), sets[0].completeStates());
 
@@ -149,11 +148,21 @@ public class GenericSequenceSet implements SequenceSet {
 	 */
 	private void read(String datasetName) throws IOException {
 		this.datasetName = datasetName;
-		String filename = IOUtils.resolveDataset(datasetName);
-		if (filename == null) {
-			throw new IllegalArgumentException(Messages.format("dataset.e_name", datasetName));
+		read(Env.resolveDataset(datasetName));
+		
+		fillMissingIds();
+	}
+	
+	/**
+	 * Создает отстутствующие идентификаторы для строк выборки. Идентификатор состоит из
+	 * названия выборки, двоеточия и порядкового номера строки в выборке.
+	 */
+	private void fillMissingIds() {
+		for (int i = 0; i < this.length(); i++) {
+			if (this.ids.get(i) == null) {
+				this.ids.set(i, this.datasetName + ":" + i);
+			}
 		}
-		read(IOUtils.getReader(filename));
 	}
 
 	/**
@@ -176,44 +185,38 @@ public class GenericSequenceSet implements SequenceSet {
 			completeStates = parts[2];
 		}
 
+		byte[] lastObservedSeq = null;
+		String lastReadId = null;
+		
 		while ((line = reader.readLine()) != null) {
-			processLine(line);
+			String key = line.substring(0, line.indexOf(':')).trim();
+			String value = line.substring(line.indexOf(':') + 1).trim();
+
+			if (key.equals("o")) {
+				lastObservedSeq = decode(value, observedStates);
+			} else if (key.equals("i")) {
+				lastReadId = value;
+			} else if (key.equals("h")) {
+				this.doAdd(lastObservedSeq, decode(value, hiddenStates), lastReadId);
+				lastReadId = null;
+			} else if (key.equals("c")) {
+				byte[] complete = decode(value, completeStates);
+				byte[] observed = new byte[complete.length], hidden = new byte[complete.length];
+
+				for (int pos = 0; pos < complete.length; pos++) {
+					observed[pos] = (byte) (complete[pos] % observedStates.length());
+					hidden[pos] = (byte) (complete[pos] / observedStates.length());
+				}
+				
+				this.doAdd(observed, hidden, lastReadId);
+				lastReadId = null;
+			}
 		}
 		((ArrayList<byte[]>) observedSeq).trimToSize();
 		((ArrayList<byte[]>) hiddenSeq).trimToSize();
 		((ArrayList<String>) ids).trimToSize();
 	}
-
-	/**
-	 * Обрабатывает отдельную строку текстового файла, содержащего выборку.
-	 * 
-	 * @param line
-	 *    строка, которую надо обработать
-	 * @throws IOException
-	 */
-	private void processLine(String line) throws IOException {
-		String key = line.substring(0, line.indexOf(':')).trim();
-		String value = line.substring(line.indexOf(':') + 1).trim();
-
-		if (key.equals("o")) {
-			lastObservedSeq = decode(value, observedStates);
-		} else if (key.equals("i")) {
-			lastReadId = value;
-		} else if (key.equals("h")) {
-			this.doAdd(lastObservedSeq, decode(value, hiddenStates), lastReadId);
-		} else if (key.equals("c")) {
-			byte[] complete = decode(value, completeStates);
-			byte[] observed = new byte[complete.length], hidden = new byte[complete.length];
-
-			for (int pos = 0; pos < complete.length; pos++) {
-				observed[pos] = (byte) (complete[pos] % observedStates.length());
-				hidden[pos] = (byte) (complete[pos] / observedStates.length());
-			}
-			
-			this.doAdd(observed, hidden, lastReadId);
-		}
-	}
-
+	
 	/**
 	 * Конвертирует строку символов из определенного алфавита в байтовый массив,
 	 * каждый элемент которого равен индексу соответствующего символа строки в алфавите.
@@ -296,7 +299,7 @@ public class GenericSequenceSet implements SequenceSet {
 		filtered.selector = new boolean[length()];
 
 		for (int i = 0; i < length(); i++)
-			if (filter.pass( this.get(i) )) {
+			if (filter.check( this.get(i) )) {
 				filtered.doAdd(observed(i), hidden(i), id(i));
 				filtered.selector[i] = true;
 			}
@@ -368,24 +371,6 @@ public class GenericSequenceSet implements SequenceSet {
 		this.ids.add(id);
 		this.length = this.hiddenSeq.size();
 	}
-	
-	/**
-	 * Добавляет в коллекцию пару из наблюдаемой и соответстующей скрытой 
-	 * последовательности состояний.
-	 * 
-	 * @param observed
-	 *        строка наблюдаемых состояний
-	 * @param hidden
-	 *        строка скрытых состояний
-	 */
-	public void add(byte[] observed, byte[] hidden, String id) {
-		this.doAdd(observed, hidden, id);
-		
-		this.datasetName = null;
-		this.unfilteredSet = null;
-		this.selector = null;
-		this.setParts = null;
-	}
 
 	/**
 	 * Добавляет все строки из другой выборки в эту выборку. 
@@ -444,8 +429,9 @@ public class GenericSequenceSet implements SequenceSet {
 				for (int i = 0; i < length(); i++) {
 					hiddenSeq.add(new byte[0]);
 					observedSeq.add(new byte[0]);
-					ids.add("" + i);
+					ids.add(null);
 				}
+				fillMissingIds();
 			}
 		} else if (unfilteredSet != null) {
 			GenericSequenceSet filtered = (GenericSequenceSet)unfilteredSet.filter(selector);

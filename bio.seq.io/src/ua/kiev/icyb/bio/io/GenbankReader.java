@@ -24,8 +24,8 @@ import org.biojavax.bio.seq.RichSequence.IOTools;
 import org.biojavax.bio.seq.SimpleRichLocation;
 
 import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.GenericSequenceSet;
 import ua.kiev.icyb.bio.IOUtils;
+import ua.kiev.icyb.bio.MutableSequenceSet;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.io.res.Messages;
 
@@ -151,8 +151,22 @@ public class GenbankReader {
 			return new byte[0];
 		}
 		
-		loc = loc.translate(-loc.getMin());
-		byte[] seq = new byte[loc.getMax() - loc.getMin() + 1];
+		
+		int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
+		for (Iterator<Location> iter = loc.blockIterator(); iter.hasNext(); ) {
+			Location block = iter.next();
+			if (block.getMin() < min) min = block.getMin();
+			if (block.getMax() > max) max = block.getMax();
+		}
+		
+		if (loc.getMin() != min) {
+			// Ошибка в BioJava?
+			return null;
+		}
+		
+		loc = loc.translate(-min);
+		byte[] seq = new byte[max - min + 1];
+		
 		Arrays.fill(seq, (byte) 1); // First, denote all symbols as beloging to introns
 		
 		for (Iterator<Location> iter = loc.blockIterator(); iter.hasNext(); ) {
@@ -213,7 +227,7 @@ public class GenbankReader {
 	 * @param cds
 	 *    позиция кодирующей последовательности гена в ДНК
 	 */
-	private void addGene(GenericSequenceSet set, RichFeature gene, RichFeature cds) {
+	private void addGene(MutableSequenceSet set, RichFeature gene, RichFeature cds) {
 		
 		byte[] hidden = getHiddenSequence(cds.getLocation());
 		byte[] observed = getObservedSequence(set.observedStates(), cds.getLocation());
@@ -240,7 +254,7 @@ public class GenbankReader {
 			id = "unknown" + set.length();
 		}
 		
-		if (observed != null) {
+		if ((observed != null) && (hidden != null)) {
 			set.add(observed, hidden, id);
 		} else {
 			Env.debugInline(2, "?");
@@ -269,7 +283,7 @@ public class GenbankReader {
 		Feature feat = iter.next();
 		//sourceSequence = feat.getSymbols(); // The first feature contains the entire sequence
 		
-		GenericSequenceSet set = new GenericSequenceSet(
+		MutableSequenceSet set = new MutableSequenceSet(
 				this.allowUnknownNts ? "ACGTN" : "ACGT", "xi",
 				this.allowUnknownNts ? "ACGTNacgtn" : "ACGTacgt");
 		

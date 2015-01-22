@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.GenericSequenceSet;
+import ua.kiev.icyb.bio.MutableSequenceSet;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.io.res.Messages;
 
@@ -89,7 +89,7 @@ public class DSSPReader {
 	/**
 	 * Выборка, состоящая из прочитанных белков.
 	 */
-	private final GenericSequenceSet proteins = new GenericSequenceSet(
+	private final MutableSequenceSet proteins = new MutableSequenceSet(
 			OBSERVED_STATES, HIDDEN_STATES, null);
 	
 	public DSSPReader() {
