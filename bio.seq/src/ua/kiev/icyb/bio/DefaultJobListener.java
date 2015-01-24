@@ -1,7 +1,5 @@
-package ua.kiev.icyb.bio.alg;
+package ua.kiev.icyb.bio;
 
-import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.JobListener;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -14,7 +12,7 @@ import ua.kiev.icyb.bio.res.Messages;
  * При отказе от классификации печатается вопросительный знак.
  * После окончания работы выводится общее количство последовательностей и время их обработки.
  */
-public class DefaultJobListener implements JobListener {
+class DefaultJobListener implements JobListener {
 	
 	private static boolean printedKey = false;
 	
@@ -32,6 +30,9 @@ public class DefaultJobListener implements JobListener {
 	 */
 	private int nProcessed = 0;
 	
+	/**
+	 * Окружение, в котором работает обработчик событий.
+	 */
 	public Env env;
 	
 	/**

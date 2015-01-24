@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import ua.kiev.icyb.bio.alg.DefaultJobListener;
 import ua.kiev.icyb.bio.res.Messages;
 
 
