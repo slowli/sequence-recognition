@@ -77,7 +77,7 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	 *    индекс (с отсчетом от нуля) компетентного составляющего алгоритма
 	 */
 	public int index(Sequence sequence) {
-		Byte idx = labels.get(sequence);
+		Byte idx = labels.get(sequence.id);
 		if (idx == null) {
 			throw new RuntimeException("Sequence is not in the training set!");
 		}
