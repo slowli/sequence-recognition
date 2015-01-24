@@ -5,7 +5,6 @@ import java.util.Map;
 
 import ua.kiev.icyb.bio.SeqAlgorithm;
 import ua.kiev.icyb.bio.Sequence;
-import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.AbstractSeqAlgorithm;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -25,8 +24,7 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	private SeqAlgorithm algorithms[];
 	
 	/**
-	 * Индексы составляющих алгоритмов, которые обрабатывают каждую строку наблюдаемых
-	 * состояний из {@link #set}.
+	 * Хэш-таблица меток.
 	 */
 	private Map<String, Byte> labels = new HashMap<String, Byte>(); 
 	
@@ -47,10 +45,8 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	 * на конечном множестве прецедентов. При попытке использовать алгоритм на 
 	 * строке наблюдаемых состояний, не входящей в прецеденты, будет вызвано исключение.
 	 * 
-	 * @param classes
-	 *    индекс компетентного алгоритма для каждого прецедента
-	 * @param set
-	 *    набор прецедентов, который будет далее использоваться с этим алгоритмом
+	 * @param labels
+	 *    хэш-таблица, связывающая идентификаторы прецедентов с метками
 	 * @param algs
 	 *    составляющие алгоритмы распознавания
 	 */
@@ -65,7 +61,7 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	 * наблюдаемых состояний.
 	 * 
 	 * <p>Имплементация по умолчанию ищет строку состояний (по содержимому) в выборке,
-	 * предоставленной с  {@linkplain #SwitchAlgorithm(byte[], SequenceSet, SeqAlgorithm[]) публичным конструктором}
+	 * предоставленной с  {@linkplain #SwitchAlgorithm(Map, SeqAlgorithm[]) публичным конструктором}
 	 * и возвращает соответствующий индекс алгоритма. Если строка не содержится в выборке,
 	 * вызывается исключение времени исполнения.
 	 * 
@@ -79,7 +75,7 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	public int index(Sequence sequence) {
 		Byte idx = labels.get(sequence.id);
 		if (idx == null) {
-			throw new RuntimeException("Sequence is not in the training set!");
+			throw new IllegalArgumentException("Sequence is not in the training set!");
 		}
 		return idx;
 	}

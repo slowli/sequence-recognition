@@ -33,12 +33,12 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	
 	/**
 	 * Создает алгоритм на основе заданного алгоритма распознавания с использованием
-	 * фиксированного числа рабочих потоков.
+	 * нескольких рабочих потоков.
 	 * 
 	 * @param base
 	 *    базовый алгоритм распознавания
-	 * @param threads
-	 *    число потоков
+	 * @param env
+	 *    среда выполнения, которая предоставляет потоки
 	 */
 	public ThreadedAlgorithm(SeqAlgorithm base, Env env) {
 		this.baseAlgorithm = base;

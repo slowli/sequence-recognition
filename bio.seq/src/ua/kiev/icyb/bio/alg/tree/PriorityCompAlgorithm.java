@@ -54,8 +54,6 @@ public class PriorityCompAlgorithm extends AbstractSeqAlgorithm {
 	 *    минимальный порядок марковской цепи
 	 * @param maxOrder
 	 *    максимальный порядок марковской цепи
-	 * @param set
-	 *    набор прецедентов, который будет далее использоваться с этим алгоритмом
 	 */
 	public PriorityCompAlgorithm(int minOrder, int maxOrder) {
 		algorithms = new SeqAlgorithm[maxOrder - minOrder + 1];

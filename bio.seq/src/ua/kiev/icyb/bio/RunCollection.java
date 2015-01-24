@@ -19,6 +19,7 @@ public interface RunCollection extends Launchable {
 	 * Количество распознанных строк между двумя последовательными сохранениями состояния алгоритма.
 	 * 
 	 * @return
+	 *    периодичность сохранения состояния алгоритма
 	 */
 	int getSequencesPerSave();
 }

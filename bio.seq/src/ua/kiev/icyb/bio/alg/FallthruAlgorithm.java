@@ -22,9 +22,6 @@ public class FallthruAlgorithm extends ViterbiAlgorithm {
 	 * 
 	 * @param approx
 	 *    параметры аппроксимации
-	 * @param set
-	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
-	 *    состояний
 	 */
 	public FallthruAlgorithm(Approximation approx) {
 		super(1, approx.order);

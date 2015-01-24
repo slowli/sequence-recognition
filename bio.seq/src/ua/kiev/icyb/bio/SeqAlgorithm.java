@@ -10,12 +10,10 @@ import java.io.Serializable;
 public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 
 	/**
-	 * Обучает алгоритм на паре из наблюдаемой и соответствующей ей скрытой последовательностей.
+	 * Обучает алгоритм на единичном прецеденте.
 	 * 
-	 * @param observed
-	 *        последовательность наблюдаемых состояний
-	 * @param hidden
-	 *        последовательность скрытых состояний, которая соответствует наблюдаемой строке
+	 * @param sequence
+	 *    прецедент
 	 */
 	void train(Sequence sequence);
 
@@ -24,7 +22,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 * скрытых состояний.
 	 * 
 	 * @param set
-	 *        выборка, в которую входят прецеденты с известными скрытыми состояниями 
+	 *    выборка, в которую входят прецеденты с известными скрытыми состояниями 
 	 */
 	void train(SequenceSet set);
 
@@ -32,7 +30,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 * Производит распознавание на отдельной строке наблюдаемых состояний.
 	 * 
 	 * @param sequence
-	 *      строка наблюдаемых состояний
+	 *    строка наблюдаемых состояний
 	 * @return 
 	 *    последовательность скрытых состояний, соответствующая наблюдаемой строке;
 	 *    {@code null} в случае отказа от распознавания
@@ -43,7 +41,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 * Производит распознавание на выборке прецедентов.
 	 * 
 	 * @param set
-	 *        множество строк наблюдаемых состояний
+	 *    множество строк наблюдаемых состояний
 	 * @return 
 	 *    множество прецедентов, в котором каждой наблюдаемой строке из <code>set</code>
 	 *    соответствует результат распознавания - последовательность скрытых состояний
@@ -55,7 +53,7 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 * Производит распознавание на выборке прецедентов с использованием обработчика событий.
 	 * 
 	 * @param set
-	 *      множество строк наблюдаемых состояний
+	 *    множество строк наблюдаемых состояний
 	 * @param listener
 	 *    обработчик событий, позволяющий следить за ходом выполнения алгоритма
 	 * @return 

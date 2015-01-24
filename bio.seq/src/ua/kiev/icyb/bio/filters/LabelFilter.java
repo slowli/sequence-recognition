@@ -44,7 +44,7 @@ public class LabelFilter implements SequenceSet.Filter {
 	 * @param labels
 	 *    данные о метках - хэш-таблица, содержащая соответствия между идентификаторами строк
 	 *    из выборки и метками
-	 * @param index
+	 * @param indices
 	 *    метки, строки с которыми нужно выбрать
 	 */
 	public LabelFilter(Map<String, Integer> labels, Collection<Integer> indices) {

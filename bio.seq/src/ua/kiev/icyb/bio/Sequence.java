@@ -70,9 +70,10 @@ public class Sequence {
 	}
 	
 	/**
-	 * Длина строк, состоавляющих прецедент.
+	 * Длина строк, составляющих прецедент.
 	 * 
 	 * @return
+	 *    длина строк
 	 */
 	public int length() {
 		return observed.length;

@@ -35,10 +35,7 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 	 *    порядок марковской цепи, используемый в алгоритме
 	 * @param validateCds
 	 *    следует ли вводить ограничение на суммарную длину скрытых состояний,
-	 *    соответствующих экзонам, так чтобы она была кратна трем 
-	 * @param set
-	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
-	 *    состояний
+	 *    соответствующих экзонам, так чтобы она была кратна трем
 	 */
 	public GeneViterbiAlgorithm(int order, boolean validateCds) {
 		super(1, order);

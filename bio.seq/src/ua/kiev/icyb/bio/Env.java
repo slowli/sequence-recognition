@@ -62,6 +62,46 @@ public class Env implements Representable {
 		}
 	}
 	
+	/**
+	 * Создает автомат для чтения из текстового файла с буфером. Если имя файла заканчивается
+	 * на «.gz», полагается, что файл сжат с помощью алгоритма GZIP.
+	 * 
+	 * @param filename
+	 *    имя файла
+	 * @return
+	 *    автомат для считывания файла
+	 * @throws IOException
+	 *    если во время создания автомата произошла ошибка (например, файла не существует)
+	 */
+	public static BufferedReader getReader(String filename) throws IOException {
+		if (filename.endsWith(".gz")) {
+			InputStream inStream = new GZIPInputStream(new FileInputStream(filename));
+			return new BufferedReader(new InputStreamReader(inStream));
+		} else {
+			return new BufferedReader(new FileReader(filename));
+		}
+	}
+
+	/**
+	 * Создает автомат для записи в текстовый файл с буфером. Если имя файла заканчивается
+	 * на «.gz», полагается, что файл следует сжимать с помощью алгоритма GZIP.
+	 * 
+	 * @param filename
+	 *    имя файла
+	 * @return 
+	 *    автомат для записи в файл
+	 * @throws IOException
+	 *    если во время создания автомата произошла ошибка
+	 */
+	public static BufferedWriter getWriter(String filename) throws IOException {
+		if (filename.endsWith(".gz")) {
+			OutputStream outStream = new GZIPOutputStream(new FileOutputStream(filename));
+			return new BufferedWriter(new OutputStreamWriter(outStream));
+		} else {
+			return new BufferedWriter(new FileWriter(filename));
+		}
+	}
+
 	/** Уровень отладки. */
 	private int debugLevel = 0;
 	
@@ -116,6 +156,7 @@ public class Env implements Representable {
 	 * с помощью нажатия {@code ^C})?
 	 * 
 	 * @return
+	 *    {@code true}, если выполнение прервано пользователем
 	 */
 	public boolean interruptedByUser() {
 		return interruptedByUser;
@@ -123,8 +164,9 @@ public class Env implements Representable {
 	
 	/**
 	 * Было ли выполнение текущего задания прервано из-за ошибки?
-	 *  
+	 * 
 	 * @return
+	 *    {@code true}, если выполнение прервано из-за ошибки
 	 */
 	public boolean interruptedByError() {
 		return interruptedByError;
@@ -227,54 +269,16 @@ public class Env implements Representable {
 	}
 	
 	/**
-	 * Создает автомат для чтения из текстового файла с буфером. Если имя файла заканчивается
-	 * на «.gz», полагается, что файл сжат с помощью алгоритма GZIP.
-	 * 
-	 * @param filename
-	 *    имя файла
-	 * @return
-	 *    автомат для считывания файла
-	 * @throws IOException
-	 *    если во время создания автомата произошла ошибка (например, файла не существует)
-	 */
-	public static BufferedReader getReader(String filename) throws IOException {
-		if (filename.endsWith(".gz")) {
-			InputStream inStream = new GZIPInputStream(new FileInputStream(filename));
-			return new BufferedReader(new InputStreamReader(inStream));
-		} else {
-			return new BufferedReader(new FileReader(filename));
-		}
-	}
-	
-	/**
-	 * Создает автомат для записи в текстовый файл с буфером. Если имя файла заканчивается
-	 * на «.gz», полагается, что файл следует сжимать с помощью алгоритма GZIP.
-	 * 
-	 * @param filename
-	 *    имя файла
-	 * @return 
-	 *    автомат для записи в файл
-	 * @throws IOException
-	 *    если во время создания автомата произошла ошибка
-	 */
-	public static BufferedWriter getWriter(String filename) throws IOException {
-		if (filename.endsWith(".gz")) {
-			OutputStream outStream = new GZIPOutputStream(new FileOutputStream(filename));
-			return new BufferedWriter(new OutputStreamWriter(outStream));
-		} else {
-			return new BufferedWriter(new FileWriter(filename));
-		}
-	}
-	
-	/**
-	 * Возвращает путь к файлу, содержащему указанную именованную выборку.
+	 * Возвращает автомат для чтения указанной именованной выборки.
+	 * Если указанное имя не соответствует выборке, оно трактуется как имя файла.
 	 * 
 	 * @param name
 	 *    имя выборки
 	 * @return
-	 *    путь к файлу, содержащему выборку; {@code null}, если в {@linkplain #DATASETS_CONF файле конфигурации} 
-	 *    нет выборки с заданным именем
+	 *    автомат для чтения выборки
+	 *    
 	 * @throws IOException 
+	 *    если при создании автомата возникла ошибка ввода/вывода
 	 */
 	public BufferedReader resolveDataset(String name) throws IOException {
 		String filename = namedSets.get(name);
@@ -329,8 +333,6 @@ public class Env implements Representable {
 	/**
 	 * Возвращает количество вычислительных потоков при параллельных
 	 * вычислениях, задаваемое соответствующей переменной окружения.
-	 * 
-	 * @see #THREADS_PROPERTY
 	 * 
 	 * @return
 	 *    количество вычислительных потоков

@@ -21,6 +21,7 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 
 	private static final long serialVersionUID = 1L;
 	
+	
 	private transient Map<Thread, Object> memoryCache;
 	
 	@Override
@@ -64,7 +65,7 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	}
 	
 	/**
-	 * Возвращает область памяти для использования в методе {@link #run(byte[])}.
+	 * Возвращает область памяти для использования в методе {@link #run(Sequence)}.
 	 * Если необходимо, память выделяется при помощи метода {@link #allocateMemory()}.
 	 * Память выделяется заново для каждой нити исполнения, вызывающей этот метод, что
 	 * позволяет безопасно его использовать при параллельных вычислениях.
@@ -86,7 +87,7 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	}
 	
 	/**
-	 * Выделяет память для использования в методе {@link #run(byte[])}.
+	 * Выделяет память для использования в методе {@link #run(Sequence)}.
 	 * Подклассы, которым необходима память для вычислений, должны переопределять этот метод.
 	 * 
 	 * @return
