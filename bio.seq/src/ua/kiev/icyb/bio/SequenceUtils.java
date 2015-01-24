@@ -155,11 +155,11 @@ public class SequenceUtils {
 		byte[] observedStateMap = stateMap(set.observedStates(), observedMap);
 		byte[] hiddenStateMap = stateMap(set.hiddenStates(), hiddenMap);
 		
-		GenericSequenceSet trSet = new GenericSequenceSet(trObservedStates, trHiddenStates, null);
+		MutableSequenceSet trSet = new MutableSequenceSet(trObservedStates, trHiddenStates, null);
 		for (int i = 0; i < set.length(); i++) {
 			byte[] observed = translate(set.observed(i), observedStateMap);
 			byte[] hidden = translate(set.hidden(i), hiddenStateMap);
-			trSet.doAdd(observed, hidden, set.id(i));
+			trSet.add(observed, hidden, set.id(i));
 		}
 		
 		return trSet;
