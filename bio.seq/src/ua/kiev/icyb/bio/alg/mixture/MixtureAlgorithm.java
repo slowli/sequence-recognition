@@ -1,9 +1,8 @@
 package ua.kiev.icyb.bio.alg.mixture;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.Fragment;
 import ua.kiev.icyb.bio.alg.GeneViterbiAlgorithm;
@@ -18,6 +17,22 @@ import ua.kiev.icyb.bio.alg.MarkovChain;
 public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 
 	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * Максимальное количество итераций в алгоритме нахождения наиболее вероятной последовательности
+	 * скрытых состояний.
+	 */
+	private static final int MAX_ITERATIONS = 10;
+	
+	/**
+	 * Граничное расстояние между оценками апостериорных вероятностей составляющих распределений в смеси,
+	 * которое используется в алгоритме нахождения наиболее вероятной последовательности
+	 * скрытых состояний.
+	 * 
+	 * Если растояние между оценками, полученными в результате двух последовательных итераций
+	 * алгоритма оптимизации, меньше граничного расстояния, алгоритм прекращает свою работу.
+	 */
+	private static final double MIN_WEIGHT_DISTANCE = 1e-4;
 
 	/**
 	 * Марковская модель, применяемая для нахождения промежуточных 
@@ -69,14 +84,20 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	}
 	
 	private static double distance(double[] x, double[] y) {
-		double dist = 0;
+		double dist = 0.0;
 		for (int i = 0; i < x.length; i++) {
 			dist = Math.max(dist, Math.abs(x[i] - y[i]));
 		}
 		return dist;
 	}
 	
+	/** Начальное приближение для используемых смесей распределений. */
 	private final ChainMixture baseMixture;
+	
+	/**
+	 * Текущая смесь распределений, полученная в результате подгонки базовой смеси
+	 * на обучающей выборке.
+	 */
 	private transient ChainMixture currentMixture;
 	
 	/**
@@ -88,12 +109,12 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	 * 		начальное приближение для используемых смесей распределений
 	 */
 	public MixtureAlgorithm(ChainMixture mixture) {
-		super(mixture.chains[0], false);
+		super(mixture.chains[0].order(), false);
 		this.baseMixture = mixture;
 	}
 	
 	@Override
-	public void train(byte[] observed, byte[] hidden) {
+	public void train(Sequence sequence) {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -101,7 +122,8 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	public void train(SequenceSet set) {
 		this.currentMixture = (ChainMixture) this.baseMixture.clone();
 		
-		/*EMAlgorithm emAlgorithm = new EMAlgorithm();
+		// TODO брать параметры откуда-то
+		EMAlgorithm emAlgorithm = new EMAlgorithm();
 		emAlgorithm.mixture = this.currentMixture;
 		emAlgorithm.set = set;
 		emAlgorithm.saveTemplate = null;
@@ -109,8 +131,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		emAlgorithm.stochastic = true;
 		emAlgorithm.ordinaryRun();
 		
-		this.currentMixture = emAlgorithm.mixture;*/
-		//((MixtureMarkovChain) this.chain).setMixture(this.currentMixture);
+		this.currentMixture = emAlgorithm.mixture;
 	}
 	
 	@Override
@@ -119,7 +140,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	}
 	
 	@Override
-	public byte[] run(byte[] sequence) {
+	public byte[] run(Sequence sequence) {
 		// Проверить несколько начальных комбинаций весов, чтобы избежать попадания
 		// в локальные максимумы
 		
@@ -128,14 +149,14 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		for (int k = 0; k < weights.length; k++) {
 			Arrays.fill(weights, 0.0);
 			weights[k] = 1.0;
-			hidden[k] = this.run(sequence, weights);
+			hidden[k] = this.run(sequence.observed, weights);
 		}
 		
 		double maxP = Double.NEGATIVE_INFINITY;
 		int maxIdx = -1;
 		for (int k = 0; k < weights.length; k++) {
 			if (hidden[k] != null) {
-				double logP = this.currentMixture.estimate(sequence, hidden[k]);
+				double logP = this.currentMixture.estimate(sequence.observed, hidden[k]);
 				if (logP > maxP) {
 					maxP = logP;
 					maxIdx = k;
@@ -199,15 +220,8 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			
 			distance = distance(aposterioriP, oldAposterioriP);
 			nIterations++;
-		} while ((distance > 1e-4) && (nIterations < 10));
+		} while ((distance > MIN_WEIGHT_DISTANCE) && (nIterations < MAX_ITERATIONS));
 		
 		return hidden;
-	}
-	
-	private void readObject(ObjectInputStream stream) 
-			throws IOException, ClassNotFoundException {
-		
-		stream.defaultReadObject();
-		this.chain = new MixtureMarkovChain(this.baseMixture);
 	}
 }
