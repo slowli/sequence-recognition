@@ -1,15 +1,8 @@
 package ua.kiev.icyb.bio.alg.mixture;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
-import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.Trainable;
@@ -120,89 +113,6 @@ public class ChainMixture implements Serializable, Trainable, Representable {
 		
 		weights = new double[count];
 		Arrays.fill(weights, 1.0 / count);
-	}
-	
-	private static class WeightTask implements Callable<Void> {
-
-		private final SequenceSet set;
-		private final ChainMixture mixture;
-		private final double[][] outWeights;
-		private final int index;
-		
-		public WeightTask(SequenceSet set, ChainMixture mixture, double[][] outWeights, int index) {
-			this.set = set;
-			this.mixture = mixture;
-			this.outWeights = outWeights;
-			this.index = index;
-		}
-		
-		@Override
-		public Void call() throws Exception {
-			byte[] obs = set.observed(index);
-			byte[] hid = set.hidden(index);
-			
-			double[] logP = new double[mixture.size()],
-					exp = new double[mixture.size()];
-			double sum, diff;
-			
-			for (int alg = 0; alg < mixture.size(); alg++) {
-				logP[alg] = mixture.chains[alg].estimate(obs, hid);
-			}
-			
-			for (int alg = 0; alg < mixture.size(); alg++) {
-				sum = 0;
-				for (int alg1 = 0; alg1 < mixture.size(); alg1++) {
-					diff = logP[alg1] - logP[alg];
-					exp[alg1] = (diff > 50) ? Math.exp(50) : Math.exp(diff);
-					exp[alg1] *= mixture.weights[alg1];
-					sum += exp[alg1];
-				}
-				
-				outWeights[alg][index] = exp[alg] / sum;
-				
-				if (Double.isNaN(outWeights[alg][index])) {
-					throw new IllegalStateException("Invalid mixture (not trained?)");
-				}
-			}
-			
-			return null;
-		}
-	}
-	
-	/**
-	 * Вычисляет апостериорные вероятности для каждой пары из марковской цепи
-	 * и строки полных состояний из выборки. Для вычисления используется
-	 * стандартный пул вычислительных потоков {@link Env#executor()}.
-	 * 
-	 * @param set
-	 *    выборка, для которой вычисляются вероятности
-	 * @return
-	 *    массив апостериорных вероятностей. В <code>j</code>-м столбце <code>i</code>-й строки
-	 *    массива находится апостериорная вероятность порождения <code>j</code>-й строки
-	 *    полных состояний из выборки с помощью <code>i</code>-й марковской цепи из этой
-	 *    композиции.
-	 */
-	public double[][] getWeights(SequenceSet set) {
-		final ExecutorService executor = Env.executor();
-		final int count = this.size();
-		double[][] weights = new double[count][set.length()];
-		
-		List<WeightTask> tasks = new ArrayList<WeightTask>(); 
-		for (int i = 0; i < set.length(); i++) {
-			tasks.add(new WeightTask(set, this, weights, i));
-		}
-		
-		try {
-			for (Future<Void> future: executor.invokeAll(tasks)) {
-				future.get();
-			}
-		} catch (InterruptedException e) {
-			Env.exception(e);
-		} catch (ExecutionException e) {
-			Env.exception(e);
-		}
-		
-		return weights;
 	}
 	
 	/**
