@@ -14,4 +14,11 @@ public interface RunCollection extends Launchable {
 	 *    выборка для запуска алгоритма с порядковым номером <code>index</code> (с отсчетом от нуля)
 	 */
 	SequenceSet getSet(int index);
+	
+	/**
+	 * Количество распознанных строк между двумя последовательными сохранениями состояния алгоритма.
+	 * 
+	 * @return
+	 */
+	int getSequencesPerSave();
 }

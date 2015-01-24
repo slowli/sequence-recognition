@@ -3,7 +3,6 @@ package ua.kiev.icyb.bio.alg.mixture;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -77,7 +76,7 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 	 *    индексы наихудших прецедентов по отношению к заданной композиции
 	 */
 	protected int[] worstSamples() {
-		Env.debug(1, Messages.getString("em.bad_search"));
+		getEnv().debug(1, Messages.getString("em.bad_search"));
 		
 		int count = mixture.size();
 		final int len = set.length();
@@ -86,7 +85,8 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 		Arrays.fill(prob, Double.NEGATIVE_INFINITY);
 		
 		if (selectWeights) {
-			double[][] weights = mixture.getWeights(set);
+			// XXX
+			double[][] weights = new double[0][0];//mixture.getWeights(set);
 			for (int i = 0; i < set.length(); i++)
 				for (int alg = 0; alg < count; alg++) {
 					prob[i] = Math.max(prob[i], weights[alg][i]);
@@ -134,7 +134,7 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 		int[] indices = new int[count];
 		for (int i = 0; i < count; i++)
 			indices[i] = records[i].index;
-		Env.debug(1, Messages.format("em.bad_found", count));
+		getEnv().debug(1, Messages.format("em.bad_found", count));
 		
 		return indices;
 	}
@@ -167,14 +167,14 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 				chain.digest(obs, hid);
 			}
 			double newWeight = 1.0 * newCount / set.length();
-			Env.debug(1, Messages.format("em.add", newCount, newWeight));
+			getEnv().debug(1, Messages.format("em.add", newCount, newWeight));
 			mixture.add(chain, newWeight);
 		}
 	}
 	
 	@Override
 	protected void doRun() {
-		Env.debug(1, repr());
+		getEnv().debug(1, repr());
 		incrementalRun();
 	}
 	

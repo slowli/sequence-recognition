@@ -23,18 +23,6 @@ public class AlgorithmRun implements Serializable, Representable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	/**
-	 * Имя свойства конфигурации, содержащего количество обрабатываемых последовательностей 
-	 * между сохранениями качества распознавания в файл.
-	 */
-	public static final String SEQ_PER_SAVE_PROPERTY = "joblistener.seqPerSave";
-	
-	/** 
-	 * Число обрабатываемых последовательностей между сохранениями 
-	 * качества распознавания в файл. 
-	 */
-	private static final int sequencesPerSave = Env.intProperty(SEQ_PER_SAVE_PROPERTY);
-	
 	/** Количество обработанных алгоритмом распознавания генов. */
 	private int nProcessed = 0;
 	/** Индикатор необработанных последовательностей. */
@@ -53,7 +41,7 @@ public class AlgorithmRun implements Serializable, Representable {
 	/** Список индексов необработанных строк в множестве {@link #set}. */
 	private transient List<Integer> unprocessedIdx;
 	/** Обработчик событий, используемый для контроля процесса распознавания. */
-	private transient JobListener jobListener;
+	private transient DefaultJobListener jobListener;
 	
 	/**
 	 * Создает объект, отвечающий отдельному запуску алгоритма распознавания.
@@ -124,7 +112,9 @@ public class AlgorithmRun implements Serializable, Representable {
 	 *    оценивается в рамках этого запуска
 	 */
 	public void run(SeqAlgorithm algorithm) {
-		algorithm.runSet(getUnprocessed(), jobListener);
+		SequenceSet unprocessed = getUnprocessed();
+		jobListener.env = parent.getEnv();
+		algorithm.runSet(unprocessed, jobListener);
 	}
 	
 	/**
@@ -155,15 +145,15 @@ public class AlgorithmRun implements Serializable, Representable {
 				super.seqCompleted(index, hidden);
 				
 				nProcessed++;
-				if (nProcessed % sequencesPerSave == 0) {
-					parent.save();
+				if (nProcessed % parent.getSequencesPerSave() == 0) {
+					env.saveProgress();
 				}
 			}
 
 			@Override
 			public void finished() {
 				super.finished();
-				parent.save();
+				env.saveProgress();
 			}
 		};
 	}

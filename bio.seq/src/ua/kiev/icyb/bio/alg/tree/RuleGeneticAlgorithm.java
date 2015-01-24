@@ -3,7 +3,6 @@ package ua.kiev.icyb.bio.alg.tree;
 import java.util.HashSet;
 import java.util.Set;
 
-import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.alg.GeneticAlgorithm;
 import ua.kiev.icyb.bio.alg.Organism;
 import ua.kiev.icyb.bio.res.Messages;
@@ -41,7 +40,7 @@ public class RuleGeneticAlgorithm extends GeneticAlgorithm {
 			population.add((Organism) set);
 		}
 		
-		Env.debug(1, Messages.format("gen.after_trim", population.size()));
+		getEnv().debug(1, Messages.format("gen.after_trim", population.size()));
 	}
 	
 	@Override

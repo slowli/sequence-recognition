@@ -32,6 +32,8 @@ public class DefaultJobListener implements JobListener {
 	 */
 	private int nProcessed = 0;
 	
+	public Env env;
+	
 	/**
 	 * Создает обработчик событий с параметрами по умолчанию.
 	 */
@@ -56,25 +58,25 @@ public class DefaultJobListener implements JobListener {
 	public synchronized void seqCompleted(int index, byte[] hidden) {
 		if (nProcessed == 0) {
 			if (!printedKey) {
-				Env.debug(1, Messages.format("test.key", sequencesPerDot));
+				env.debug(1, Messages.format("test.key", sequencesPerDot));
 				printedKey = true;
 			}
 		}
 		nProcessed++;
 		
 		if (nProcessed % sequencesPerDot == 0)
-			Env.debugInline(1, ".");
+			env.debugInline(1, ".");
 		if (hidden == null)
-			Env.debugInline(1, "?");
+			env.debugInline(1, "?");
 		
 		if (nProcessed % (sequencesPerDot * dotsPerLine) == 0)
-			Env.debug(1, "" + nProcessed);
+			env.debug(1, "" + nProcessed);
 	}
 
 	@Override
 	public void finished() {
 		if (nProcessed % (sequencesPerDot * dotsPerLine) >= sequencesPerDot) {
-			Env.debug(1, "");
+			env.debug(1, "");
 		}
 	}
 }

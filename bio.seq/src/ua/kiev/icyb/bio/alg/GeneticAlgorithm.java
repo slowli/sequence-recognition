@@ -17,8 +17,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import ua.kiev.icyb.bio.AbstractLaunchable;
-import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.IOUtils;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -177,9 +175,9 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 		}
 		
 		for (int t = this.generationIdx; t < generations; this.generationIdx = ++t) {
-			Env.debug(1, Messages.format("gen.generation", t + 1));
-			Env.debug(1, Messages.format("gen.pop_size", population.size()));
-			Env.debug(2, Messages.format("gen.cache", cache.size()));
+			getEnv().debug(1, Messages.format("gen.generation", t + 1));
+			getEnv().debug(1, Messages.format("gen.pop_size", population.size()));
+			getEnv().debug(2, Messages.format("gen.cache", cache.size()));
 			
 			if (!populationFormed) {
 				// Crossbreed
@@ -197,14 +195,14 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 					for (int i = 0; i < mutations; i++)
 						population.add(item.mutate(mutationP));
 
-				Env.debug(1, Messages.format("gen.new_pop_size", population.size()));
+				getEnv().debug(1, Messages.format("gen.new_pop_size", population.size()));
 				onGenerationFormed(population);
 				populationFormed = true;
 			}
 			
 			// Choose most fitting items
 			if (population.size() > maxSize) {
-				Env.debug(1, Messages.getString("gen.filter"));
+				getEnv().debug(1, Messages.getString("gen.filter"));
 				
 				int cached = 0;
 				for (Organism item : population) {
@@ -218,14 +216,14 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 				}
 				
 				
-				ExecutorService executor = Env.executor();
+				ExecutorService executor = getEnv().executor();
 				List<FitnessTask> tasks = new ArrayList<FitnessTask>();
 				for (Map.Entry<Organism, Double> entry : fitness.entrySet()) {
 					if (entry.getValue().isNaN()) {
 						tasks.add(new FitnessTask(entry));
 					}
 				}
-				Env.debug(1, Messages.format("gen.tasks", 
+				getEnv().debug(1, Messages.format("gen.tasks", 
 						tasks.size(), fitness.size() - tasks.size(), cached));
 				
 				try {
@@ -234,9 +232,9 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 						future.get();
 					}
 				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
+					getEnv().exception(e);
 				} catch (ExecutionException e) {
-					throw new RuntimeException(e);
+					getEnv().exception(e);
 				}
 				
 				population = trimPopulation(fitness, maxSize);
@@ -282,11 +280,11 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 	private void savePopulation() {
 		if (saveTemplate != null) {
 			String filename = saveTemplate.replaceAll("\\{i\\}", "" + (this.generationIdx + 1));
-			Env.debug(1, Messages.format("gen.save_pop", filename));
+			getEnv().debug(1, Messages.format("gen.save_pop", filename));
 			try {
-				IOUtils.writeObject(filename, (Serializable) this.population);
+				getEnv().save((Serializable) this.population, filename);
 			} catch (IOException e) {
-				Env.debug(1, Messages.format("gen.e_save_pop", e));
+				getEnv().debug(1, Messages.format("gen.e_save_pop", e));
 			}
 		}
 	}

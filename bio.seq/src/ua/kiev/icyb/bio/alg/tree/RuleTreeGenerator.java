@@ -14,8 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import ua.kiev.icyb.bio.AbstractLaunchable;
-import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.IOUtils;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
@@ -31,7 +29,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	private static final long serialVersionUID = 1L;
 
 	/** Количество правил в дереве, которое надо построить. */
-	public int rules;
+	public int treeSize;
 	
 	/** Порядок марковских цепей при вычислении функционала качества для правил. */
 	public int order;
@@ -39,7 +37,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	/** 
 	 * Набор отношений, в которых тестируемые предикаты делят выборку.
 	 * Например, значение {@code 0.6} означает, что предикат должен быть 
-	 * истинен на 60% прецедентов выборки.   
+	 * истинен на 60% прецедентов выборки.
 	 */
 	public double[] percentages;
 	
@@ -157,7 +155,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			}
 		}
 		
-		ExecutorService executor = Env.executor();
+		ExecutorService executor = getEnv().executor();
 		RuleEntropy entropy = getEntropy();
 		List<RuleTask> tasks = new ArrayList<RuleTask>();
 		for (Map.Entry<PartitionRule, Double> entry : this.ruleFitness.entrySet()) {
@@ -171,12 +169,13 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			for (int i = 0; i < futures.size(); i++) {
 				futures.get(i).get();
 			}
-			return ruleFitness;
 		} catch (InterruptedException e) {
-			return null;
+			getEnv().exception(e);
 		} catch (ExecutionException e) {
-			return null;
+			getEnv().exception(e);
 		}
+
+		return ruleFitness;
 	}
 	
 	/**
@@ -193,29 +192,29 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 		}
 		
 		partRules = new ArrayList<PartitionRule>();
-		ExecutorService executor = Env.executor();
+		ExecutorService executor = getEnv().executor();
 		List<InferTask> tasks = new ArrayList<InferTask>();
 		for (FragmentSet comb : baseSets) {
 			tasks.add(new InferTask(set, comb, percentages));
 		}
 		
 		try {
-			Env.debugInline(1, Messages.getString("tree.infer"));
+			getEnv().debugInline(1, Messages.getString("tree.infer"));
 			List<Future<List<PartitionRule>>> futures = executor.invokeAll(tasks);
 			for (Future<List<PartitionRule>> future : futures)
 				partRules.addAll(future.get());
-			Env.debug(1, "");
+			getEnv().debug(1, "");
 		} catch (InterruptedException e) {
-			return null;
+			getEnv().exception(e);
 		} catch (ExecutionException e) {
-			return null;
+			getEnv().exception(e);
 		}
 
 		rulesInferred = true;
 		return partRules;
 	}
 
-	private static final class InferTask implements Callable<List<PartitionRule>> {
+	private final class InferTask implements Callable<List<PartitionRule>> {
 		private final SequenceSet set;
 		private final double[] percentages;
 		private final FragmentSet comb;
@@ -239,7 +238,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 				PartitionRule r = new ContentPartitionRule(comb, vars[idx]);
 				rules.add(r);
 			}
-			Env.debugInline(1, ".");
+			getEnv().debugInline(1, ".");
 
 			return rules;
 		}
@@ -265,11 +264,11 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			double fitness = -1;
 			if ((subset.length() < minPartSize) || (subset.length() > fullSet.length() - minPartSize)) {
 				fitness = -1;
-				Env.debug(1, Messages.format("tree.small_set", 
+				getEnv().debug(1, Messages.format("tree.small_set", 
 						Messages.format("tree.rule", rule, subset.length()) ));
 			} else {
 				fitness = entropy.fitness(subset);
-				Env.debug(1, Messages.format("misc.fitness", 
+				getEnv().debug(1, Messages.format("misc.fitness", 
 						Messages.format("tree.rule", rule, subset.length()), 
 						fitness));
 			}
@@ -284,23 +283,23 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 		if (minPartSize < 1) {
 			minPartSize = set.length() * minPartSize;
 		}
-		Env.debug(1, this.repr());
+		getEnv().debug(1, this.repr());
 		
 		if (tree == null) {
 			tree = new PartitionRuleTree();
 			partIdx = new int[set.length()];
-			maxFitness = new double[rules];
+			maxFitness = new double[treeSize];
 			Arrays.fill(maxFitness, Double.NEGATIVE_INFINITY);
-			optRule = new PartitionRule[rules];
+			optRule = new PartitionRule[treeSize];
 		}
 		
-		while (tree.size() <= rules) { 			
+		while (tree.size() <= treeSize) { 			
 			for (int p = this.currentPart; p < tree.size(); this.currentPart = ++p) {
-				Env.debug(1, "");
-				Env.debug(1, Messages.format("tree.part", p + 1, tree.size()));
+				getEnv().debug(1, "");
+				getEnv().debug(1, Messages.format("tree.part", p + 1, tree.size()));
 				
 				if (maxFitness[p] > Double.NEGATIVE_INFINITY) {
-					Env.debug(1, Messages.format("tree.opt_rule",
+					getEnv().debug(1, Messages.format("tree.opt_rule",
 							p + 1, optRule[p], maxFitness[p]));
 					continue;
 				}				
@@ -327,7 +326,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 				}
 				maxFitness[p] = partMax;
 				optRule[p] = partMaxRule;
-				Env.debug(1, Messages.format("tree.opt_rule",
+				getEnv().debug(1, Messages.format("tree.opt_rule",
 						p + 1, optRule[p], maxFitness[p]));
 				
 				rulesInferred = false;
@@ -355,7 +354,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			}
 		}
 		
-		Env.debug(1, Messages.format("tree.g_opt_rule", 
+		getEnv().debug(1, Messages.format("tree.g_opt_rule", 
 				maxPart + 1, optRule[maxPart], overallMax));
 		tree.add(optRule[maxPart], maxPart);
 		
@@ -378,7 +377,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 		maxFitness[maxPart] = Double.NEGATIVE_INFINITY;
 		optRule[maxPart] = null;
 		
-		Env.debug(1, Messages.format("tree.new_part", 
+		getEnv().debug(1, Messages.format("tree.new_part", 
 				count, partSelector.length, 1.0 * count/partSelector.length) + "\n");
 		
 		saveTree();
@@ -389,11 +388,11 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	 */
 	private void saveTree() {
 		if (treeFile != null) {
-			Env.debug(1, Messages.format("tree.save_tree", treeFile));
+			getEnv().debug(1, Messages.format("tree.save_tree", treeFile));
 			try {
-				IOUtils.writeObject(treeFile, tree);
+				getEnv().save(tree, treeFile);
 			} catch (IOException e) {
-				Env.error(1, Messages.format("tree.e_save_tree", e));
+				getEnv().error(1, Messages.format("tree.e_save_tree", e));
 			}
 		}
 	}
@@ -401,7 +400,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	@Override
 	public String repr() {
 		String repr = "";
-		repr += Messages.format("tree.rules", this.rules) + "\n";
+		repr += Messages.format("tree.rules", this.treeSize) + "\n";
 		repr += Messages.format("tree.order", this.order) + "\n";
 		repr += Messages.format("tree.percentages", Arrays.toString(this.percentages)) + "\n";
 		repr += Messages.format("tree.min_part_size", this.minPartSize) + "\n";

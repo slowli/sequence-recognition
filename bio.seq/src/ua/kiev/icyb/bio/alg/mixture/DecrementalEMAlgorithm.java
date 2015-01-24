@@ -1,6 +1,5 @@
 package ua.kiev.icyb.bio.alg.mixture;
 
-import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.res.Messages;
 
 /**
@@ -31,7 +30,7 @@ public class DecrementalEMAlgorithm extends EMAlgorithm {
 				break;
 			}
 			
-			// Remove components with low weights
+			// Убрать компоненту с наименьшим весом
 			double[] weights = mixture.weights.clone(); 
 			int minModel = -1;
 			double minWeight = 1.0; 
@@ -42,7 +41,7 @@ public class DecrementalEMAlgorithm extends EMAlgorithm {
 					minModel = i;
 				}
 			}
-			Env.debug(1, Messages.format("em.remove", minModel + 1, minWeight));
+			getEnv().debug(1, Messages.format("em.remove", minModel + 1, minWeight));
 			mixture.delete(minModel);
 			
 			saveMixture();
@@ -52,7 +51,7 @@ public class DecrementalEMAlgorithm extends EMAlgorithm {
 	
 	@Override
 	protected void doRun() {
-		Env.debug(1, repr());
+		getEnv().debug(1, repr());
 		decrementalRun();
 	}
 	

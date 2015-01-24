@@ -14,8 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import ua.kiev.icyb.bio.AbstractLaunchable;
-import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.IOUtils;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
@@ -76,7 +74,7 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 	
 	@SuppressWarnings("unchecked")
 	protected void doRun() {
-		Env.debug(1, reprHeader());
+		getEnv().debug(1, reprHeader());
 		
 		RuleEntropy ruleEntropy = new RuleEntropy(set, order);
 		
@@ -100,11 +98,11 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 							fitness[count].put(newComb, Double.NaN);
 						}
 			}
-			Env.debug(1, Messages.format("add.process", fitness[count].size(), count));
+			getEnv().debug(1, Messages.format("add.process", fitness[count].size(), count));
 			
 			evaluate(fitness[count], ruleEntropy);
 			fitness[count] = trim(fitness[count], optCombinations);
-			Env.debug(1, Messages.format("add.trimmed", fitness[count].keySet()));
+			getEnv().debug(1, Messages.format("add.trimmed", fitness[count].keySet()));
 			
 			save();
 			saveSets();
@@ -146,7 +144,7 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 	 *    множествам с невычисленным функционалом соответствуют значения {@link Double#NaN}. 
 	 */
 	private void evaluate(Map<FragmentSet, Double> combinations, RuleEntropy entropy) {
-		ExecutorService executor = Env.executor();
+		ExecutorService executor = getEnv().executor();
 		List<RunnableTask> tasks = new ArrayList<RunnableTask>();
 		for (Map.Entry<FragmentSet, Double> entry: combinations.entrySet()) {
 			if (entry.getValue().isNaN()) {
@@ -160,7 +158,9 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 				futures.get(i).get();
 			}
 		} catch (InterruptedException e) {
+			getEnv().exception(e);
 		} catch (ExecutionException e) {
+			getEnv().exception(e);
 		}
 	}
 	
@@ -190,15 +190,15 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 	private void saveSets() {
 		if (setsFile != null) {
 			try {
-				Env.debug(1, Messages.format("add.save_sets", setsFile));
-				IOUtils.writeObject(setsFile, (Serializable)getSets());
+				getEnv().debug(1, Messages.format("add.save_sets", setsFile));
+				getEnv().save((Serializable) getSets(), setsFile);
 			} catch (IOException e) {
-				Env.error(1, Messages.format("add.e_save_sets", e));
+				getEnv().error(1, Messages.format("add.e_save_sets", e));
 			}
 		}
 	}
 	
-	private static class RunnableTask implements Callable<Void> {
+	private class RunnableTask implements Callable<Void> {
 
 		private final RuleEntropy entropy;
 		private final Map.Entry<FragmentSet, Double> entry;
@@ -215,7 +215,7 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 			ContentPartitionRule rule = new ContentPartitionRule(combination, 0.0);
 			rule.setThreshold(combination.median(entropy.getSet()));
 			double difference = entropy.fitness(rule);
-			Env.debug(2, Messages.format("misc.fitness", rule, difference));
+			getEnv().debug(2, Messages.format("misc.fitness", rule, difference));
 			entry.setValue(difference);
 			
 			return null;

@@ -33,6 +33,16 @@ public class QualityEstimation extends AbstractLaunchable implements RunCollecti
 	private transient SeqAlgorithm algorithm;
 	
 	/**
+	 * Количество распознанных строк между двумя последовательными сохранениями состояния алгоритма.
+	 */
+	public int sequencesPerSave = 100;
+	
+	@Override
+	public int getSequencesPerSave() {
+		return sequencesPerSave;
+	}
+	
+	/**
 	 * Создает экземпляр класса для оценки качества распознавания.
 	 * 
 	 * @param trainingSet
@@ -75,29 +85,16 @@ public class QualityEstimation extends AbstractLaunchable implements RunCollecti
 	}
 
 	@Override
-	protected void preRun() {
+	protected void doRun() {
 		if (algorithm == null) {
 			throw new IllegalStateException(Messages.getString("test.no_alg"));
 		}
-	}
-
-	@Override
-	protected void doRun() {
-		SeqAlgorithm tAlgorithm = new ThreadedAlgorithm(algorithm, Env.threadCount());
-		Env.debug(1, this.repr());
+		SeqAlgorithm tAlgorithm = new ThreadedAlgorithm(algorithm, getEnv());
+		getEnv().debug(1, this.repr());
 		
 		tAlgorithm.train(trainingSet);
 		run.run(tAlgorithm);
-		Env.debug(1, Messages.format("test.quality", run.getQuality().repr()));
-	}
-
-	@Override
-	protected void onSave() {
-		if (!interruptedByUser) {
-			Env.debugInline(2, "S");
-		} else {
-			super.onSave();
-		}
+		getEnv().debug(1, Messages.format("test.quality", run.getQuality().repr()));
 	}
 	
 	@Override
@@ -122,7 +119,7 @@ public class QualityEstimation extends AbstractLaunchable implements RunCollecti
 		try {
 			this.algorithm = (SeqAlgorithm) in.readObject();
 		} catch (Exception e) {
-			Env.debug(0, Messages.format("test.load_error", e));
+			getEnv().debug(0, Messages.format("test.load_error", e));
 		}
 	}
 

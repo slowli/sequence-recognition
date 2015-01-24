@@ -63,6 +63,16 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 	private transient SeqAlgorithm algorithm;
 	
 	/**
+	 * Количество распознанных строк между двумя последовательными сохранениями состояния алгоритма.
+	 */
+	public int sequencesPerSave = 100;
+	
+	@Override
+	public int getSequencesPerSave() {
+		return sequencesPerSave;
+	}
+	
+	/**
 	 * Создает коллекцию выборок, соответствующий кросс-валидации с заданной
 	 * кратностью.
 	 * 
@@ -80,12 +90,12 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 			foldIndex[i] = (byte) Math.floor(Math.random() * nFolds);
 		}
 		
-		// Create folds
+		// Создать запуски
 		for (int f = 0; f < runs.length; f++) {
 			runs[f] = new AlgorithmRun(this, f);
 		}
 		
-		// Create mean training and control qualities
+		// Создать объекты для усредненных значений функционалов качества
 		PredictionQuality[] samples = new PredictionQuality[nFolds];
 		for (int f = 0; f < nFolds * 2; f += 2) {
 			samples[f / 2] = runs[f].getQuality();
@@ -116,7 +126,7 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 		for (int i = 0; i < set.length(); i++) {
 			selector[i] = (foldIndex[i] == index/2);
 			if (index % 2 == 0) {
-				// Training fold
+				// Обучающая выборка
 				selector[i] = !selector[i];
 			}
 		}
@@ -171,27 +181,23 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 	 * @throws IllegalStateException 
 	 *    если к коллекции выборок не прикреплен алгоритм распознавания
 	 */
-	public void run() {
-		super.run();
-	}
-	
-	@Override
-	protected void preRun() {
+	public void run(Env env) {
 		if (algorithm == null) {
 			throw new IllegalStateException(Messages.getString("test.no_alg"));
 		}
+		super.run(env);
 	}
 	
 	protected void doRun() {
-		SeqAlgorithm tAlgorithm = new ThreadedAlgorithm(algorithm, Env.threadCount());
-		Env.debug(1, reprHeader());
+		SeqAlgorithm tAlgorithm = new ThreadedAlgorithm(algorithm, getEnv());
+		getEnv().debug(1, reprHeader());
 		
 		for (int r = 0; r < runs.length; r++) {
-			Env.debug(1, getRunName(r));
-			Env.debug(1, runs[r].repr());
+			getEnv().debug(1, getRunName(r));
+			getEnv().debug(1, runs[r].repr());
 			
 			if ((r % 2 == 0) && skipTraining) {
-				Env.debug(1, Messages.getString("test.skip_train") + "\n");
+				getEnv().debug(1, Messages.getString("test.skip_train") + "\n");
 				continue;
 			}
 			
@@ -206,16 +212,14 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 			tAlgorithm.train(trainingSet);
 			runs[r].run(tAlgorithm);
 			
-			Env.debug(1, Messages.format("test.quality", runs[r].getQuality().repr()));
+			getEnv().debug(1, Messages.format("test.quality", runs[r].getQuality().repr()));
 		}
 	}
 	
 	@Override
-	protected void onSave() {
-		if (!interruptedByUser) {
-			Env.debugInline(2, "S");
-		} else {
-			super.onSave();
+	public void save() {
+		if (!getEnv().interruptedByUser()) {
+			getEnv().debugInline(2, "S");
 		}
 	}
 	
@@ -280,7 +284,7 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 		try {
 			this.algorithm = (SeqAlgorithm) in.readObject();
 		} catch (Exception e) {
-			Env.debug(0, Messages.format("test.load_error", e));
+			getEnv().debug(0, Messages.format("test.load_error", e));
 		}
 	}
 

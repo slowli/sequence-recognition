@@ -10,8 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import ua.kiev.icyb.bio.AbstractLaunchable;
-import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.IOUtils;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.res.Messages;
@@ -104,21 +102,22 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 	public void ordinaryRun() {
 		if (random == null)
 			random = new Random();
-		ExecutorService executor = Env.executor();
+		ExecutorService executor = getEnv().executor();
 		
 		final int count = mixture.size();
 		
-		double[][] weights;
+		double[][] weights = new double[0][0];
 		
 		for (int t = this.iteration; t < nIterations; this.iteration = ++t) {
 			
 			// Expectation step
-			Env.debug(1, "\n" + Messages.format("em.e_step", t + 1));
-			weights = mixture.getWeights(set);
-			Env.debug(1, ChainMixture.reprDistribution(weights));
+			getEnv().debug(1, "\n" + Messages.format("em.e_step", t + 1));
+			// XXX 
+			//weights = mixture.getWeights(set);
+			getEnv().debug(1, ChainMixture.reprDistribution(weights));
 			
 			// Maximization step			
-			Env.debug(1, Messages.format("em.m_step", t + 1));
+			getEnv().debug(1, Messages.format("em.m_step", t + 1));
 			ChainMixture newMixture = (ChainMixture) mixture.clearClone();
 			
 			List<MaximizationTask> tasks = new ArrayList<MaximizationTask>(); 
@@ -148,13 +147,13 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 					future.get();
 				}
 			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
+				getEnv().exception(e);
 			} catch (ExecutionException e) {
-				throw new RuntimeException(e);
+				getEnv().exception(e);
 			}
 			
 			mixture = newMixture;
-			Env.debug(1, mixture.repr());
+			getEnv().debug(1, mixture.repr());
 			
 			saveMixture();
 			save();
@@ -170,12 +169,12 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 			String filename = saveTemplate
 					.replaceAll("\\{n\\}", "" + mixture.size())
 					.replaceAll("\\{i\\}", "" + (iteration + 1));
-			Env.debug(2, Messages.format("em.save_comp", filename));
+			getEnv().debug(2, Messages.format("em.save_comp", filename));
 			
 			try {
-				IOUtils.writeObject(filename, mixture);
+				getEnv().save(mixture, filename);
 			} catch (IOException e) {
-				Env.error(0, Messages.format("em.save_comp_error", e));
+				getEnv().error(0, Messages.format("em.save_comp_error", e));
 			}
 		}
 	}
@@ -210,7 +209,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 
 	@Override
 	protected void doRun() {
-		Env.debug(1, repr());
+		getEnv().debug(1, repr());
 		ordinaryRun();
 	}
 }

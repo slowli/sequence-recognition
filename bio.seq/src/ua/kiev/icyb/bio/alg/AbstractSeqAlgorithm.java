@@ -41,7 +41,13 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 
 	@Override
 	public SequenceSet runSet(SequenceSet set) {
-		return runSet(set, new DefaultJobListener());
+		EstimatesSet est = new EstimatesSet(set);
+		for (int i = 0; i < set.length(); i++) {
+			if (Thread.interrupted()) break;
+				
+			est.put(i, run(set.get(i)));
+		}
+		return est;
 	}
 
 	@Override
@@ -53,7 +59,7 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 			est.put(i, run(set.get(i)));
 			listener.seqCompleted(i, est.hidden(i));
 		}
-		listener.finished();	
+		listener.finished();
 		return est;
 	}
 	

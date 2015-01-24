@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import ua.kiev.icyb.bio.Env;
@@ -30,10 +29,7 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	 */
 	private SeqAlgorithm baseAlgorithm;
 	
-	/**
-	 * Число используемых потоков исполнения.
-	 */
-	private int nThreads;
+	private final Env env;
 	
 	/**
 	 * Создает алгоритм на основе заданного алгоритма распознавания с использованием
@@ -44,9 +40,9 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	 * @param threads
 	 *    число потоков
 	 */
-	public ThreadedAlgorithm(SeqAlgorithm base, int threads) {
+	public ThreadedAlgorithm(SeqAlgorithm base, Env env) {
 		this.baseAlgorithm = base;
-		this.nThreads = threads;
+		this.env = env;
 	}
 	
 	@Override
@@ -93,13 +89,12 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	
 	@Override
 	public synchronized SequenceSet runSet(SequenceSet set) {
-		return runSet(set, new DefaultJobListener());
+		return runSet(set, null);
 	}
 
 	@Override
 	public synchronized SequenceSet runSet(SequenceSet set, final JobListener listener) {
-		// TODO Env.executor()?
-		ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+		ExecutorService executor = env.executor();
 		List<SequenceTask> tasks = new ArrayList<SequenceTask>();
 		for (int i = 0; i < set.length(); i++)
 			tasks.add(new SequenceTask(set, i, listener));
@@ -114,11 +109,9 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 				listener.finished();
 			return estimates;
 		} catch (InterruptedException e) {
-			Env.exception(e);
+			env.exception(e);
 		} catch (ExecutionException e) {
-			Env.exception(e);
-		} finally {
-			executor.shutdown();
+			env.exception(e);
 		}
 		
 		// Недостижимый код
@@ -135,7 +128,6 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	@Override
 	public String repr() {
 		String repr = super.repr() + "\n";
-		repr += Messages.format("alg.threads", nThreads) + "\n";
 		repr += Messages.format("alg.base", baseAlgorithm.repr());
 		return repr;
 	}
