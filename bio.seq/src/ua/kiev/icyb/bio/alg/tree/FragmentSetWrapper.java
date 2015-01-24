@@ -1,8 +1,6 @@
 package ua.kiev.icyb.bio.alg.tree;
 
-import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.alg.Organism;
-import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Оболочка для множества цепочек состояний, позволяющее использовать его
@@ -119,7 +117,6 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 		ContentPartitionRule rule = new ContentPartitionRule(this, 0.0);
 		rule.setThreshold(this.median(entropy.getSet()));
 		double fitness = entropy.fitness(rule);
-		Env.debug(2, Messages.format("misc.fitness", rule, fitness));
 		return fitness;
 	}
 
