@@ -260,9 +260,11 @@ public class SimpleSequenceSet implements SequenceSet {
 	 * Сохраняет набор последовательностей в текстовый поток.
 	 * 
 	 * @param writer
+	 *    поток для записи
 	 * @throws IOException
+	 *    в случае ошибки ввода/вывода
 	 */
-	protected void saveToFile(BufferedWriter writer) throws IOException {
+	private void saveToFile(BufferedWriter writer) throws IOException {
 		writer.write(observedStates + " " + hiddenStates);
 		if (completeStates != null)
 			writer.write(" " + completeStates);
