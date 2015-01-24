@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio.alg;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,7 +92,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * Последний элемент массива равен сумме остальных элементов (предназначен для ускорения
 	 * вычислений).
 	 */
-	protected Map<Fragment, float[]> transitions;
+	protected Map<Fragment, double[]> transitions;
 	
 	/**
 	 * Возвращает статистику по переходам из цепочек полных состояний длины, определяемой порядком
@@ -108,7 +109,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @return
 	 *    хэш-таблица с статистикой переходов
 	 */
-	public Map<Fragment, float[]> getTransitionTable() {
+	public Map<Fragment, double[]> getTransitionTable() {
 		return Collections.unmodifiableMap(transitions);
 	}
 	
@@ -203,8 +204,8 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 			MarkovChain other = (MarkovChain) super.clone();
 			other.initial = (Map<Fragment, Double>) 
 					((HashMap<Fragment, Double>) this.initial).clone();
-			other.transitions = (Map<Fragment, float[]>) 
-					((HashMap<Fragment, float[]>) this.transitions).clone();
+			other.transitions = (Map<Fragment, double[]>) 
+					((HashMap<Fragment, double[]>) this.transitions).clone();
 			return other;
 		} catch (CloneNotSupportedException e) {
 			// Should never happen
@@ -234,7 +235,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 		factory = new FragmentFactory(observedStates, hiddenStates, order + depLength);
 		initial = new HashMap<Fragment, Double>();
 		nSequences = 0;
-		transitions = new HashMap<Fragment, float[]>();
+		transitions = new HashMap<Fragment, double[]>();
 		
 		lengthDistr = new EmpiricalDistribution(20000, 100, 1e-7);
 	}
@@ -279,7 +280,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @return вероятность перехода
 	 */
 	public double getTransP(Fragment tail, Fragment head) {
-		float[] trans = transitions.get(tail);
+		double[] trans = transitions.get(tail);
 		// Index of the head state among all complete states of the same length
 		int idx = factory.getTotalIndex(head);
 		
@@ -299,9 +300,9 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 */
 	protected final void incTransStats(Fragment tail, Fragment head, double weight) {
 		int totalIndex = factory.getTotalIndex(head);
-		float[] trans = transitions.get(tail);
+		double[] trans = transitions.get(tail);
 		if (trans == null) {
-			trans = new float[headsCount + 1];
+			trans = new double[headsCount + 1];
 			transitions.put(tail, trans);
 		}
 		trans[totalIndex] += weight;
@@ -432,6 +433,28 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 		return logP;
 	}
 	
+	@SuppressWarnings("unchecked")
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		
+		Map<Fragment, double[]> transitions = this.transitions;
+		
+		Map<Fragment, ?> _tempMap = new HashMap<Fragment, float[]>();
+		for (Map.Entry<Fragment, double[]> entry : transitions.entrySet()) {
+			double[] dVal = entry.getValue();
+			float[] fVal = new float[dVal.length];
+			
+			for (int i = 0; i < fVal.length; i++) {
+				fVal[i] = (float) dVal[i];
+			}
+			
+			((Map<Fragment, float[]>) _tempMap).put(entry.getKey(), fVal);
+		}
+		
+		this.transitions = (Map<Fragment, double[]>) _tempMap;
+		stream.defaultWriteObject();
+		this.transitions = transitions;
+	}
+	
 	/**
 	 * Восстанавливает поля объекта, которые не записываются в поток, 
 	 * на основе сохраненных полей.
@@ -441,9 +464,23 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
+	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream stream) 
 			throws IOException, ClassNotFoundException {
+		
 		stream.defaultReadObject();
+		
+		for (Map.Entry<Fragment, ?> entry : this.transitions.entrySet()) {
+			if (entry.getValue() instanceof float[]) {
+				float[] fVal = (float[]) entry.getValue(); 
+				double[] dVal = new double[fVal.length];
+				for (int i = 0; i < fVal.length; i++) {
+					dVal[i] = fVal[i];
+				}
+				
+				((Map.Entry<Fragment, double[]>) entry).setValue(dVal);
+			}
+		}
 		
 		// Initialize transient fields
 		headsCount = 1;

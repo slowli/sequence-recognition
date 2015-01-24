@@ -126,7 +126,7 @@ public class FallthruChain extends MarkovChain {
 	@Override
 	public double getTransP(Fragment tail, Fragment head) {
 		if (strategy == Approximation.Strategy.FIXED) {
-			float[] trans = transitions.get(tail);
+			double[] trans = transitions.get(tail);
 			int idx = factory.getTotalIndex(head);
 			if ((trans == null) || (trans[idx] == 0)) 
 				return tThreshold;
@@ -141,7 +141,7 @@ public class FallthruChain extends MarkovChain {
 		
 		for (int tlen = order; tlen >= minOrder; tlen--) {
 			suffix = factory.suffix(tail, tlen);
-			float[] trans = subchains[tlen].transitions.get(suffix);
+			double[] trans = subchains[tlen].transitions.get(suffix);
 			if (trans != null) {
 				result += 1.0 * trans[idx]/trans[trans.length - 1];
 				count++;
