@@ -1,5 +1,7 @@
 package ua.kiev.icyb.bio;
 
+import ua.kiev.icyb.bio.res.Messages;
+
 /**
  * Прецедент — пара из наблюдаемой и скрытой строк состояний. 
  */
@@ -40,9 +42,28 @@ public class Sequence {
 	 * @param observed
 	 * @param hidden
 	 */
-	public Sequence(SequenceSet set, int index, String id, byte[] observed, byte[] hidden) {
+	Sequence(SequenceSet set, int index, String id, byte[] observed, byte[] hidden) {
+		if ((hidden != null) && (observed.length != hidden.length)) {
+			throw new IllegalArgumentException(Messages.getString("dataset.e_length"));
+		}
+		
 		this.set = set;
 		this.index = index;
+		this.id = id;
+		this.observed = observed;
+		this.hidden = hidden;
+	}
+	
+	/**
+	 * Создает прецедент с заданными параметрами.
+	 * 
+	 * @param id
+	 * @param observed
+	 * @param hidden
+	 */
+	public Sequence(String id, byte[] observed, byte[] hidden) {
+		this.set = null;
+		this.index = -1;
 		this.id = id;
 		this.observed = observed;
 		this.hidden = hidden;
@@ -55,5 +76,28 @@ public class Sequence {
 	 */
 	public int length() {
 		return observed.length;
+	}
+	
+	@Override
+	public String toString() {
+		if (set == null) {
+			return "seq([" + length() + " symbols])";
+		}
+
+		String oStates = set.observedStates(), hStates = set.hiddenStates(), 
+				cStates = set.completeStates();
+		StringBuilder builder = (cStates != null)
+				? new StringBuilder(length()) : new StringBuilder(2 * length());
+		
+		for (int i = 0; i < length(); i++) {
+			if (cStates != null) {
+				builder.append("" + cStates.charAt(hidden[i] * hStates.length() + observed[i]));
+			} else { 
+				builder.append("" + oStates.charAt(observed[i])); 
+				builder.append("" + hStates.charAt(hidden[i]));
+			}
+		}
+		
+		return "seq('" + builder.toString() + "')";
 	}
 }
