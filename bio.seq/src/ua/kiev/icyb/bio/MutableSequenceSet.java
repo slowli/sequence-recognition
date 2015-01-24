@@ -1,11 +1,11 @@
 package ua.kiev.icyb.bio;
 
-import ua.kiev.icyb.bio.GenericSequenceSet;
+import ua.kiev.icyb.bio.SimpleSequenceSet;
 
 /**
  * Выборка, в которую можно добавлять строки.
  */
-public class MutableSequenceSet extends GenericSequenceSet {
+public class MutableSequenceSet extends SimpleSequenceSet {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -28,11 +28,22 @@ public class MutableSequenceSet extends GenericSequenceSet {
 	 * последовательности состояний.
 	 * 
 	 * @param observed
-	 *        строка наблюдаемых состояний
+	 *    строка наблюдаемых состояний
 	 * @param hidden
-	 *        строка скрытых состояний
+	 *    строка скрытых состояний
 	 */
 	public void add(byte[] observed, byte[] hidden, String id) {
-		this.doAdd(observed, hidden, id);
+		this.doAdd(new Sequence(null, -1, id, observed, hidden));
+	}
+	
+	/**
+	 * Добавляет в коллекцию пару из наблюдаемой и соответстующей скрытой 
+	 * последовательности состояний.
+	 * 
+	 * @param sequence
+	 *    добавляемый объект
+	 */
+	public void add(Sequence sequence) {
+		this.doAdd(sequence);
 	}
 }
