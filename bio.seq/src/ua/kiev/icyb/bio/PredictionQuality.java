@@ -347,7 +347,7 @@ public class PredictionQuality implements Serializable, Representable {
 				symbolACP(state) * 100, symbolCC(state) * 100,
 				regionSpec(state) * 100, regionSens(state) * 100);
 		
-		if ((truePos != null) && (Env.debugLevel() > 1)) {
+		if (truePos != null) {
 			repr += "\n";
 			repr += String.format("TP = %d, TN = %d, FP = %d, FN = %d; TR = %d, AR = %d, PR = %d",
 					truePos[state], trueNeg[state], falsePos[state], falseNeg[state],
