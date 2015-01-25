@@ -83,10 +83,10 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 	 */
 	public CrossValidation(SequenceSet set, int nFolds) {
 		this.set = set;
-		foldIndex = new byte[set.length()];
+		foldIndex = new byte[set.size()];
 		runs = new AlgorithmRun[2 * nFolds];
 		
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			foldIndex[i] = (byte) Math.floor(Math.random() * nFolds);
 		}
 		
@@ -122,8 +122,8 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 	 */
 	@Override
 	public SequenceSet getSet(int index) {
-		boolean[] selector = new boolean[set.length()];
-		for (int i = 0; i < set.length(); i++) {
+		boolean[] selector = new boolean[set.size()];
+		for (int i = 0; i < set.size(); i++) {
 			selector[i] = (foldIndex[i] == index/2);
 			if (index % 2 == 0) {
 				// Обучающая выборка
@@ -230,7 +230,7 @@ public class CrossValidation extends AbstractLaunchable implements RunCollection
 		}
 		
 		String repr = Messages.format("test.cv_repr", 
-				runs.length / 2, set.length(), nProcessed) + "\n";
+				runs.length / 2, set.size(), nProcessed) + "\n";
 		repr += Messages.format("misc.dataset", set.repr()) + "\n";
 		if (algorithm != null) {
 			repr += Messages.format("test.alg", algorithm.repr()) + "\n";

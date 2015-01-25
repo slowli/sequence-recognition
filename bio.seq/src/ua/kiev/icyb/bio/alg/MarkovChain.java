@@ -380,7 +380,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 *    набор наблюдаемых и соответствующих им скрытых строк состояний
 	 */
 	public void digestSet(SequenceSet set) {
-		for (int i = 0; i < set.length(); i++)
+		for (int i = 0; i < set.size(); i++)
 			digest(set.observed(i), set.hidden(i), 1.0);
 	}
 	
@@ -393,7 +393,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 *    веса прецедентов
 	 */
 	public void digestSet(SequenceSet set, double[] weights) {
-		for (int i = 0; i < set.length(); i++)
+		for (int i = 0; i < set.size(); i++)
 			digest(set.observed(i), set.hidden(i), weights[i]);
 	}
 	

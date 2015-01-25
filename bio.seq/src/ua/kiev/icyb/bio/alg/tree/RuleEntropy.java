@@ -98,7 +98,7 @@ public class RuleEntropy implements Serializable {
 	private Map<Fragment, Integer> headStats(SequenceSet set, int length) {
 		Map<Fragment, Integer> stats = new HashMap<Fragment, Integer>();
 
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			byte[] observed = set.observed(i);
 			byte[] hidden = set.hidden(i);
 			if (observed.length < length)
@@ -116,7 +116,7 @@ public class RuleEntropy implements Serializable {
 	private Map<Fragment, Integer> stats(SequenceSet set, int length) {
 		Map<Fragment, Integer> stats = new HashMap<Fragment, Integer>();
 
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			byte[] observed = set.observed(i);
 			byte[] hidden = set.hidden(i);
 			if (observed.length < length)
@@ -171,7 +171,7 @@ public class RuleEntropy implements Serializable {
 
 		if (countInitials) {
 			headMap = headStats(fullSet, order);
-			result += sum(headMap, null) - xlog(fullSet.length());
+			result += sum(headMap, null) - xlog(fullSet.size());
 		}
 
 		return result;
@@ -192,8 +192,8 @@ public class RuleEntropy implements Serializable {
 
 		double result = sum(fullMap, ruleFullMap) - sum(tailMap, ruleTailMap);
 		if (countInitials) {
-			double headProb = sum(headMap, ruleHeadMap) - xlog(subset.length())
-					- xlog(fullSet.length() - subset.length());
+			double headProb = sum(headMap, ruleHeadMap) - xlog(subset.size())
+					- xlog(fullSet.size() - subset.size());
 			result += headProb;
 		}
 		result -= fullEntropy;

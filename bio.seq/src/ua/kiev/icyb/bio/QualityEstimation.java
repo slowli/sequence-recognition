@@ -100,7 +100,7 @@ public class QualityEstimation extends AbstractLaunchable implements RunCollecti
 	@Override
 	public String repr() {
 		String repr = Messages.format("test.repr", 
-				controlSet.length(), run.getProcessedCount()) + "\n";
+				controlSet.size(), run.getProcessedCount()) + "\n";
 		repr += Messages.format("test.train_set", trainingSet.repr()) + "\n";
 		repr += Messages.format("test.control_set", controlSet.repr()) + "\n";
 		

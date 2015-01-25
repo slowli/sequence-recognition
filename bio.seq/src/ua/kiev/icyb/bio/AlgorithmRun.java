@@ -100,7 +100,7 @@ public class AlgorithmRun implements Serializable, Representable {
 	 *    {@code true}, если алгоритм закончил распознавание на всех строках
 	 */
 	public boolean isComplete() {
-		return getProcessedCount() == getSet().length();
+		return getProcessedCount() == getSet().size();
 	}
 	
 	/**
@@ -124,7 +124,7 @@ public class AlgorithmRun implements Serializable, Representable {
 		set = parent.getSet(this.runIndex);
 
 		if (isUnprocessed == null) {
-			isUnprocessed = new boolean[set.length()];
+			isUnprocessed = new boolean[set.size()];
 			Arrays.fill(isUnprocessed, true);
 		}
 		unprocessedIdx = new ArrayList<Integer>();
@@ -172,7 +172,7 @@ public class AlgorithmRun implements Serializable, Representable {
 	
 	@Override
 	public String repr() {
-		String repr = Messages.format("test.repr", getSet().length(), nProcessed);
+		String repr = Messages.format("test.repr", getSet().size(), nProcessed);
 		if (nProcessed > 0) {
 			repr += "\n" + quality.repr();
 		}

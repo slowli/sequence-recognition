@@ -228,13 +228,13 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 		public List<PartitionRule> call() throws Exception {
 			List<PartitionRule> rules = new ArrayList<PartitionRule>();
 
-			double[] vars = new double[set.length()];
-			for (int i = 0; i < set.length(); i++)
+			double[] vars = new double[set.size()];
+			for (int i = 0; i < set.size(); i++)
 				vars[i] = comb.calc(set.observed(i));
 			Arrays.sort(vars);
 
 			for (int i = 0; i < percentages.length; i++) {
-				int idx = (int) (set.length() * percentages[i]);
+				int idx = (int) (set.size() * percentages[i]);
 				PartitionRule r = new ContentPartitionRule(comb, vars[idx]);
 				rules.add(r);
 			}
@@ -262,14 +262,14 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			boolean[] complies = rule.test(fullSet);
 			SequenceSet subset = fullSet.filter(complies);
 			double fitness = -1;
-			if ((subset.length() < minPartSize) || (subset.length() > fullSet.length() - minPartSize)) {
+			if ((subset.size() < minPartSize) || (subset.size() > fullSet.size() - minPartSize)) {
 				fitness = -1;
 				getEnv().debug(1, Messages.format("tree.small_set", 
-						Messages.format("tree.rule", rule, subset.length()) ));
+						Messages.format("tree.rule", rule, subset.size()) ));
 			} else {
 				fitness = entropy.fitness(subset);
 				getEnv().debug(1, Messages.format("misc.fitness", 
-						Messages.format("tree.rule", rule, subset.length()), 
+						Messages.format("tree.rule", rule, subset.size()), 
 						fitness));
 			}
 			
@@ -281,13 +281,13 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	@Override
 	protected void doRun() {
 		if (minPartSize < 1) {
-			minPartSize = set.length() * minPartSize;
+			minPartSize = set.size() * minPartSize;
 		}
 		getEnv().debug(1, this.repr());
 		
 		if (tree == null) {
 			tree = new PartitionRuleTree();
-			partIdx = new int[set.length()];
+			partIdx = new int[set.size()];
 			maxFitness = new double[treeSize];
 			Arrays.fill(maxFitness, Double.NEGATIVE_INFINITY);
 			optRule = new PartitionRule[treeSize];
@@ -304,7 +304,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 					continue;
 				}				
 				
-				boolean b[] = new boolean[set.length()];
+				boolean b[] = new boolean[set.size()];
 				for (int i = 0; i < b.length; i++) {
 					b[i] = (partIdx[i] == p);
 				}
@@ -358,7 +358,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 				maxPart + 1, optRule[maxPart], overallMax));
 		tree.add(optRule[maxPart], maxPart);
 		
-		boolean[] selector = new boolean[set.length()];
+		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < selector.length; i++)
 			selector[i] = (partIdx[i] == maxPart);
 		SequenceSet partSet = set.filter(selector);

@@ -48,7 +48,7 @@ public class MixtureWeights implements Launchable {
 			double sum, diff;
 			
 			for (int alg = 0; alg < mixture.size(); alg++) {
-				logP[alg] = mixture.chains[alg].estimate(obs, hid);
+				logP[alg] = mixture.chain(alg).estimate(obs, hid);
 			}
 			
 			for (int alg = 0; alg < mixture.size(); alg++) {
@@ -56,7 +56,7 @@ public class MixtureWeights implements Launchable {
 				for (int alg1 = 0; alg1 < mixture.size(); alg1++) {
 					diff = logP[alg1] - logP[alg];
 					exp[alg1] = (diff > 50) ? Math.exp(50) : Math.exp(diff);
-					exp[alg1] *= mixture.weights[alg1];
+					exp[alg1] *= mixture.weight(alg1);
 					sum += exp[alg1];
 				}
 				
@@ -98,7 +98,7 @@ public class MixtureWeights implements Launchable {
 	public MixtureWeights(ChainMixture mixture, SequenceSet set) {
 		this.mixture = mixture;
 		this.set = set;
-		this.weights = new double[mixture.size()][set.length()];
+		this.weights = new double[mixture.size()][set.size()];
 	}
 	
 	@Override
@@ -106,7 +106,7 @@ public class MixtureWeights implements Launchable {
 		final ExecutorService executor = env.executor();
 		
 		List<WeightTask> tasks = new ArrayList<WeightTask>(); 
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			tasks.add(new WeightTask(set, mixture, weights, i));
 		}
 		
@@ -121,7 +121,7 @@ public class MixtureWeights implements Launchable {
 		}
 		
 		labels.clear();
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			int maxChain = -1;
 			double maxP = Double.NEGATIVE_INFINITY;
 			for (int k = 0; k < mixture.size(); k++) {

@@ -34,8 +34,8 @@ class EstimatesSet extends SimpleSequenceSet {
 		super(set.observedStates(), set.hiddenStates(), set.completeStates());
 		this.baseSet = set;
 		
-		this.hidden = new byte[set.length()][];
-		for (int i = 0; i < set.length(); i++) {
+		this.hidden = new byte[set.size()][];
+		for (int i = 0; i < set.size(); i++) {
 			this.hidden[i] = new byte[set.observed(i).length];
 			this.doAdd(new Sequence(set.id(i), set.observed(i), null));
 		}

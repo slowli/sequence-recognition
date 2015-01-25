@@ -96,14 +96,14 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	public synchronized SequenceSet runSet(SequenceSet set, final JobListener listener) {
 		ExecutorService executor = env.executor();
 		List<SequenceTask> tasks = new ArrayList<SequenceTask>();
-		for (int i = 0; i < set.length(); i++)
+		for (int i = 0; i < set.size(); i++)
 			tasks.add(new SequenceTask(set, i, listener));
 		
 		EstimatesSet estimates = new EstimatesSet(set);
 		
 		try {
 			List<Future<byte[]>> results = executor.invokeAll(tasks);
-			for (int i = 0; i < set.length(); i++)
+			for (int i = 0; i < set.size(); i++)
 				estimates.put(i, results.get(i).get());
 			if (listener != null)
 				listener.finished();

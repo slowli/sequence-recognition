@@ -73,16 +73,16 @@ public class FilterTask implements Launchable {
 		final ExecutorService executor = env.executor();
 		
 		List<PassTask> tasks = new ArrayList<PassTask>();
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			tasks.add(new PassTask( set.get(i) ));
 		}
 
-		boolean[] selector = new boolean[set.length()];
+		boolean[] selector = new boolean[set.size()];
 		
 		try {
 			List<Future<Boolean>> futures = executor.invokeAll(tasks);
 			
-			for (int i = 0; i < set.length(); i++) {
+			for (int i = 0; i < set.size(); i++) {
 				selector[i] = futures.get(i).get();
 			}	
 		} catch (InterruptedException e) {

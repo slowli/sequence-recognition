@@ -29,8 +29,8 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	
 	@Override
 	public void train(SequenceSet set) {
-		for (int i = 0; i < set.length(); i++) {
-			this.train(set.get(i));
+		for (Sequence sequence : set) {
+			this.train(sequence);
 		}
 	}
 
@@ -43,10 +43,10 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	@Override
 	public SequenceSet runSet(SequenceSet set) {
 		EstimatesSet est = new EstimatesSet(set);
-		for (int i = 0; i < set.length(); i++) {
+		for (Sequence sequence : set) {
 			if (Thread.interrupted()) break;
 				
-			est.put(i, run(set.get(i)));
+			est.put(sequence.index, run(sequence));
 		}
 		return est;
 	}
@@ -54,11 +54,11 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	@Override
 	public SequenceSet runSet(SequenceSet set, JobListener listener) {
 		EstimatesSet est = new EstimatesSet(set);
-		for (int i = 0; i < set.length(); i++) {
+		for (Sequence sequence : set) {
 			if (Thread.interrupted()) break;
 				
-			est.put(i, run(set.get(i)));
-			listener.seqCompleted(i, est.hidden(i));
+			est.put(sequence.index, run(sequence));
+			listener.seqCompleted(sequence.index, est.hidden(sequence.index));
 		}
 		listener.finished();
 		return est;

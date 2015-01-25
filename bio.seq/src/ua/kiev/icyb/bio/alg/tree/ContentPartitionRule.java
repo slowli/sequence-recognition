@@ -56,9 +56,9 @@ public class ContentPartitionRule implements PartitionRule {
 
 	@Override
 	public boolean[] test(SequenceSet set) {
-		boolean[] selector = new boolean[set.length()];
+		boolean[] selector = new boolean[set.size()];
 
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			selector[i] = test(set.observed(i));
 		}
 

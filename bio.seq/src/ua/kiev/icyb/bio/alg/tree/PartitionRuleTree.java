@@ -96,7 +96,7 @@ public class PartitionRuleTree implements Serializable, Representable {
 	 *    строку из выборки
 	 */
 	public int[] split(SequenceSet set) {
-		int[] result = new int[set.length()];
+		int[] result = new int[set.size()];
 		for (int i = 0; i < result.length; i++)
 			result[i] = getPart(set.observed(i));
 		return result;

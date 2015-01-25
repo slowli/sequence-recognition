@@ -37,7 +37,7 @@ public class PredictionQuality implements Serializable, Representable {
 	 */
 	public PredictionQuality(SequenceSet reference, SequenceSet est) {
 		this(reference);
-		assert(reference.length() == est.length());
+		assert(reference.size() == est.size());
 		calculateStats(reference, est);
 	}
 	
@@ -112,7 +112,7 @@ public class PredictionQuality implements Serializable, Representable {
 	}
 	
 	private void calculateStats(SequenceSet ref, SequenceSet est) {
-		for (int i = 0; i < ref.length(); i++) {
+		for (int i = 0; i < ref.size(); i++) {
 			addSequence(ref.hidden(i), est.hidden(i));
 		}
 	}

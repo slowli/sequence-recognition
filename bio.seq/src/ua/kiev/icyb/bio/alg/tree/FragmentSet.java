@@ -100,8 +100,8 @@ public class FragmentSet extends HashSet<Integer> {
 	 *    от <code>0.0</code> до <code>1.0</code>)
 	 */
 	public double median(SequenceSet set) {
-		double[] vars = new double[set.length()];
-		for (int i = 0; i < set.length(); i++)
+		double[] vars = new double[set.size()];
+		for (int i = 0; i < set.size(); i++)
 			vars[i] = calc(set.observed(i));
 		Arrays.sort(vars);
 		return vars[vars.length / 2];
