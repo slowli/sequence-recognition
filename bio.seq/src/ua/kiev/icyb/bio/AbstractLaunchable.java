@@ -55,6 +55,8 @@ public abstract class AbstractLaunchable implements Launchable {
 	 */
 	protected void save() {
 		String dest = getEnv().saveProgress();
-		env.debug(1, Messages.format("misc.save", dest));
+		if (dest != null) {
+			env.debug(1, Messages.format("misc.save", dest));
+		}
 	}
 }

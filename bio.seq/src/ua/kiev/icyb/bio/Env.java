@@ -509,7 +509,6 @@ public class Env implements Representable {
 				this.exception(e);
 			}
 
-			this.debug(1, Messages.format("misc.save", taskSaveFile));
 			return taskSaveFile;
 		}
 		
