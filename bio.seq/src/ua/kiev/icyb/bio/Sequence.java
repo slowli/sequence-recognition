@@ -80,25 +80,38 @@ public class Sequence {
 	}
 	
 	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (obj.getClass() != this.getClass()) return false;
+		
+		Sequence other = (Sequence) obj;
+		return other.id.equals(this.id);
+	}
+	
+	@Override
 	public String toString() {
+		String args = "ID='" + id + "',";
+		
 		if (set == null) {
-			return "seq([" + length() + " symbols])";
-		}
-
-		String oStates = set.observedStates(), hStates = set.hiddenStates(), 
-				cStates = set.completeStates();
-		StringBuilder builder = (cStates != null)
-				? new StringBuilder(length()) : new StringBuilder(2 * length());
-		
-		for (int i = 0; i < length(); i++) {
-			if (cStates != null) {
-				builder.append("" + cStates.charAt(hidden[i] * hStates.length() + observed[i]));
-			} else { 
-				builder.append("" + oStates.charAt(observed[i])); 
-				builder.append("" + hStates.charAt(hidden[i]));
+			args += "[" + length() + " symbols]";
+		} else {
+			String oStates = set.observedStates(), hStates = set.hiddenStates(), 
+					cStates = set.completeStates();
+			StringBuilder builder = (cStates != null)
+					? new StringBuilder(length()) : new StringBuilder(2 * length());
+			
+			for (int i = 0; i < length(); i++) {
+				if (cStates != null) {
+					builder.append("" + cStates.charAt(hidden[i] * oStates.length() + observed[i]));
+				} else { 
+					builder.append("" + oStates.charAt(observed[i])); 
+					builder.append("" + hStates.charAt(hidden[i]));
+				}
 			}
+			
+			args += "'" + builder.toString() + "'";
 		}
 		
-		return "seq('" + builder.toString() + "')";
+		return "seq(" + args + ")";
 	}
 }
