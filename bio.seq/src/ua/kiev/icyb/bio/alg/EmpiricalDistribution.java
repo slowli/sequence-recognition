@@ -1,11 +1,12 @@
 package ua.kiev.icyb.bio.alg;
 
+
 /**
  * Эмпирическое вероятностное распределение с усреднением. Вероятность в конкретной точке
  * рассчитывается на основе (взвешенной) доли прецедентов из обучающей выборки, попадающих
  * в определенную окрестность этой точки.
  */
-public class EmpiricalDistribution implements Distribution {
+public class EmpiricalDistribution extends AbstractDistribution<Integer> {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -26,7 +27,7 @@ public class EmpiricalDistribution implements Distribution {
 	 * Распределение прецедентов. {@code i}-й элемент массива равен сумме весов прецедентов,
 	 * имеющих значение {@code i}.
 	 */
-	private final double[] bins;
+	private double[] bins;
 	
 	/**
 	 * Создает эмпирическое распределение с заданными параметрами.
@@ -47,7 +48,7 @@ public class EmpiricalDistribution implements Distribution {
 	}
 	
 	@Override
-	public void digest(int value, double weight) {
+	public void train(Integer value, double weight) {
 		if (value < bins.length) {
 			bins[value] += weight;
 			weightSum += weight;
@@ -63,7 +64,7 @@ public class EmpiricalDistribution implements Distribution {
 	}
 
 	@Override
-	public double estimate(int value) {
+	public double estimate(Integer value) {
 		double mean = 0.0;
 		int nSamples = 0;
 		for (int i = -window/2; i <= window/2; i++)
@@ -84,5 +85,12 @@ public class EmpiricalDistribution implements Distribution {
 	@Override
 	public String toString() {
 		return String.format("Empirical(w=%d)", window);
+	}
+	
+	@Override
+	public EmpiricalDistribution clone() {
+		EmpiricalDistribution other = (EmpiricalDistribution) super.clone();
+		other.bins = this.bins.clone();
+		return other;
 	}
 }

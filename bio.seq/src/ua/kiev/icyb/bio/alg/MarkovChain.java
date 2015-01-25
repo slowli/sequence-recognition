@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ua.kiev.icyb.bio.Representable;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.Trainable;
 import ua.kiev.icyb.bio.res.Messages;
@@ -40,7 +41,7 @@ import ua.kiev.icyb.bio.res.Messages;
  * являются решением задачи максимизации совместного (взвешенного) правдоподобия
  * для набора строк полных состояний, которые были перед этим переданы методам первой группы.
  */
-public class MarkovChain implements Serializable, Trainable, Representable {
+public class MarkovChain extends AbstractDistribution<Sequence> implements Representable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -114,7 +115,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	}
 	
 	/** Вероятностное распределение строк по длинам. */
-	protected Distribution lengthDistr;
+	protected Distribution<Integer> lengthDistr;
 	
 	/**
 	 * Создает марковскую цепь с заданными параметрами.
@@ -199,29 +200,20 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Object clone() {
-		try {
-			MarkovChain other = (MarkovChain) super.clone();
-			other.initial = (Map<Fragment, Double>) 
-					((HashMap<Fragment, Double>) this.initial).clone();
-			other.transitions = (Map<Fragment, double[]>) 
-					((HashMap<Fragment, double[]>) this.transitions).clone();
-			return other;
-		} catch (CloneNotSupportedException e) {
-			// Should never happen
-			return null;
-		}
+	public MarkovChain clone() {
+		MarkovChain other = (MarkovChain) super.clone();
+		other.initial = (Map<Fragment, Double>) 
+				((HashMap<Fragment, Double>) this.initial).clone();
+		other.transitions = (Map<Fragment, double[]>) 
+				((HashMap<Fragment, double[]>) this.transitions).clone();
+		return other;
 	}
 	
-	public Object clearClone() {
-		try {
-			MarkovChain other = (MarkovChain) super.clone();
-			other.initialize();
-			return other;
-		} catch (CloneNotSupportedException e) {
-			// Should never happen
-			return null;
-		}
+	@Override
+	public MarkovChain clearClone() {
+		MarkovChain other = (MarkovChain) super.clone();
+		other.initialize();
+		return other;
 	}
 	
 	/**
@@ -325,9 +317,9 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @param hidden
 	 *    цепочка скрытых состояний, отвечающих наблюдаемым
 	 */
-	public void digest(byte[] observed, byte[] hidden) {
+	/*public void digest(byte[] observed, byte[] hidden) {
 		this.digest(observed, hidden, 1.0);
-	}
+	}*/
 	
 	/**
 	 * Обучает модель на паре строк, состоящей из наблюдаемых и соответствующих им скрытых состояний,
@@ -340,14 +332,14 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @param weight
 	 *    неотрицательный вес прецедента
 	 */
-	public void digest(byte[] observed, byte[] hidden, double weight) {
+	/*public void digest(byte[] observed, byte[] hidden, double weight) {
 		if (observed.length < order) return;
 		if (weight <= 0.0) return;
 		
 		assert(observed.length == hidden.length);
 		doDigest(observed, hidden, weight);
 		nSequences++;
-	}
+	}*/
 	
 	/**
 	 * Производит сбор статистики на паре строк, состоящей из наблюдаемых и соответствующих им скрытых состояний.
@@ -361,7 +353,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 *    неотрицательный вес прецедента
 	 */
 	protected void doDigest(byte[] observed, byte[] hidden, double weight) {
-		lengthDistr.digest(observed.length, weight);
+		lengthDistr.train(observed.length, weight);
 		
 		Fragment state = factory.fragment(observed, hidden, 0, order);
 		incInitialStats(state, weight);
@@ -379,10 +371,10 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @param set
 	 *    набор наблюдаемых и соответствующих им скрытых строк состояний
 	 */
-	public void digestSet(SequenceSet set) {
+	/*public void digestSet(SequenceSet set) {
 		for (int i = 0; i < set.size(); i++)
 			digest(set.observed(i), set.hidden(i), 1.0);
-	}
+	}*/
 	
 	/**
 	 * Обучает параметры модели на наборе прецедентов с заданными весами.
@@ -392,10 +384,8 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @param weights
 	 *    веса прецедентов
 	 */
-	public void digestSet(SequenceSet set, double[] weights) {
-		for (int i = 0; i < set.size(); i++)
-			digest(set.observed(i), set.hidden(i), weights[i]);
-	}
+	//public void digestSet(SequenceSet set, double[] weights) {
+	//}
 	
 	/**
 	 * Вычисляет функцию логарифмисеского правдоподобия для последовательности
@@ -412,7 +402,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	 * @return
 	 *    логарифмическое правдоподобие для цепочек
 	 */
-	public double estimate(byte[] observed, byte[] hidden) {
+	/*public double estimate(byte[] observed, byte[] hidden) {
 		double logP = 0.0;
 		
 		logP = Math.max(lengthDistr.estimate(observed.length), -15);
@@ -431,7 +421,7 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 		}
 		
 		return logP;
-	}
+	}*/
 	
 	@SuppressWarnings("unchecked")
 	private void writeObject(ObjectOutputStream stream) throws IOException {
@@ -499,5 +489,37 @@ public class MarkovChain implements Serializable, Trainable, Representable {
 	@Override
 	public String toString() {
 		return String.format("h=%d, order=%d", depLength, nSequences);
+	}
+
+	@Override
+	public void train(Sequence sample, double weight) {
+		if (weight <= 0.0) return;
+		if (sample.length() < order) return;
+		
+		doDigest(sample.observed, sample.hidden, weight);
+		nSequences++;
+	}
+
+	@Override
+	public double estimate(Sequence point) {
+		final byte[] observed = point.observed, hidden = point.hidden;
+		double logP = 0.0;
+		
+		logP = Math.max(lengthDistr.estimate(observed.length), -15);
+		if (observed.length < order) {
+			return logP;
+		}
+		
+		Fragment state = factory.fragment(observed, hidden, 0, order);
+		logP = Math.log(Math.max(1e-4, getInitialP(state)));
+		
+		for (int i = order; i + depLength <= observed.length; i += depLength) {
+			final Fragment lState = factory.fragment(observed, hidden, i - order, order);
+			final Fragment mState = factory.fragment(observed, hidden, i, depLength);
+			
+			logP += Math.log(Math.max(1e-4, getTransP(lState, mState)));
+		}
+		
+		return logP;
 	}
 }

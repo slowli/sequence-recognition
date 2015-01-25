@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio.alg;
 
 import java.util.Arrays;
 
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -93,7 +94,7 @@ public class FallthruChain extends MarkovChain {
 	}
 	
 	@Override
-	public Object clearClone() {
+	public FallthruChain clearClone() {
 		FallthruChain other = (FallthruChain) super.clearClone();
 		other.initializeSubchains(subchains.length - 1);
 		return other;
@@ -107,13 +108,13 @@ public class FallthruChain extends MarkovChain {
 	}
 	
 	@Override
-	public void digest(byte[] observed, byte[] hidden, double weight) {
-		super.digest(observed, hidden, weight);
+	public void train(Sequence sample, double weight) {
+		super.train(sample, weight);
 		for (int i = minOrder; i < order; i++) 
-			if (order - i < observed.length) {
-				byte[] truncObs = Arrays.copyOfRange(observed, order - i, observed.length);
-				byte[] truncHid = Arrays.copyOfRange(hidden, order - i, hidden.length);
-				subchains[i].digest(truncObs, truncHid, weight);
+			if (order - i < sample.length()) {
+				byte[] truncObs = Arrays.copyOfRange(sample.observed, order - i, sample.length());
+				byte[] truncHid = Arrays.copyOfRange(sample.hidden, order - i, sample.length());
+				subchains[i].train(new Sequence(null, truncObs, truncHid), weight);
 			}
 	}
 	
