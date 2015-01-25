@@ -49,9 +49,12 @@ class EstimatesSet extends SimpleSequenceSet {
 	 *    для которой найдены соответствующие скрытые состояния
 	 * @param array
 	 *    последовательность скрытых состояний для сохранения
+	 * @return
+	 *    прецедент, соответствующий сохраненной строке скрытых состояний
 	 */
-	public void put(int index, byte[] array) {
+	public Sequence put(int index, byte[] array) {
 		hidden[index] = array;
+		return get(index);
 	}
 	
 	@Override
