@@ -70,6 +70,18 @@ public class Sequence {
 	}
 	
 	/**
+	 * Создает прецедент с заданными строками наблюдаемых и скрытых состояний.
+	 * 
+	 * @param observed
+	 *    строка наблюдаемых состояний
+	 * @param hidden
+	 *    строка скрытых состояний
+	 */
+	public Sequence(byte[] observed, byte[] hidden) {
+		this(null, observed, hidden);
+	}
+	
+	/**
 	 * Длина строк, составляющих прецедент.
 	 * 
 	 * @return
@@ -90,7 +102,7 @@ public class Sequence {
 	
 	@Override
 	public String toString() {
-		String args = "ID='" + id + "',";
+		String args = (id == null) ? "" : "ID='" + id + "',";
 		
 		if (set == null) {
 			args += "[" + length() + " symbols]";
