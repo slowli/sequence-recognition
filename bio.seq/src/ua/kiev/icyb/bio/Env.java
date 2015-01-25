@@ -124,6 +124,8 @@ public class Env implements Representable {
 	
 	private boolean interruptedByError;
 	
+	private final File workingDir;
+	
 	/** Кэш загруженных выборок данных. */
 	private final Map<String, WeakReference<SequenceSet>> loadedSets = 
 			new HashMap<String, WeakReference<SequenceSet>>();
@@ -132,6 +134,7 @@ public class Env implements Representable {
 	 * Создает окружение с настройками по умолчанию.
 	 */
 	public Env() {
+		workingDir = new File(".");
 	}
 	
 	/**
@@ -149,6 +152,9 @@ public class Env implements Representable {
 		for (Map.Entry<Object, Object> entry : props.entrySet()) {
 			addDataset((String) entry.getKey(), (String) entry.getValue());
 		}
+		
+		File dir = new File(configFile).getParentFile();
+		workingDir = (dir == null) ? new File(".") : dir;
 	}
 	
 	/**
@@ -283,7 +289,7 @@ public class Env implements Representable {
 	public BufferedReader resolveDataset(String name) throws IOException {
 		String filename = namedSets.get(name);
 		if (filename == null) filename = name;
-		return getReader(filename);
+		return getReader(workingDir + "/" + filename);
 	}
 	
 	/**
