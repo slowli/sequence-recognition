@@ -103,7 +103,7 @@ public class SwitchAlgorithm extends AbstractSeqAlgorithm {
 	}
 
 	@Override
-	public Object clearClone() {
+	public SwitchAlgorithm clearClone() {
 		SwitchAlgorithm other = (SwitchAlgorithm) super.clearClone();
 		other.algorithms = algorithms.clone();
 		for (int i = 0; i < algorithms.length; i++) {

@@ -13,6 +13,9 @@ package ua.kiev.icyb.bio;
  * они должны быть определены в реализациях.
  */
 public interface Trainable extends Cloneable {
+	
+	Object clone();
+	
 	/**
 	 * Создает копию рассматриваемого объекта. В отличие от метода {@link Object#clone()},
 	 * под копией подразумевается объект с теми же управляющими параметрами,
@@ -24,10 +27,10 @@ public interface Trainable extends Cloneable {
 	 * @return
 	 *    копия объекта, обладающая теми же управляющими параметрами
 	 */
-	public Object clearClone();
+	Object clearClone();
 	
 	/**
 	 * Сбрасывает результаты обучения.
 	 */
-	public void reset();
+	void reset();
 }

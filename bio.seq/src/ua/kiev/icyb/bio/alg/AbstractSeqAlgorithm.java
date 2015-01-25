@@ -57,8 +57,8 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 		for (Sequence sequence : set) {
 			if (Thread.interrupted()) break;
 				
-			est.put(sequence.index, run(sequence));
-			listener.seqCompleted(sequence.index, est.hidden(sequence.index));
+			Sequence estimated = est.put(sequence.index, run(sequence));
+			listener.seqCompleted(estimated);
 		}
 		listener.finished();
 		return est;
@@ -98,9 +98,18 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	}
 	
 	@Override
-	public Object clearClone() {
+	public SeqAlgorithm clone() {
 		try {
-			return super.clone();
+			return (SeqAlgorithm) super.clone();
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
+	}
+	
+	@Override
+	public SeqAlgorithm clearClone() {
+		try {
+			return (SeqAlgorithm) super.clone();
 		} catch (CloneNotSupportedException e) {
 			// Should not happen
 			return null;

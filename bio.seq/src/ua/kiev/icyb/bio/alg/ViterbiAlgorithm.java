@@ -80,7 +80,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		if (chain == null) {
 			chain = createChain(sequence.set);
 		}
-		chain.digest(sequence.observed, sequence.hidden);
+		chain.train(sequence);
 	}
 	
 	@Override
@@ -88,7 +88,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		if (chain == null) {
 			chain = createChain(set);
 		}
-		chain.digestSet(set);
+		chain.train(set);
 	}
 
 	@Override
@@ -217,7 +217,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public Object clearClone() {
+	public ViterbiAlgorithm clearClone() {
 		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clearClone();
 		if (other.chain != null) {
 			other.chain = (MarkovChain) other.chain.clearClone();

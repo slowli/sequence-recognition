@@ -25,6 +25,12 @@ public interface SeqAlgorithm extends Serializable, Trainable, Representable {
 	 *    выборка, в которую входят прецеденты с известными скрытыми состояниями 
 	 */
 	void train(SequenceSet set);
+	
+	@Override
+	SeqAlgorithm clone();
+	
+	@Override
+	SeqAlgorithm clearClone();
 
 	/**
 	 * Производит распознавание на отдельной строке наблюдаемых состояний.

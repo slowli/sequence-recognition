@@ -95,7 +95,7 @@ public class PriorityCompAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public Object clearClone() {
+	public PriorityCompAlgorithm clearClone() {
 		PriorityCompAlgorithm other = (PriorityCompAlgorithm) super.clearClone();
 		other.algorithms = algorithms.clone();
 		for (int i = 0; i < algorithms.length; i++) {
