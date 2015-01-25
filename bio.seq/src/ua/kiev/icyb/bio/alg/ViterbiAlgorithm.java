@@ -49,9 +49,6 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    длина зависимой цепочки состояний, используемая в алгоритме
 	 * @param order
 	 *    порядок марковской цепи, используемый в алгоритме
-	 * @param set
-	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
-	 *    состояний
 	 */
 	public ViterbiAlgorithm(int depLength, int order) {
 		this.depLength = depLength;
@@ -59,14 +56,20 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	/**
-	 * Создает новый алгоритм с заданной вероятностной моделью.
-	 * 
-	 * @param chain
-	 *    марковская цепь, используемая в алгоритме
+	 * Создает новый алгоритм.
 	 */
 	protected ViterbiAlgorithm() {
 	}
 	
+	/**
+	 * Создает марковскую модель на основе предоставленной обучающей выборки.
+	 * Модель используется в алгоритме Витерби для получения сведений о начальных и переходных вероятностях.
+	 * 
+	 * @param set
+	 *    выборка
+	 * @return
+	 *    созданная модель
+	 */
 	protected MarkovChain createChain(SequenceSet set) {
 		return new MarkovChain(depLength, order, 
 				set.observedStates(), set.hiddenStates());
@@ -112,6 +115,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    {@code null} в случае отказа от распознавания
 	 */
 	protected byte[] run(byte[] seq, MarkovChain chain) {
+		if (chain == null) return null;
 		if ((seq.length < chain.order()) || (seq.length > MAX_SEQ_LENGTH)) return null;
 		
 		final int order = chain.order(), 
