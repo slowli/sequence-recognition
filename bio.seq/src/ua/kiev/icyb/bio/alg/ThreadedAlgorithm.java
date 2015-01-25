@@ -66,24 +66,29 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 		return baseAlgorithm.run(sequence);
 	}
 	
-	private class SequenceTask implements Callable<byte[]> {
+	private class SequenceTask implements Callable<Void> {
 
 		private final SequenceSet set;
+		private final EstimatesSet estimates;
 		private final int index;
 		private final JobListener listener;
 		
-		public SequenceTask(SequenceSet set, int index, JobListener listener) {
+		public SequenceTask(SequenceSet set, EstimatesSet estimates, int index, JobListener listener) {
 			this.set = set;
+			this.estimates = estimates;
 			this.index = index;
 			this.listener = listener;
 		}
 		
 		@Override
-		public byte[] call() throws Exception {
+		public Void call() throws Exception {
 			byte[] result = baseAlgorithm.run(set.get(index));
-			if (listener != null)
-				listener.seqCompleted(index, result);
-			return result;
+			Sequence est = estimates.put(index, result);
+			
+			if (listener != null) {
+				listener.seqCompleted(est);
+			}
+			return null;
 		}
 	}
 	
@@ -95,31 +100,32 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	@Override
 	public synchronized SequenceSet runSet(SequenceSet set, final JobListener listener) {
 		ExecutorService executor = env.executor();
-		List<SequenceTask> tasks = new ArrayList<SequenceTask>();
-		for (int i = 0; i < set.size(); i++)
-			tasks.add(new SequenceTask(set, i, listener));
-		
+
 		EstimatesSet estimates = new EstimatesSet(set);
 		
+		List<SequenceTask> tasks = new ArrayList<SequenceTask>();
+		for (int i = 0; i < set.size(); i++) {
+			tasks.add(new SequenceTask(set, estimates, i, listener));
+		}
+		
 		try {
-			List<Future<byte[]>> results = executor.invokeAll(tasks);
-			for (int i = 0; i < set.size(); i++)
-				estimates.put(i, results.get(i).get());
-			if (listener != null)
-				listener.finished();
-			return estimates;
+			List<Future<Void>> results = executor.invokeAll(tasks);
+			for (int i = 0; i < results.size(); i++) {
+				results.get(i).get();
+			}
+			
+			if (listener != null) listener.finished();	
 		} catch (InterruptedException e) {
 			env.exception(e);
 		} catch (ExecutionException e) {
 			env.exception(e);
 		}
 		
-		// Недостижимый код
-		return null;
+		return estimates;
 	}
 
 	@Override
-	public Object clearClone() {
+	public ThreadedAlgorithm clearClone() {
 		ThreadedAlgorithm other = (ThreadedAlgorithm) super.clearClone();
 		other.baseAlgorithm = (SeqAlgorithm) baseAlgorithm.clearClone();
 		return other;
