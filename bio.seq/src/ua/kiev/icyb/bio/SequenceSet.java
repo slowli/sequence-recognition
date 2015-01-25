@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * Хранилище наблюдаемых и соответствующих им скрытых последовательностей.
@@ -42,7 +43,7 @@ import java.io.Serializable;
  * assert(Arrays.equals(set.hidden(0), new byte[] { 0, 0, 1 }));
  * </pre>
  */
-public interface SequenceSet extends Serializable, Representable {
+public interface SequenceSet extends Collection<Sequence>, Serializable, Representable {
 	
 	/**
 	 * Интерфейс, используемый для фильтрации набора последовательностей.
@@ -68,7 +69,7 @@ public interface SequenceSet extends Serializable, Representable {
 	 *  
 	 * @return количество строк в этом хранилище
 	 */
-	int length();
+	int size();
 	
 	/**
 	 * Возвращает строку наблюдаемых состояний с заданным номером.

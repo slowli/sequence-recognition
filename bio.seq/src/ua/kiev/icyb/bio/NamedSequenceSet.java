@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Collection;
 
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -47,6 +48,7 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 	 */
 	public NamedSequenceSet(String datasetName, Env env) throws IOException {
 		super(env.resolveDataset(datasetName));
+		this.writeContent = false;
 		this.datasetName = datasetName;
 		fillMissingIds(this.datasetName + ":");
 	}
@@ -59,6 +61,7 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 	 */
 	protected NamedSequenceSet(SequenceSet other) {
 		super(other);
+		this.writeContent = false;
 	}
 	
 	@Override
@@ -96,7 +99,7 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 			set = set.unfilteredSet;
 		}
 		int totalLength = 0;
-		for (int i = 0; i < this.length(); i++) {
+		for (int i = 0; i < this.size(); i++) {
 			totalLength += observed(i).length;
 		}
 		
@@ -105,8 +108,8 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 			repr += Messages.format("dataset.name", set.datasetName) + "\n";
 		}
 		repr += Messages.format("dataset.repr", 
-				length(), observedStates(), hiddenStates()) + "\n";
-		repr += Messages.format("dataset.seq_len", totalLength, 1.0 * totalLength / length());
+				size(), observedStates(), hiddenStates()) + "\n";
+		repr += Messages.format("dataset.seq_len", totalLength, 1.0 * totalLength / size());
 		return repr;
 	}
 	
@@ -116,7 +119,7 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 		if (this.datasetName != null) {
 			args = "'" + this.datasetName + "'";
 		} else if (this.unfilteredSet != null) {
-			args = this.unfilteredSet + "," + this.length();
+			args = this.unfilteredSet + "," + this.size();
 		} else if (this.setParts != null) {
 			args += this.setParts[0];
 			for (int i = 1; i < this.setParts.length; i++) {
@@ -160,5 +163,40 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 				this.addSet(part);
 			}
 		}
+	}
+	
+	@Override
+	public boolean add(Sequence sequence) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public Sequence remove(int index) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean remove(Object o) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void clear() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends Sequence> c) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
 	}
 }

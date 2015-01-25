@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import ua.kiev.icyb.bio.res.Messages;
@@ -37,13 +40,13 @@ import ua.kiev.icyb.bio.res.Messages;
  * <p>Файл может быть сжат с помощью алгоритма GZIP; в этом случае он должен заканчиваться
  * расширением «.gz».
  */
-public class SimpleSequenceSet implements SequenceSet {
+public class SimpleSequenceSet extends AbstractCollection<Sequence> implements SequenceSet {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private transient List<byte[]> hiddenSeq = new ArrayList<byte[]>();
-	private transient List<byte[]> observedSeq = new ArrayList<byte[]>();
-	private transient List<String> ids = new ArrayList<String>();
+	private List<byte[]> hiddenSeq = new ArrayList<byte[]>();
+	private List<byte[]> observedSeq = new ArrayList<byte[]>();
+	private List<String> ids = new ArrayList<String>();
 
 	/** Алфавит наблюдаемых состояний. */
 	private String observedStates;
@@ -53,9 +56,9 @@ public class SimpleSequenceSet implements SequenceSet {
 	private String completeStates;
 	
 	/**
-	 * Количество пар наблюдаемых и скрытых строк в выборке.
+	 * Следует ли записывать содержимое выборки при сериализации.
 	 */
-	private int length;
+	protected boolean writeContent = true;
 
 	/**
 	 * Создает новую пустую выборку.
@@ -83,7 +86,6 @@ public class SimpleSequenceSet implements SequenceSet {
 	 */
 	public SimpleSequenceSet(BufferedReader reader) throws IOException {
 		read(reader);
-		this.length = hiddenSeq.size();
 	}
 
 	
@@ -97,7 +99,7 @@ public class SimpleSequenceSet implements SequenceSet {
 	 * названия выборки, двоеточия и порядкового номера строки в выборке.
 	 */
 	protected void fillMissingIds(String prefix) {
-		for (int i = 0; i < this.length(); i++) {
+		for (int i = 0; i < this.size(); i++) {
 			if (this.ids.get(i) == null) {
 				this.ids.set(i, prefix + i);
 			}
@@ -136,7 +138,7 @@ public class SimpleSequenceSet implements SequenceSet {
 			} else if (key.equals("i")) {
 				lastReadId = value;
 			} else if (key.equals("h")) {
-				this.doAdd(new Sequence(null, -1, 
+				this.doAdd(new Sequence(
 						lastReadId, lastObservedSeq, decode(value, hiddenStates)));
 				lastReadId = null;
 			} else if (key.equals("c")) {
@@ -148,7 +150,7 @@ public class SimpleSequenceSet implements SequenceSet {
 					hidden[pos] = (byte) (complete[pos] / observedStates.length());
 				}
 				
-				this.doAdd(new Sequence(null, -1, lastReadId, observed, hidden));
+				this.doAdd(new Sequence(lastReadId, observed, hidden));
 				lastReadId = null;
 			}
 		}
@@ -181,8 +183,8 @@ public class SimpleSequenceSet implements SequenceSet {
 	}
 
 	@Override
-	public int length() {
-		return this.length;
+	public int size() {
+		return this.ids.size();
 	}
 
 	@Override
@@ -244,9 +246,9 @@ public class SimpleSequenceSet implements SequenceSet {
 	}
 
 	public SequenceSet filter(Filter filter) {
-		boolean[] selector = new boolean[this.length()];
+		boolean[] selector = new boolean[this.size()];
 		
-		for (int i = 0; i < length(); i++)
+		for (int i = 0; i < size(); i++)
 			selector[i] = filter.eval( this.get(i) );
 		return this.filter(selector);
 	}
@@ -273,7 +275,7 @@ public class SimpleSequenceSet implements SequenceSet {
 		StringBuilder builder = new StringBuilder();
 		byte[] seq, hidden;
 
-		for (int i = 0; i < length(); i++) {
+		for (int i = 0; i < size(); i++) {
 			writer.write("i: " + id(i) + "\n");
 			builder.setLength(0);
 			if (completeStates == null) {
@@ -311,7 +313,6 @@ public class SimpleSequenceSet implements SequenceSet {
 		this.observedSeq.add(sequence.observed);
 		this.hiddenSeq.add(sequence.hidden);
 		this.ids.add(sequence.id);
-		this.length = this.hiddenSeq.size();
 	}
 
 	/**
@@ -328,17 +329,36 @@ public class SimpleSequenceSet implements SequenceSet {
 			throw new IllegalArgumentException(Messages.getString("dataset.e_states"));
 		}
 
-		for (int i = 0; i < set.length(); i++) {
+		for (int i = 0; i < set.size(); i++) {
 			this.doAdd(set.get(i));
 		}
 	}
 	
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 		in.defaultReadObject();
+
+		if (!this.writeContent) {
+			this.hiddenSeq = new ArrayList<byte[]>();
+			this.observedSeq = new ArrayList<byte[]>();
+			this.ids = new ArrayList<String>();
+		}
+	}
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		List<byte[]> o = this.observedSeq, h = this.hiddenSeq;
+		List<String> ids = this.ids;
 		
-		this.hiddenSeq = new ArrayList<byte[]>(this.length());
-		this.observedSeq = new ArrayList<byte[]>(this.length());
-		this.ids = new ArrayList<String>(this.length());
+		if (!this.writeContent) {
+			this.observedSeq = null;
+			this.hiddenSeq = null;
+			this.ids = null;
+		}
+		
+		out.defaultWriteObject();
+		
+		this.observedSeq = o;
+		this.hiddenSeq = h;
+		this.ids = ids;
 	}
 
 	/**
@@ -349,20 +369,89 @@ public class SimpleSequenceSet implements SequenceSet {
 	 */
 	public String repr() {
 		int totalLength = 0;
-		for (int i = 0; i < this.length(); i++) {
+		for (int i = 0; i < this.size(); i++) {
 			totalLength += observed(i).length;
 		}
 		
 		String repr = "";
 		repr += Messages.format("dataset.repr", 
-				length(), observedStates(), hiddenStates()) + "\n";
-		repr += Messages.format("dataset.seq_len", totalLength, 1.0 * totalLength / length());
+				size(), observedStates(), hiddenStates()) + "\n";
+		repr += Messages.format("dataset.seq_len", totalLength, 1.0 * totalLength / size());
 		return repr;
 	}
 	
 	@Override
 	public String toString() {
-		return Messages.format("dataset.str", length(), 
+		return Messages.format("dataset.str", size(), 
 				observedStates(), hiddenStates());
+	}
+
+	private static class SetIterator implements Iterator<Sequence> {
+
+		private final SimpleSequenceSet set;
+		
+		private int index;
+		
+		public SetIterator(SimpleSequenceSet set) {
+			this.set = set;
+			this.index = 0;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return (index < set.size());
+		}
+
+		@Override
+		public Sequence next() {
+			return this.set.get(this.index++);
+		}
+
+		@Override
+		public void remove() {
+			this.set.remove(this.index - 1);
+		}
+		
+	}
+	
+	@Override
+	public Iterator<Sequence> iterator() {
+		return new SetIterator(this);
+	}
+	
+	@Override
+	public void clear() {
+		this.observedSeq.clear();
+		this.hiddenSeq.clear();
+		this.ids.clear();
+	}
+	
+	/**
+	 * Добавляет в коллекцию пару из наблюдаемой и соответстующей скрытой 
+	 * последовательности состояний.
+	 * 
+	 * @param sequence
+	 *    добавляемый объект
+	 */
+	@Override
+	public boolean add(Sequence sequence) {
+		this.doAdd(sequence);
+		return true;
+	}
+	
+	/**
+	 * Удаляет из коллекции прецедент с заданным индексом.
+	 * 
+	 * @param index
+	 *    индекс прецедента, который надо удалить
+	 */
+	public Sequence remove(int index) {
+		Sequence sequence = this.get(index);
+		
+		this.observedSeq.remove(index);
+		this.hiddenSeq.remove(index);
+		this.ids.remove(index);
+		
+		return sequence;
 	}
 }
