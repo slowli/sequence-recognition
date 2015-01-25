@@ -56,7 +56,7 @@ class DefaultJobListener implements JobListener {
 	}
 	
 	@Override
-	public synchronized void seqCompleted(int index, byte[] hidden) {
+	public synchronized void seqCompleted(Sequence sequence) {
 		if (nProcessed == 0) {
 			if (!printedKey) {
 				env.debug(1, Messages.format("test.key", sequencesPerDot));
@@ -67,7 +67,7 @@ class DefaultJobListener implements JobListener {
 		
 		if (nProcessed % sequencesPerDot == 0)
 			env.debugInline(1, ".");
-		if (hidden == null)
+		if (sequence.hidden == null)
 			env.debugInline(1, "?");
 		
 		if (nProcessed % (sequencesPerDot * dotsPerLine) == 0)

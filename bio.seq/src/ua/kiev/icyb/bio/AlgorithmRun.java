@@ -138,10 +138,10 @@ public class AlgorithmRun implements Serializable, Representable {
 		jobListener = new DefaultJobListener() {
 
 			@Override
-			public synchronized void seqCompleted(int index, byte[] hidden) {
-				quality.addSequence(getUnprocessed().hidden(index), hidden);
-				isUnprocessed[unprocessedIdx.get(index)] = false;
-				super.seqCompleted(index, hidden);
+			public synchronized void seqCompleted(Sequence sequence) {
+				quality.addSequence(getUnprocessed().hidden(sequence.index), sequence.hidden);
+				isUnprocessed[unprocessedIdx.get(sequence.index)] = false;
+				super.seqCompleted(sequence);
 				
 				nProcessed++;
 				if (nProcessed % parent.getSequencesPerSave() == 0) {
