@@ -46,11 +46,11 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		private static final long serialVersionUID = 1L;
 		
 		
-		private final ChainMixture mixture;
+		private final MarkovMixture mixture;
 		private double[] weights;
 		
-		public MixtureMarkovChain(ChainMixture mixture) {
-			super(mixture.chains[0]);
+		public MixtureMarkovChain(MarkovMixture mixture) {
+			super(mixture.model(0));
 			this.mixture = mixture;
 		}
 		
@@ -67,7 +67,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			double logP = 0;
 			for (int i = 0; i < this.mixture.size(); i++) {
 				logP += getWeight(i) * Math.max(-1000.0, 
-						Math.log(this.mixture.chains[i].getInitialP(state)));
+						Math.log(this.mixture.model(i).getInitialP(state)));
 			}
 			return Math.exp(logP);
 		}
@@ -77,7 +77,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			double logP = 0;
 			for (int i = 0; i < this.mixture.size(); i++) {
 				logP += getWeight(i) * Math.max(-1000.0,
-						Math.log(this.mixture.chains[i].getTransP(tail, head)));
+						Math.log(this.mixture.model(i).getTransP(tail, head)));
 			}
 			return Math.exp(logP);
 		}
@@ -92,13 +92,13 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	}
 	
 	/** Начальное приближение для используемых смесей распределений. */
-	private final ChainMixture baseMixture;
+	private final MarkovMixture baseMixture;
 	
 	/**
 	 * Текущая смесь распределений, полученная в результате подгонки базовой смеси
 	 * на обучающей выборке.
 	 */
-	private transient ChainMixture currentMixture;
+	private transient MarkovMixture currentMixture;
 	
 	/**
 	 * Создает новый алгоритм распознавания, использующий смесь марковских моделей.
@@ -108,8 +108,8 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	 * @param mixture
 	 * 		начальное приближение для используемых смесей распределений
 	 */
-	public MixtureAlgorithm(ChainMixture mixture) {
-		super(mixture.chains[0].order(), false);
+	public MixtureAlgorithm(MarkovMixture mixture) {
+		super(mixture.model(0).order(), false);
 		this.baseMixture = mixture;
 	}
 	
@@ -120,7 +120,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	
 	@Override
 	public void train(SequenceSet set) {
-		this.currentMixture = (ChainMixture) this.baseMixture.clone();
+		this.currentMixture = (MarkovMixture) this.baseMixture.clone();
 		
 		// TODO брать параметры откуда-то
 		EMAlgorithm emAlgorithm = new EMAlgorithm();
@@ -156,7 +156,7 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 		int maxIdx = -1;
 		for (int k = 0; k < weights.length; k++) {
 			if (hidden[k] != null) {
-				double logP = this.currentMixture.estimate(sequence.observed, hidden[k]);
+				double logP = this.currentMixture.estimate(new Sequence(sequence.observed, hidden[k]));
 				if (logP > maxP) {
 					maxP = logP;
 					maxIdx = k;
@@ -201,8 +201,8 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			
 			double maxLogP = Double.NEGATIVE_INFINITY;
 			for (int k = 0; k < currentMixture.size(); k++) {
-				aposterioriP[k] = currentMixture.chains[k].estimate(sequence, hidden) 
-						+ Math.log(currentMixture.weights[k]);
+				aposterioriP[k] = currentMixture.model(k).estimate(new Sequence(sequence, hidden)) 
+						+ Math.log(currentMixture.weight(k));
 				if (aposterioriP[k] > maxLogP) {
 					maxLogP = aposterioriP[k];
 				}

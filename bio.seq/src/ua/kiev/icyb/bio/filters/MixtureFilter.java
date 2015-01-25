@@ -6,7 +6,7 @@ import java.util.Set;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.alg.mixture.ChainMixture;
+import ua.kiev.icyb.bio.alg.mixture.MarkovMixture;
 
 /**
  * Фильтр, принимающий решение на основе смеси марковских моделей.
@@ -17,7 +17,7 @@ import ua.kiev.icyb.bio.alg.mixture.ChainMixture;
 public class MixtureFilter implements SequenceSet.Filter {
 	
 	/** Смесь марковских моделей, используемая фильтром. */
-	private ChainMixture mixture;
+	private MarkovMixture mixture;
 	
 	/** Индексы компонент смеси, которые выделяются фильтром. */
 	private final Set<Integer> indices = new HashSet<Integer>();
@@ -25,15 +25,15 @@ public class MixtureFilter implements SequenceSet.Filter {
 	private double confidence;
 	
 	
-	public MixtureFilter(ChainMixture mixture, Set<Integer> indices, double confidence) {
+	public MixtureFilter(MarkovMixture mixture, Set<Integer> indices, double confidence) {
 		init(mixture, indices, confidence);
 	}
 	
-	public MixtureFilter(ChainMixture mixture, int index, double confidence) {
+	public MixtureFilter(MarkovMixture mixture, int index, double confidence) {
 		init(mixture, Collections.singleton(index), confidence);
 	}
 	
-	private void init(ChainMixture mixture, Set<Integer> indices, double confidence) {
+	private void init(MarkovMixture mixture, Set<Integer> indices, double confidence) {
 		for (int index : indices) {
 			if ((index < 0) || (index >= mixture.size())) {
 				throw new IllegalArgumentException();
@@ -52,8 +52,8 @@ public class MixtureFilter implements SequenceSet.Filter {
 		int maxIndex = -1;
 		
 		for (int k = 0; k < this.mixture.size(); k++) {
-			aposterioriP[k] = this.mixture.chains[k].estimate(sequence.observed, sequence.hidden)
-					+ Math.log(this.mixture.weights[k]);
+			aposterioriP[k] = this.mixture.model(k).estimate(sequence)
+					+ Math.log(this.mixture.weight(k));
 			if (aposterioriP[k] > maxP) {
 				maxP = aposterioriP[k];
 				maxIndex = k;

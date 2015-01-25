@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio.alg.mixture;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -27,11 +28,11 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 	private static class MaximizationTask implements Callable<Void> {
 
 		private final SequenceSet set;
-		private final ChainMixture mixture;
+		private final MarkovMixture mixture;
 		private final int index;
 		private final double[] sampleWeights;
 		
-		public MaximizationTask(SequenceSet set, ChainMixture mixture, int index, double[] sampleW) {
+		public MaximizationTask(SequenceSet set, MarkovMixture mixture, int index, double[] sampleW) {
 			this.set = set;
 			this.mixture = mixture;
 			this.index = index;
@@ -40,12 +41,63 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 		
 		@Override
 		public Void call() throws Exception {
-			mixture.chains[index].reset();
-			mixture.chains[index].digestSet(set, sampleWeights);
+			mixture.model(index).reset();
+			mixture.model(index).train(set, sampleWeights);
 			return null;
 		}
 	}
 	
+	/**
+	 * Значения порога достоверности, испольуемые при отображении смеси с помощью
+	 * метода {@link #reprDistribution(double[][])}.
+	 */
+	private static final double[] ALIGNMENT_THRESHOLDS = { 0.99, 0.95, 0.9, 0.5 };
+
+	/**
+	 * Печатает сводку по распеределению прецедентов выборки по вероятностым моделям
+	 * из взвешенной смеси.
+	 * 
+	 * @param weights
+	 *    веса, полученные с помощью метода {@link #getWeights(SequenceSet, ChainMixture)}
+	 * @param threshold 
+	 *    порог достоверности, т.е. минимальная апостериорная вероятность, досатачная, чтобы 
+	 *    отнести прецедент к некоторой вероятностной модели
+	 * @return
+	 *    число прецедентов, принадлежащих каждой модели из смеси
+	 */
+	private static int[] getAlignments(double[][] weights, double threshold) {
+		final int count = weights.length;
+		
+		int[] counts = new int[count];
+		for (int alg = 0; alg < count; alg++)
+			for (int i = 0; i < weights[0].length; i++)
+				if (weights[alg][i] > threshold) {
+					counts[alg]++;
+				}
+		
+		return counts;
+	}
+
+	/**
+	 * Печатает сводку по распеределению прецедентов выборки по вероятностым моделям
+	 * из взвешенной композиции.
+	 * 
+	 * @param weights
+	 *    веса для объектов выборки, полученные с помощью метода {@link #getWeights(SequenceSet)}
+	 * @return
+	 *    сводка по распределению
+	 */
+	private static String reprDistribution(double[][] weights) {
+		String repr = ""; 
+		
+		for (double thres : ALIGNMENT_THRESHOLDS) {
+			repr += Messages.format("em.alignments", thres, 
+					Arrays.toString(getAlignments(weights, thres))) + "\n";
+		}
+		
+		return repr;
+	}
+
 	/** 
 	 * Использовать ли стохастическую модификацию EM-алгоритма.
 	 * <p> 
@@ -80,7 +132,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 	/**
 	 * Текущая смесь распределений.
 	 */
-	public ChainMixture mixture;
+	public MarkovMixture mixture;
 	
 	private Random random = null;
 
@@ -106,41 +158,45 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 		
 		final int count = mixture.size();
 		
-		double[][] weights = new double[0][0];
+		double[][] weights = null;
 		
 		for (int t = this.iteration; t < nIterations; this.iteration = ++t) {
 			
 			// Expectation step
 			getEnv().debug(1, "\n" + Messages.format("em.e_step", t + 1));
-			// XXX 
-			//weights = mixture.getWeights(set);
-			getEnv().debug(1, ChainMixture.reprDistribution(weights));
+			
+			MixtureWeights mw = new MixtureWeights(mixture, set);
+			mw.run(getEnv());
+			weights = mw.weights;
+			getEnv().debug(1, reprDistribution(weights));
 			
 			// Maximization step			
 			getEnv().debug(1, Messages.format("em.m_step", t + 1));
-			ChainMixture newMixture = (ChainMixture) mixture.clearClone();
+			MarkovMixture newMixture = (MarkovMixture) mixture.clearClone();
 			
-			List<MaximizationTask> tasks = new ArrayList<MaximizationTask>(); 
+			List<MaximizationTask> tasks = new ArrayList<MaximizationTask>();
+			double[] sums = new double[count];
+			
 			for (int alg = 0; alg < count; alg++) {
-				double[] sampleWeights = new double[set.length()];
+				double[] sampleWeights = new double[set.size()];
 				if (stochastic) {
 					// Transform weights to the set {0, 1}
 					double r = 0;
-					for (int i = 0; i < set.length(); i++) {
+					for (int i = 0; i < set.size(); i++) {
 						r = random.nextDouble();
 						sampleWeights[i] = (r < weights[alg][i]) ? 1 : 0;
 					}
 				} else {
-					System.arraycopy(weights[alg], 0, sampleWeights, 0, set.length());
+					System.arraycopy(weights[alg], 0, sampleWeights, 0, set.size());
 				}
 				tasks.add(new MaximizationTask(set, newMixture, alg, sampleWeights));
 				
-				double sum = 0;
-				for (int i = 0; i < set.length(); i++) {
-					sum += weights[alg][i];
+				for (int i = 0; i < set.size(); i++) {
+					sums[alg] += weights[alg][i];
 				}
-				newMixture.weights[alg] = sum / set.length();
 			}
+
+			newMixture.setWeights(sums);
 			
 			try {
 				for (Future<Void> future : executor.invokeAll(tasks)) {

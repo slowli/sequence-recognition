@@ -79,31 +79,31 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 		getEnv().debug(1, Messages.getString("em.bad_search"));
 		
 		int count = mixture.size();
-		final int len = set.length();
-		double[] prob = new double[set.length()];
+		final int len = set.size();
+		double[] prob = new double[set.size()];
 		
 		Arrays.fill(prob, Double.NEGATIVE_INFINITY);
 		
 		if (selectWeights) {
-			// XXX
-			double[][] weights = new double[0][0];//mixture.getWeights(set);
-			for (int i = 0; i < set.length(); i++)
+			MixtureWeights mw = new MixtureWeights(mixture, set);
+			mw.run(getEnv());
+			double[][] weights = mw.weights;
+			
+			for (int i = 0; i < set.size(); i++)
 				for (int alg = 0; alg < count; alg++) {
 					prob[i] = Math.max(prob[i], weights[alg][i]);
 				}
 		} else {
-			for (int i = 0; i < set.length(); i++) {
-				byte[] obs = set.observed(i);
-				byte[] hid = set.hidden(i);
+			for (int i = 0; i < set.size(); i++) {
 				for (int alg = 0; alg < count; alg++)
-					prob[i] = Math.max(prob[i], mixture.chains[alg].estimate(obs, hid));
+					prob[i] = Math.max(prob[i], mixture.model(alg).estimate(set.get(i)));
 				
-				prob[i] /= obs.length;
+				prob[i] /= set.get(i).length();
 			}
 		}
 		
-		Record[] records = new Record[set.length()];
-		for (int i = 0; i < set.length(); i++)
+		Record[] records = new Record[set.size()];
+		for (int i = 0; i < set.size(); i++)
 			records[i] = new Record(i, prob[i]);
 		Arrays.sort(records, R_COMPARATOR);
 		
@@ -159,14 +159,12 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 			// Find the samples with worst probabilities
 			int[] idx = worstSamples();
 			
-			MarkovChain chain = (MarkovChain) mixture.chains[0].clearClone();
+			MarkovChain chain = (MarkovChain) mixture.model(0).clearClone();
 			int newCount = idx.length;
 			for (int i = 0; i < newCount; i++) {
-				byte[] obs = set.observed(idx[i]);
-				byte[] hid = set.hidden(idx[i]);
-				chain.digest(obs, hid);
+				chain.train(set.get(idx[i]));
 			}
-			double newWeight = 1.0 * newCount / set.length();
+			double newWeight = 1.0 * newCount / set.size();
 			getEnv().debug(1, Messages.format("em.add", newCount, newWeight));
 			mixture.add(chain, newWeight);
 		}

@@ -31,7 +31,7 @@ public class DecrementalEMAlgorithm extends EMAlgorithm {
 			}
 			
 			// Убрать компоненту с наименьшим весом
-			double[] weights = mixture.weights.clone(); 
+			double[] weights = mixture.weights(); 
 			int minModel = -1;
 			double minWeight = 1.0; 
 			

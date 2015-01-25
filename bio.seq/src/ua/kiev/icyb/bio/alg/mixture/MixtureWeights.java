@@ -27,11 +27,11 @@ public class MixtureWeights implements Launchable {
 	private static class WeightTask implements Callable<Void> {
 
 		private final SequenceSet set;
-		private final ChainMixture mixture;
+		private final MarkovMixture mixture;
 		private final double[][] outWeights;
 		private final int index;
 		
-		public WeightTask(SequenceSet set, ChainMixture mixture, double[][] outWeights, int index) {
+		public WeightTask(SequenceSet set, MarkovMixture mixture, double[][] outWeights, int index) {
 			this.set = set;
 			this.mixture = mixture;
 			this.outWeights = outWeights;
@@ -40,16 +40,14 @@ public class MixtureWeights implements Launchable {
 		
 		@Override
 		public Void call() throws Exception {
-			byte[] obs = set.observed(index);
-			byte[] hid = set.hidden(index);
 			
 			double[] logP = new double[mixture.size()],
 					exp = new double[mixture.size()];
 			double sum, diff;
 			
 			for (int alg = 0; alg < mixture.size(); alg++) {
-				logP[alg] = mixture.chain(alg).estimate(obs, hid);
-			}
+				logP[alg] = mixture.model(alg).estimate(set.get(index));
+			}			
 			
 			for (int alg = 0; alg < mixture.size(); alg++) {
 				sum = 0;
@@ -71,7 +69,7 @@ public class MixtureWeights implements Launchable {
 		}
 	}
 	
-	private final ChainMixture mixture;
+	private final MarkovMixture mixture;
 	
 	private final SequenceSet set;
 	
@@ -95,7 +93,7 @@ public class MixtureWeights implements Launchable {
 	 * @param set
 	 *    выборка, для которой вычисляются вероятности
 	 */
-	public MixtureWeights(ChainMixture mixture, SequenceSet set) {
+	public MixtureWeights(MarkovMixture mixture, SequenceSet set) {
 		this.mixture = mixture;
 		this.set = set;
 		this.weights = new double[mixture.size()][set.size()];
