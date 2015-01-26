@@ -9,16 +9,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.MutableSequenceSet;
+import ua.kiev.icyb.bio.Launchable;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.io.res.Messages;
+import ua.kiev.icyb.bio.SimpleSequenceSet;
 
 /**
  * Класс для преобразования файлов в формате DSSP, описывающими пространственную структуру 
  * конкретного белка.
  */
-public class DSSPReader {
+public class DSSPReader implements Launchable {
 	
+	private static final long serialVersionUID = 1L;
+	
+
 	/**
 	 * Регулярное выражение для извлечения идентификатора белка. Первая группа соответствует имени.
 	 */
@@ -89,10 +93,13 @@ public class DSSPReader {
 	/**
 	 * Выборка, состоящая из прочитанных белков.
 	 */
-	private final MutableSequenceSet proteins = new MutableSequenceSet(
+	private final SimpleSequenceSet proteins = new SimpleSequenceSet(
 			OBSERVED_STATES, HIDDEN_STATES, null);
 	
-	public DSSPReader() {
+	private String[] filenames;
+	
+	public DSSPReader(String[] files) {
+		this.filenames = files.clone();
 	}
 
 	/**
@@ -101,13 +108,16 @@ public class DSSPReader {
 	 * свойство {@link #uniqueNames} установлено в {@code true} и белок с тем же
 	 * именем уже есть в выборке).
 	 * 
+	 * @param env
+	 *    окружение
 	 * @param filename
 	 *    имя DSSP-файла
+	 *    
 	 * @throws IOException
 	 *    если при чтении файла произошла ошибка ввода/вывода
 	 */
-	public void read(String filename) throws IOException {
-		Env.debug(1, Messages.format("dssp.file", filename));
+	public void read(Env env, String filename) throws IOException {
+		env.debug(1, Messages.format("dssp.file", filename));
 		
 		BufferedReader reader = new BufferedReader(new FileReader(filename));
 		String line, proteinId = null;
@@ -204,7 +214,8 @@ public class DSSPReader {
 			}
 			hidden[i] = (byte) pos;
 		}
-		proteins.add(observed, hidden, id);
+		
+		proteins.add(new Sequence(id, observed, hidden));
 	}
 	
 	/**
@@ -215,5 +226,21 @@ public class DSSPReader {
 	 */
 	public SequenceSet getSet() {
 		return proteins;
+	}
+
+	@Override
+	public void run(Env env) {
+		try {
+			for (String filename : this.filenames) {
+				this.read(env, filename);
+			}
+		} catch (IOException e) {
+			env.exception(e);
+		}
+	}
+
+	@Override
+	public Env getEnv() {
+		return null;
 	}
 }

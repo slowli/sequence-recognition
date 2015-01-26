@@ -24,16 +24,19 @@ import org.biojavax.bio.seq.RichSequence.IOTools;
 import org.biojavax.bio.seq.SimpleRichLocation;
 
 import ua.kiev.icyb.bio.Env;
-import ua.kiev.icyb.bio.IOUtils;
-import ua.kiev.icyb.bio.MutableSequenceSet;
+import ua.kiev.icyb.bio.Launchable;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.io.res.Messages;
+import ua.kiev.icyb.bio.SimpleSequenceSet;
 
 /**
  * Класс для обработки файлов в формате Genbank.
  */
-public class GenbankReader {
+public class GenbankReader implements Launchable {
 
+	private static final long serialVersionUID = 1L;
+	
+	
 	/**
 	 * Имя базы данных, согласно которой последовательностям присваиваются идентификаторы.
 	 */
@@ -75,6 +78,12 @@ public class GenbankReader {
 	 */
 	public boolean allowUnknownNts = false;
 	
+	public SequenceSet set = null;
+	
+	private Env env;
+	
+	private final String filename; 
+	
 	/**
 	 * Создает объект для чтения данных из файла Genbank.
 	 * 
@@ -84,9 +93,7 @@ public class GenbankReader {
 	 *    если при работе с файлом произошла ошибка ввода/вывода
 	 */
 	public GenbankReader(String filename) throws IOException {
-		reader = IOUtils.getReader(filename);
-		// Разделить файл на две части: 
-		reader = new BufferedReader(splitFile(reader));
+		this.filename = filename;
 	}
 	
 	/**
@@ -131,7 +138,7 @@ public class GenbankReader {
 		} catch (IllegalSymbolException e) {
 			throw new IllegalStateException(Messages.getString("genbank.e_illegal_seq"), e);
 		}
-		Env.debug(1, Messages.format("genbank.read_seq", sourceSequence.length()));
+		env.debug(1, Messages.format("genbank.read_seq", sourceSequence.length()));
 		
 		return new StringReader(attributes.toString());
 	}
@@ -227,14 +234,14 @@ public class GenbankReader {
 	 * @param cds
 	 *    позиция кодирующей последовательности гена в ДНК
 	 */
-	private void addGene(MutableSequenceSet set, RichFeature gene, RichFeature cds) {
+	private void addGene(SequenceSet set, RichFeature gene, RichFeature cds) {
 		
 		byte[] hidden = getHiddenSequence(cds.getLocation());
 		byte[] observed = getObservedSequence(set.observedStates(), cds.getLocation());
 		
 		Object protId = cds.getRichAnnotation().getProperty("protein_id");
 		if (protId == null) {
-			Env.debug(1, "Missing protein id for the CDS");
+			env.debug(1, "Missing protein id for the CDS");
 		}
 		
 		String id = null;
@@ -251,13 +258,13 @@ public class GenbankReader {
 		}
 		
 		if (id == null) {
-			id = "unknown" + set.length();
+			id = "unknown" + set.size();
 		}
 		
 		if ((observed != null) && (hidden != null)) {
-			set.add(observed, hidden, id);
+			set.add(new Sequence(id, observed, hidden));
 		} else {
-			Env.debugInline(2, "?");
+			env.debugInline(2, "?");
 		}
 	}
 	
@@ -269,11 +276,11 @@ public class GenbankReader {
 	 * @throws BioException
 	 *    в случае ошибки обработки файла
 	 */
-	public SequenceSet transform() throws BioException {
+	private SequenceSet transform() throws BioException {
 		RichSequence rs = IOTools.readGenbankDNA(reader, null).nextRichSequence();
-		Env.debug(1, Messages.format("genbank.seq_name", rs.getName()));
-		Env.debug(1, Messages.format("genbank.seq_descr", rs.getDescription()));
-		Env.debug(1, "");
+		env.debug(1, Messages.format("genbank.seq_name", rs.getName()));
+		env.debug(1, Messages.format("genbank.seq_descr", rs.getDescription()));
+		env.debug(1, "");
 		
 		int geneIndex = 0;
 		Feature gene = null;
@@ -281,9 +288,8 @@ public class GenbankReader {
 		
 		Iterator<Feature> iter = rs.features();
 		Feature feat = iter.next();
-		//sourceSequence = feat.getSymbols(); // The first feature contains the entire sequence
 		
-		MutableSequenceSet set = new MutableSequenceSet(
+		SequenceSet set = new SimpleSequenceSet(
 				this.allowUnknownNts ? "ACGTN" : "ACGT", "xi",
 				this.allowUnknownNts ? "ACGTNacgtn" : "ACGTacgt");
 		
@@ -292,9 +298,9 @@ public class GenbankReader {
 			
 			if (feat.getType().equals("gene")) {
 				geneIndex++;
-				Env.debugInline(2, ".");
+				env.debugInline(2, ".");
 				if (geneIndex % 50 == 0) {
-					Env.debug(2, Messages.format("genbank.n_genes", geneIndex));
+					env.debug(2, Messages.format("genbank.n_genes", geneIndex));
 				}
 				gene = feat;
 				cdsFound = false;
@@ -306,7 +312,28 @@ public class GenbankReader {
 			}
 		}
 		
-		Env.debug(1, Messages.format("genbank.n_total", geneIndex));
+		env.debug(1, Messages.format("genbank.n_total", geneIndex));
 		return set;
+	}
+
+	@Override
+	public void run(Env env) {
+		try {
+			this.env = env;
+			
+			reader = Env.getReader(filename);
+			// Разделить файл на две части:
+			reader = new BufferedReader(splitFile(reader));
+			this.set = this.transform();
+		} catch (BioException e) {
+			env.exception(e);
+		} catch (IOException e) {
+			env.exception(e);
+		}
+	}
+
+	@Override
+	public Env getEnv() {
+		return this.env;
 	}
 }

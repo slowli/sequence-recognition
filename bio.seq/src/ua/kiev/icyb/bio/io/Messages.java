@@ -1,4 +1,4 @@
-package ua.kiev.icyb.bio.io.res;
+package ua.kiev.icyb.bio.io;
 
 import java.util.ResourceBundle;
 
@@ -7,12 +7,12 @@ import ua.kiev.icyb.bio.res.ResourceBundleUtils;
 /**
  * Класс, содержащий методы для работы с локализованными сообщениями.
  */
-public class Messages {
+class Messages {
 	
 	/**
 	 * Имя ресурса, содержащего сообщения.
 	 */
-	public static final String BUNDLE_NAME = "ua.kiev.icyb.bio.io.res.messages"; //$NON-NLS-1$
+	public static final String BUNDLE_NAME = "ua.kiev.icyb.bio.io.messages"; //$NON-NLS-1$
 	
 	private static ResourceBundle getBundle() {
 		return ResourceBundleUtils.getBundle(BUNDLE_NAME);
