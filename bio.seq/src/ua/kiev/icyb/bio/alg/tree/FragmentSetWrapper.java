@@ -3,7 +3,7 @@ package ua.kiev.icyb.bio.alg.tree;
 import ua.kiev.icyb.bio.alg.Organism;
 
 /**
- * Оболочка для множества цепочек состояний, позволяющее использовать его
+ * Оболочка для множества цепочек состояний, позволяющая использовать его
  * в генетическом алгоритме оптимизации. 
  */
 public class FragmentSetWrapper extends FragmentSet implements Organism {

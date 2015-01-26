@@ -3,15 +3,12 @@ package ua.kiev.icyb.bio.alg;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.Sequence;
-import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.Trainable;
 import ua.kiev.icyb.bio.res.Messages;
 
 

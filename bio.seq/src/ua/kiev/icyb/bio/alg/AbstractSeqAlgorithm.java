@@ -1,5 +1,6 @@
 package ua.kiev.icyb.bio.alg;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,18 +28,18 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 	@Override
 	public abstract void train(Sequence sequence);
 	
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * <p>Реализация по умолчанию обучает распределение на всех объектах, перечисляемых итератором коллекции,
+	 * при помощи метода {@link #train(Sequence)}.
+	 */
 	@Override
-	public void train(SequenceSet set) {
+	public void train(Collection<? extends Sequence> set) {
 		for (Sequence sequence : set) {
 			this.train(sequence);
 		}
 	}
-
-	@Override
-	public abstract void reset();
-	
-	@Override 
-	public abstract byte[] run(Sequence sequence);
 
 	@Override
 	public SequenceSet runSet(SequenceSet set) {
@@ -97,6 +98,11 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 		return new Object();
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * <p>Реализация по умолчанию возвращает объект, клонированный с помощью стандартного механизма Java.
+	 */
 	@Override
 	public SeqAlgorithm clone() {
 		try {
@@ -106,14 +112,17 @@ public abstract class AbstractSeqAlgorithm implements SeqAlgorithm {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * <p>Реализация по умолчанию возвращает объект, клонированный с помощью метода {@link #clone()},
+	 * и затем сброшенный с помощью метода {@link #reset()}.
+	 */
 	@Override
 	public SeqAlgorithm clearClone() {
-		try {
-			return (SeqAlgorithm) super.clone();
-		} catch (CloneNotSupportedException e) {
-			// Should not happen
-			return null;
-		}
+		SeqAlgorithm algorithm = this.clone();
+		algorithm.reset();
+		return algorithm;
 	}
 	
 	@Override

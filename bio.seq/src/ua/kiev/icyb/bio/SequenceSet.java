@@ -106,6 +106,14 @@ public interface SequenceSet extends Collection<Sequence>, Serializable, Represe
 	 */
 	String id(int index);
 	
+	/**
+	 * Возвращает из выборки прецедент с заданным номером.
+	 * 
+	 * @param index
+	 *    номер прецедента (с отсчетом от нуля)
+	 * @return
+	 *    прецедент из выборки
+	 */
 	Sequence get(int index);
 	
 	/**
