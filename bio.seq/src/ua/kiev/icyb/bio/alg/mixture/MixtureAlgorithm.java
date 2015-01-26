@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg.mixture;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
@@ -119,13 +120,13 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	}
 	
 	@Override
-	public void train(SequenceSet set) {
+	public void train(Collection<? extends Sequence> set) {
 		this.currentMixture = (MarkovMixture) this.baseMixture.clone();
 		
 		// TODO брать параметры откуда-то
 		EMAlgorithm emAlgorithm = new EMAlgorithm();
 		emAlgorithm.mixture = this.currentMixture;
-		emAlgorithm.set = set;
+		emAlgorithm.set = (SequenceSet) set;
 		emAlgorithm.saveTemplate = null;
 		emAlgorithm.nIterations = 5;
 		emAlgorithm.stochastic = true;

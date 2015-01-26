@@ -1,8 +1,9 @@
 package ua.kiev.icyb.bio.alg.tree;
 
+import java.util.Collection;
+
 import ua.kiev.icyb.bio.SeqAlgorithm;
 import ua.kiev.icyb.bio.Sequence;
-import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.AbstractSeqAlgorithm;
 import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
 import ua.kiev.icyb.bio.res.Messages;
@@ -71,7 +72,7 @@ public class PriorityCompAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public void train(SequenceSet set) {
+	public void train(Collection<? extends Sequence> set) {
 		for (SeqAlgorithm m: algorithms)
 			m.train(set);
 	}

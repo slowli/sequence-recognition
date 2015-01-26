@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +52,7 @@ public class ThreadedAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public void train(SequenceSet set) {
+	public void train(Collection<? extends Sequence> set) {
 		baseAlgorithm.train(set);
 	}
 

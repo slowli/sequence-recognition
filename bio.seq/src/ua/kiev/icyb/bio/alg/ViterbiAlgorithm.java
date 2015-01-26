@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
@@ -84,9 +85,9 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	}
 	
 	@Override
-	public void train(SequenceSet set) {
+	public void train(Collection<? extends Sequence> set) {
 		if (chain == null) {
-			chain = createChain(set);
+			chain = createChain((SequenceSet) set);
 		}
 		chain.train(set);
 	}
@@ -218,7 +219,8 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	@Override
 	public ViterbiAlgorithm clearClone() {
-		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clearClone();
+		// TODO why clearClone() doesn't work here?
+		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clone();
 		if (other.chain != null) {
 			other.chain = (MarkovChain) other.chain.clearClone();
 		}
