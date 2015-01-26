@@ -10,23 +10,15 @@ import ua.kiev.icyb.bio.Trainable;
  * Параметрическое вероятностное распределение на некотором множестве объектов.
  * 
  * <p>Для работы с рапределением следует вначале <em>обучить</em> его
- * путем вызовов метода {@link #train(T, double)} для определенной выборки.
- * После этого метод {@link #estimate(T)} возвращает значение логарифмического правдоподобия
+ * путем вызовов метода {@link #train(Object, double)} для определенной выборки.
+ * После этого метод {@link #estimate(Object)} возвращает значение логарифмического правдоподобия
  * в заданной точке с использованием параметров распределения, которые максимизируют
  * совместное правдоподобие для прецедентов из обучающей выборки <code>D</code>.
  * 
  * @param <T>
  *    класс объектов, на котором задано это распределение
  */
-public interface Distribution<T> extends Trainable, Serializable {
-	
-	/**
-	 * Добавляет объект к пулу прецедентов.
-	 * 
-	 * @param sample
-	 *    объект
-	 */
-	void train(T sample);
+public interface Distribution<T> extends Trainable<T>, Serializable {
 	
 	/**
 	 * Добавляет объект к пулу прецедентов с определенным весом.
@@ -39,14 +31,6 @@ public interface Distribution<T> extends Trainable, Serializable {
 	void train(T sample, double weight);
 	
 	/**
-	 * Добавляет в прецеденты множество объектов.
-	 * 
-	 * @param samples
-	 *    набор объектов
-	 */
-	void train(Collection<? extends T> samples);
-	
-	/**
 	 * Добавляет в прецеденты множество объектов с заданными весами элементов.
 	 * 
 	 * @param samples
@@ -55,9 +39,6 @@ public interface Distribution<T> extends Trainable, Serializable {
 	 *    веса объектов в том порядке, в котором они возвращаются итератором набора
 	 */
 	void train(Collection<? extends T> samples, double[] weights);
-	
-	@Override
-	void reset();
 	
 	@Override
 	Distribution<T> clone();

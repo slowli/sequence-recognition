@@ -7,24 +7,7 @@ import java.io.Serializable;
  * Общий интерфейс для алгоритмов распознавания скрытых последовательностей,
  * основанных на обучении на прецедентах.
  */
-public interface SeqAlgorithm extends Serializable, Trainable, Representable {
-
-	/**
-	 * Обучает алгоритм на единичном прецеденте.
-	 * 
-	 * @param sequence
-	 *    прецедент
-	 */
-	void train(Sequence sequence);
-
-	/**
-	 * Обучает алгоритм на выборке, состоящей из набора наблюдаемых и соответствующих им
-	 * скрытых состояний.
-	 * 
-	 * @param set
-	 *    выборка, в которую входят прецеденты с известными скрытыми состояниями 
-	 */
-	void train(SequenceSet set);
+public interface SeqAlgorithm extends Serializable, Trainable<Sequence>, Representable {
 	
 	@Override
 	SeqAlgorithm clone();
