@@ -1,11 +1,56 @@
 package ua.kiev.icyb.bio;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Прецедент — пара из наблюдаемой и скрытой строк состояний. 
  */
 public class Sequence {
+	
+	/**
+	 * Сегмент последовательности — наибольший возможный отрезок строки скрытых состояний,
+	 * включающий состояния одного типа.
+	 */
+	public static class Segment {
+		
+		/**
+		 * Позиция первого состояния сегмента (с отсчетом от нуля).
+		 */
+		public final int start;
+		
+		/**
+		 * Позиция последнего состояния сегмента (с отсчетом от нуля).
+		 */
+		public final int end;
+		
+		/**
+		 * Скрытое состояние, соответствующее сегменту.
+		 */
+		public final byte state;
+		
+		/**
+		 * Возвражает длину сегмента.
+		 * 
+		 * @return
+		 *    длина сегмента
+		 */
+		public int length() {
+			return this.end - this.start + 1;
+		}
+		
+		private Segment(byte state, int start, int end) {
+			this.start = start;
+			this.end = end;
+			this.state = state;
+		}
+		
+		public String toString() {
+			return String.format("segment(%d:%d-%d)", this.state, this.start, this.end);
+		}
+	}
 	
 	/**
 	 * Последовательность наблюдаемых состояний.
@@ -89,6 +134,30 @@ public class Sequence {
 	 */
 	public int length() {
 		return observed.length;
+	}
+	
+	private transient List<Segment> segments;
+	
+	/**
+	 * Вовращает последовательность сегментов, из которых состоит этот прецедент.
+	 * 
+	 * @return
+	 *    список сегментов в порядке их появления в строке скрытых состояний
+	 */
+	public List<Segment> segments() {
+		if ((this.segments == null) && (this.hidden != null)) {
+			this.segments = new ArrayList<Segment>();
+			
+			int start = 0;
+			for (int pos = 1; pos <= this.length(); pos++) {
+				if ((pos == this.length()) || (hidden[pos] != hidden[pos - 1])) {
+					this.segments.add(new Segment(hidden[pos - 1], start, pos - 1));
+					start = pos;
+				}
+			}
+		}
+		
+		return this.segments;
 	}
 	
 	@Override
