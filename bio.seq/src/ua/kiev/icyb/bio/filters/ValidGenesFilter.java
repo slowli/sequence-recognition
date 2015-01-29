@@ -14,7 +14,7 @@ import ua.kiev.icyb.bio.SequenceSet;
  * 
  * <p>Кроме того, фильтр может проверять условие, касающееся интронов:
  * <ul>
- *   <li>каждый интрон начинается с нуклеотидов <code>GT</code> и заканчивается нуклеотидами <code>AG</code>.
+ *   <li>каждый интрон начинается с нуклеотида <code>G</code> и заканчивается нуклеотидом <code>G</code>.
  * </ul>
  */
 public class ValidGenesFilter implements SequenceSet.Filter {
@@ -53,11 +53,10 @@ public class ValidGenesFilter implements SequenceSet.Filter {
 			boolean intronStart = (hidden[pos - 1] == 0) && (hidden[pos] == 1);
 			boolean intronEnd = (hidden[pos - 1] == 1) && (hidden[pos] == 0);
 			
-			
-			if (intronStart && ((observed[pos] != 2) || (observed[pos + 1] != 3))) {
+			if (intronStart && (observed[pos] != 2)) {
 				return false;
 			}
-			if (intronEnd && ((observed[pos - 2] != 0) || (observed[pos - 1] != 2))) {
+			if (intronEnd && (observed[pos - 1] != 2)) {
 				return false;
 			}
 		}
