@@ -100,6 +100,11 @@ public final class Fragment implements Serializable {
 	}
 
 	@Override
+	public Fragment clone() {
+		return new Fragment(this);
+	}
+	
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
