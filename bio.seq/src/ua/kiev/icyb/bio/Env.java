@@ -34,6 +34,14 @@ import ua.kiev.icyb.bio.res.Messages;
  */
 public class Env implements Representable {
 	
+	private static final String DEBUG_PROPERTY = "env.debug";
+	
+	private static final String THREADS_PROPERTY = "env.threads";
+	
+	private static final String LOCALE_PROPERTY = "env.locale";
+	
+	private static final String ENCODING_PROPERTY = "env.encoding";
+	
 	/**
 	 * Поток для загрузки данных, предоставляющий доступ к окружению,
 	 * в пределах которого выполняется загрузка.
@@ -139,6 +147,16 @@ public class Env implements Representable {
 	
 	/**
 	 * Создает окружение с настройками, которые читаются из файла конфигурации.
+	 * Файл конигурации должен быть текстовым файлом в формате, определенном согласно
+	 * классу {@link Properties}.
+	 * 
+	 * <p>Определенные настройки:
+	 * <ul>
+	 * <li><b>env.debug</b> — определяет уровень отладки;
+	 * <li><b>env.threads</b> — определяет количество потоков выполнения;
+	 * <li><b>env.locale</b> — определяет локализацию сообщений;
+	 * <li><b>env.encoding</b> — определяет кодировку сообщений.
+	 * </ul>
 	 * 
 	 * @param configFile
 	 *    имя файла конфигурации
@@ -150,11 +168,36 @@ public class Env implements Representable {
 		Properties props = new Properties();
 		props.load(new FileReader(configFile));
 		for (Map.Entry<Object, Object> entry : props.entrySet()) {
-			addDataset((String) entry.getKey(), (String) entry.getValue());
+			processProperty(entry.getKey().toString(), entry.getValue().toString());
 		}
 		
 		File dir = new File(configFile).getParentFile();
 		workingDir = (dir == null) ? new File(".") : dir;
+	}
+	
+	/**
+	 * Обрабатывает опцию из файла конфигурации.
+	 * 
+	 * @param key
+	 *    имя опции
+	 * @param value
+	 *    значение опции
+	 */
+	protected void processProperty(String key, String value) {
+		key = key.trim();
+		value = value.trim();
+		
+		if (DEBUG_PROPERTY.equals(key)) {
+			this.setDebugLevel(Integer.parseInt(value));
+		} else if (THREADS_PROPERTY.equals(key)) {
+			this.setThreadCount(Integer.parseInt(value));
+		} else if (LOCALE_PROPERTY.equals(key)) {
+			this.setLocale(value);
+		} else if (ENCODING_PROPERTY.equals(key)) {
+			this.setEncoding(value);
+		} else {
+			this.addDataset(key, value);
+		}
 	}
 	
 	/**
