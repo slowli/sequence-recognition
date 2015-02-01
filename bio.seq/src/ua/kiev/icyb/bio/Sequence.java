@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ua.kiev.icyb.bio.res.Messages;
@@ -14,7 +15,7 @@ public class Sequence {
 	 * Сегмент последовательности — наибольший возможный отрезок строки скрытых состояний,
 	 * включающий состояния одного типа.
 	 */
-	public static class Segment {
+	public class Segment {
 		
 		/**
 		 * Позиция первого состояния сегмента (с отсчетом от нуля).
@@ -45,6 +46,17 @@ public class Sequence {
 			this.start = start;
 			this.end = end;
 			this.state = state;
+		}
+		
+		/**
+		 * Возвращает скрытое состояние для этого сегмента.
+		 * 
+		 * @return
+		 *    символьное представление скрытого состояния или {@code '\0'}, 
+		 *    если символьное представление не определено  
+		 */
+		public char stateChar() {
+			return (Sequence.this.set == null) ? '\0' : Sequence.this.set.hiddenStates().charAt(this.state);
 		}
 		
 		public String toString() {
@@ -166,7 +178,11 @@ public class Sequence {
 		if (obj.getClass() != this.getClass()) return false;
 		
 		Sequence other = (Sequence) obj;
-		return other.id.equals(this.id);
+		if ((this.id != null) && (other.id != null)) {
+			return other.id.equals(this.id);
+		} else {
+			return Arrays.equals(this.observed, other.observed) && Arrays.equals(this.hidden, other.hidden); 
+		}
 	}
 	
 	@Override
