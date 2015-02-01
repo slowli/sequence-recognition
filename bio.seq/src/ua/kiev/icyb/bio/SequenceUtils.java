@@ -11,6 +11,60 @@ import ua.kiev.icyb.bio.res.Messages;
 public class SequenceUtils {
 	
 	/**
+	 * Создает последовательность по ее текстовому представлению и выборке, в которую последовательность
+	 * потенциально может входить.
+	 * 
+	 * Если выборка задает алфавит полных состояний, то представление состоит из полных состояний;
+	 * в противном случае представление состоит из чередующихся между собой наблюдаемых и скрытых
+	 * состояний.
+	 * 
+	 * @param set
+	 *    выборка, которая определяет множества наблюдаемых и скрытых состояний
+	 * @param text
+	 *    текстовое представление последовательности
+	 * @return
+	 *    последовательность, соответствующая текстовому представлению
+	 */
+	public static Sequence parseSequence(SequenceSet set, String text) {
+		byte[] observed, hidden;
+		
+		if (set.completeStates() != null) {
+			observed = new byte[text.length()];
+			hidden = new byte[text.length()];
+			
+			final int oSize = set.observedStates().length();
+			
+			for (int pos = 0; pos < text.length(); pos++) {
+				int idx = set.completeStates().indexOf(text.charAt(pos));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in complete states");
+				}
+				observed[pos] = (byte)(idx % oSize);
+				hidden[pos] = (byte)(idx / oSize);
+			}
+		} else {
+			observed = new byte[text.length() / 2];
+			hidden = new byte[text.length() / 2];
+			
+			for (int pos = 0; pos < text.length(); pos += 2) {
+				int idx = set.observedStates().indexOf(text.charAt(pos));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in observed states");
+				}
+				observed[pos / 2] = (byte) idx;
+				
+				idx = set.hiddenStates().indexOf(text.charAt(pos + 1));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in hidden states");
+				}
+				hidden[pos / 2] = (byte) idx;
+			}
+		}
+		
+		return new Sequence(set, -1, null, observed, hidden);
+	}
+	
+	/**
 	 * Создает символьное отображение по его текстовому представлению.
 	 * Текстовое представление должно иметь вид
 	 * <pre>
