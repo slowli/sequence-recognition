@@ -58,7 +58,7 @@ public interface SequenceSet extends Collection<Sequence>, Serializable, Represe
 		 *    последовательность, которую надо проверить
 		 * 
 		 * @return 
-		 *    <code>true</code>, если пара последовательностей должна остаться
+		 *    <code>true</code>, если последовательность должна остаться
 		 *    в фильтрованном наборе
 		 */
 		boolean eval(Sequence sequence);

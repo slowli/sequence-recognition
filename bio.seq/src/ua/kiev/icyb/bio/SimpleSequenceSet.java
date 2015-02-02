@@ -96,7 +96,10 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	
 	/**
 	 * Создает отстутствующие идентификаторы для строк выборки. Идентификатор состоит из
-	 * названия выборки, двоеточия и порядкового номера строки в выборке.
+	 * заданного префикса, за которым следует порядковый номер строки в выборке.
+	 * 
+	 * @param prefix
+	 *    префикс для идентификаторов
 	 */
 	protected void fillMissingIds(String prefix) {
 		for (int i = 0; i < this.size(); i++) {
