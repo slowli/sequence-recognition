@@ -1,9 +1,14 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -33,13 +38,13 @@ public class MixtureTests {
 	@Test
 	public void testMixtureAdd() {
 		MarkovMixture mixture = new MarkovMixture();
-		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi");
+		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc1, 1.0);
 		
 		assertEquals(1, mixture.size());
 		assertEquals(1.0, mixture.weight(0), 1e-6);
 		
-		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi");
+		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc2, 0.5);
 		
 		assertEquals(2, mixture.size());
@@ -48,7 +53,7 @@ public class MixtureTests {
 		assertSame(mc1, mixture.model(0));
 		assertSame(mc2, mixture.model(1));
 		
-		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi");
+		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc3, 0.5);
 		
 		assertEquals(3, mixture.size());
@@ -64,11 +69,11 @@ public class MixtureTests {
 	@Test
 	public void testMixtureDelete() {
 		MarkovMixture mixture = new MarkovMixture();
-		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi");
+		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc1, 1.0);
-		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi");
+		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc2, 0.5);
-		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi");
+		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
 		mixture.add(mc3, 0.5);
 		
 		assertEquals(0.25, mixture.weight(0), 1e-6);

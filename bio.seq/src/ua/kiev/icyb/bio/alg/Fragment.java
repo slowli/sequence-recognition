@@ -61,15 +61,22 @@ public final class Fragment implements Serializable {
 	 * наблюдаемых строк фиксированной длины.
 	 */
 	public int observed;
+	
 	/**
 	 * Порядковый номер скрытой цепочки состояний среди всех
 	 * скрытых строк фиксированной длины.
 	 */
 	public int hidden;
+	
 	/**
 	 * Длина цепочки.
 	 */
 	public int length;
+	
+	/**
+	 * Фабрика, с помощью которой был создан этот фрагмент.
+	 */
+	FragmentFactory factory;
 
 	/**
 	 * Создает фрагмент с заданными целочисленными параметрами.
@@ -81,10 +88,11 @@ public final class Fragment implements Serializable {
 	 * @param length
 	 *    длина цепочки
 	 */
-	public Fragment(int observed, int hidden, int length) {
+	Fragment(FragmentFactory factory, int observed, int hidden, int length) {
 		this.observed = observed;
 		this.hidden = hidden;
 		this.length = length;
+		this.factory = factory;
 	}
 	
 	/**
@@ -93,10 +101,11 @@ public final class Fragment implements Serializable {
 	 * @param other
 	 *    фрагмент, который надо скопировать
 	 */
-	public Fragment(Fragment other) {
+	private Fragment(Fragment other) {
 		this.observed = other.observed;
 		this.hidden = other.hidden;
 		this.length = other.length;
+		this.factory = other.factory;
 	}
 
 	@Override
@@ -116,25 +125,104 @@ public final class Fragment implements Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 
 		Fragment other = (Fragment) obj;
-		if (hidden != other.hidden)
-			return false;
-		if (length != other.length)
-			return false;
-		if (observed != other.observed)
-			return false;
+		if (hidden != other.hidden) return false;
+		if (length != other.length) return false;
+		if (observed != other.observed) return false;
+		
 		return true;
 	}
 
+	/**
+	 * Объединяет другой фрагмент с этим фрагментом.
+	 * 
+	 * @param other
+	 *    фрагмент, добавляемый вслед за данным
+	 * @return
+	 *    результат объединения фрагментов
+	 */
+	public Fragment append(Fragment other) {
+		return factory.compose(this, other);
+	}
+	
+	/**
+	 * Объединяет другой фрагмент с этим фрагментом.
+	 * 
+	 * @param other
+	 *    фрагмент, добавляемый вслед за данным
+	 * @param output
+	 *    фрагмент, в который следует записать результат
+	 */
+	public void append(Fragment other, Fragment output) {
+		factory.compose(this, other, output);
+	}
+	
+	/**
+	 * Возвращает префикс этого фрагмента заданной длины.
+	 * 
+	 * @param length
+	 *    длина префикса
+	 * @return
+	 *    префикс фрагмента
+	 */
+	public Fragment prefix(int length) {
+		return factory.prefix(this, length);
+	}
+	
+	/**
+	 * Возвращает префикс этого фрагмента заданной длины.
+	 * 
+	 * @param length
+	 *    длина префикса
+	 * @param output
+	 *    фрагмент, в который следует записать результат
+	 */
+	public void prefix(int length, Fragment output) {
+		factory.prefix(this, length, output);
+	}
+	
+	/**
+	 * Возвращает суффикс этого фрагмента заданной длины.
+	 * 
+	 * @param length
+	 *    длина суффикса
+	 * @return
+	 *    суффикс фрагмента
+	 */
+	public Fragment suffix(int length) {
+		return factory.suffix(this, length);
+	}
+	
+	/**
+	 * Возвращает суффикс этого фрагмента заданной длины.
+	 * 
+	 * @param length
+	 *    длина суффикса
+	 * @param output
+	 *    фрагмент, в который следует записать результат
+	 */
+	public void suffix(int length, Fragment output) {
+		factory.suffix(this, length, output);
+	}
+	
+	/**
+	 * Вычисляет позицию фрагмента в упорядоченном множестве фрагментов строк полных
+	 * состояний той же длины.
+	 * 
+	 * @return 
+	 *    индекс (с отсчетом от нуля) фрагмента в упорядоченном множестве фрагментов
+	 *    фиксированной длины
+	 */
+	public int index() {
+		return factory.getTotalIndex(this);
+	}
+	
 	@Override
 	public String toString() {
-		return observed + " " + hidden;
+		return factory.toString(this);
 	}
 }

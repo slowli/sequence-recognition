@@ -68,7 +68,7 @@ public class RuleEntropy implements Serializable {
 		this.order = order;
 		this.countInitials = countInitials;
 
-		factory = new FragmentFactory(set.observedStates(), set.hiddenStates(), order + 1);
+		factory = new FragmentFactory(set, order + 1);
 		this.fullEntropy = entropy();
 	}
 
@@ -227,8 +227,7 @@ public class RuleEntropy implements Serializable {
 	private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
 		in.defaultReadObject();
 		
-		factory = new FragmentFactory(fullSet.observedStates(), fullSet.hiddenStates(), 
-				order + 1);
+		factory = new FragmentFactory(fullSet, order + 1);
 		this.fullEntropy = entropy();
 	}
 }

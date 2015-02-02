@@ -5,7 +5,7 @@ import java.util.Arrays;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.res.Messages;
 
-
+// TODO in a bad need of reworking
 
 /**
  * Модификация марковской цепи с аппроксимацией неизвестных
@@ -78,13 +78,15 @@ public class FallthruChain extends MarkovChain {
 	 * 
 	 * @param approx
 	 *    используемые параметры аппроксимации
-	 * @param alphabet
+	 * @param observedStates
 	 *    алфавит наблюдаемых состояний
-	 * @param hAlphabet
+	 * @param hiddenStates
 	 *    алфавит скрытых состояний
+	 * @param completeStates
+	 *    алфавит полных состояний (может равняться {@code null})
 	 */
-	public FallthruChain(Approximation approx, String alphabet, String hAlphabet) {
-		super(1, approx.order, alphabet, hAlphabet);
+	public FallthruChain(Approximation approx, String observedStates, String hiddenStates, String completeStates) {
+		super(1, approx.order, observedStates, hiddenStates, completeStates);
 		this.minOrder = approx.minOrder;
 		this.strategy = approx.strategy;
 		this.iThreshold = approx.initThreshold;
@@ -103,7 +105,7 @@ public class FallthruChain extends MarkovChain {
 	private void initializeSubchains(int maxOrder) {
 		subchains = new MarkovChain[maxOrder + 1];		
 		for (int i = minOrder; i < maxOrder; i++)
-			subchains[i] = new MarkovChain(1, i, observedStates(), hiddenStates());
+			subchains[i] = new MarkovChain(1, i, observedStates(), hiddenStates(), completeStates());
 		subchains[maxOrder] = this;
 	}
 	
@@ -121,32 +123,35 @@ public class FallthruChain extends MarkovChain {
 	@Override
 	public double getInitialP(Fragment state) {
 		// TODO: implement different strategies
-		return Math.max(super.getInitialP(state), iThreshold);
+		return super.getInitialP(state);
+		//return Math.max(super.getInitialP(state), iThreshold);
 	}
 	
 	@Override
 	public double getTransP(Fragment tail, Fragment head) {
+		int headIdx = head.index();
+		
 		if (strategy == Approximation.Strategy.FIXED) {
 			double[] trans = transitions.get(tail);
-			int idx = factory.getTotalIndex(head);
-			if ((trans == null) || (trans[idx] == 0)) 
+			if ((trans == null) || (trans[headIdx] == 0)) 
 				return tThreshold;
-			return (1.0 * trans[idx] / trans[trans.length - 1]); 
+			return (1.0 * trans[headIdx] / trans[trans.length - 1]); 
 		}
 		
 		Fragment suffix;
 		double result = 0.0;
 		int count = 0;
 		
-		int idx = factory.getTotalIndex(head);
+		final int minSamples = 100;
 		
 		for (int tlen = order; tlen >= minOrder; tlen--) {
 			suffix = factory.suffix(tail, tlen);
 			double[] trans = subchains[tlen].transitions.get(suffix);
-			if (trans != null) {
-				result += 1.0 * trans[idx]/trans[trans.length - 1];
+			if ((trans != null) && (trans[trans.length - 1] > minSamples)) {
+				result += 1.0 * trans[headIdx]/trans[trans.length - 1];
 				count++;
-				if ((strategy == Approximation.Strategy.FIRST) && (result > 0)) {
+				
+				if (strategy == Approximation.Strategy.FIRST) {
 					count = 1;
 					break;
 				}

@@ -64,7 +64,8 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	/**
 	 * Создает марковскую модель на основе предоставленной обучающей выборки.
-	 * Модель используется в алгоритме Витерби для получения сведений о начальных и переходных вероятностях.
+	 * Созданная модель используется в алгоритме Витерби для получения сведений 
+	 * о начальных и переходных вероятностях.
 	 * 
 	 * @param set
 	 *    выборка
@@ -72,8 +73,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    созданная модель
 	 */
 	protected MarkovChain createChain(SequenceSet set) {
-		return new MarkovChain(depLength, order, 
-				set.observedStates(), set.hiddenStates());
+		return new MarkovChain(depLength, order, set);
 	}
 	
 	@Override
@@ -132,18 +132,19 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		}
 
 		final FragmentFactory factory = chain.factory();
+		Fragment tail = factory.fragment(), head = factory.fragment(), shifted = factory.fragment();
 		
 		Memory mem = (Memory) getMemory();
 		
-		double curProb[] = new double[nHiddenTails], nextProb[] = new double[nHiddenTails]; 
-		short pointer[][] = mem.pointer; 
+		double[] curProb = new double[nHiddenTails], nextProb = new double[nHiddenTails]; 
+		short[][] pointer = mem.pointer;
 		// Обрезать последовательность
 		int trimmedLength = ((seq.length - order) / depLength) * depLength + order; 
-
+		
 		// Инициализировать промежуточные массивы
 		for (int i = 0; i < nHiddenTails; i++) {
-			Fragment state = chain.factory.fragment(seq, i, 0, order);
-			curProb[i] = Math.log(Math.max(chain.getInitialP(state), 0));
+			factory.fragment(seq, i, 0, order, tail);
+			curProb[i] = Math.log(Math.max(chain.getInitialP(tail), 0));
 		}
 		
 		int ptrIdx = 0; // текущая позиция в массиве указателей
@@ -151,13 +152,16 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 			Arrays.fill(nextProb, Double.NEGATIVE_INFINITY);
 			
 			for (int i = 0; i < nHiddenHeads; i++) {
-				Fragment newState = factory.fragment(seq, i, pos, depLength);	
+				factory.fragment(seq, i, pos, depLength, head);
 				
 				for (short j = 0; j < nHiddenTails; j++) {
-					Fragment tailState = factory.fragment(seq, j, pos - order, order);
-					double val = Math.log(Math.max(0, chain.getTransP(tailState, newState))) 
+					factory.fragment(seq, j, pos - order, order, tail);
+					
+					double val = Math.log(Math.max(0, chain.getTransP(tail, head))) 
 							+ curProb[j];
-					int idx = factory.shift(tailState, newState);
+					tail.append(head, shifted);
+					shifted.suffix(tail.length, shifted);
+					int idx = shifted.hidden;
 					
 					if (nextProb[idx] < val) {
 						nextProb[idx] = val;

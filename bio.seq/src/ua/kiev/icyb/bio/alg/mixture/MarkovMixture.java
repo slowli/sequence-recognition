@@ -45,9 +45,7 @@ public class MarkovMixture extends Mixture<Sequence> implements Representable {
 	public MarkovMixture(int size, int order, SequenceSet set) {
 		super();
 		for (int i = 0; i < size; i++) {
-			MarkovChain chain = new MarkovChain(1, order, 
-					set.observedStates(), 
-					set.hiddenStates());
+			MarkovChain chain = new MarkovChain(1, order, set);
 			this.add(chain, 1.0);
 		}
 		

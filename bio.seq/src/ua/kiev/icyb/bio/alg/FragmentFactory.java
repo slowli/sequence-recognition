@@ -1,16 +1,27 @@
 package ua.kiev.icyb.bio.alg;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import ua.kiev.icyb.bio.SequenceSet;
+
 /**
  * Фабрика для создания и операций над фрагментами строк полных состояний.
  * 
  * @see Fragment
  */
-public class FragmentFactory {
+public class FragmentFactory implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+	
 	
 	/** Алфавит наблюдаемых состояний. */
-	private final String alphabet;
+	private final String observedStates;
 	/** Алфавит скрытых состояний. */
-	private final String hAlphabet;
+	private final String hiddenStates;
+	/** Алфавит полных состояний (может быть равен {@code null}). */
+	private final String completeStates;
 	/** Количество наблюдаемых состояний. */
 	private int oSize;
 	/** Количество скрытых состояний. */
@@ -22,23 +33,32 @@ public class FragmentFactory {
 	private int[] obsPower;
 	private int[] hPower;
 	private int[] cPower;
-
+	
 	/**
 	 * Создает фабрику с заданной структурой полных состояний.
 	 * 
-	 * @param alphabet
-	 *        строка, каждый символ которой определяет одно из наблюдаемых состояний
-	 * @param hAlphabet
-	 *        строка, каждый символ которой определяет одно из скрытых состояний
+	 * @param observedStates
+	 *    строка, каждый символ которой определяет одно из наблюдаемых состояний
+	 * @param hiddenStates
+	 *    строка, каждый символ которой определяет одно из скрытых состояний
+	 * @param completeStates
+	 *    строка, каждый символ которой определяет одно из полных состояний (может равняться {@code null})
 	 * @param maxLength
-	 *        максимальная длина фрагментов полных состояний, которые будут
-	 *        создаваться этой фабрикой
+	 *    максимальная длина фрагментов полных состояний, которые будут
+	 *    создаваться этой фабрикой
 	 */
-	public FragmentFactory(String alphabet, String hAlphabet, int maxLength) {
-		this.alphabet = alphabet.toUpperCase();
-		this.hAlphabet = hAlphabet.toLowerCase();
-		this.oSize = alphabet.length();
-		this.hSize = hAlphabet.length();
+	public FragmentFactory(String observedStates, String hiddenStates, String completeStates, int maxLength) {
+		if ((completeStates != null) 
+				&& (completeStates.length() != observedStates.length() * hiddenStates.length())) {
+			
+			throw new IllegalArgumentException("Wrong number of complete states");
+		}
+		
+		this.observedStates = observedStates;
+		this.hiddenStates = hiddenStates;
+		this.completeStates = completeStates;
+		this.oSize = observedStates.length();
+		this.hSize = hiddenStates.length();
 
 		maxLength++; // Powers go from zero, hence the increment
 		obsPower = new int[maxLength];
@@ -54,22 +74,73 @@ public class FragmentFactory {
 		for (int i = 1; i < maxLength; i++)
 			cPower[i] = cPower[i - 1] * oSize * hSize;
 	}
+	
+	public FragmentFactory(SequenceSet set, int maxLength) {
+		this(set.observedStates(), set.hiddenStates(), set.completeStates(), maxLength);
+	}
+	
+	/**
+	 * Создает новый пустой фрагмент.
+	 * 
+	 * @return
+	 *    созданный фрагмент
+	 */
+	public Fragment fragment() {
+		return new Fragment(this, 0, 0, 0);
+	}
+	
+	/**
+	 * Создает фрагмент с заданными параметрами.
+	 * 
+	 * @param observed
+	 *    порядковый номер наблюдаемой цепочки состояний среди всех строк наблюдаемых состояний
+	 *    фиксированной длины
+	 * @param hidden
+	 *    порядковый номер скрытой цепочки состояний среди всех строк скрытых состояний
+	 *    фиксированной длины
+	 * @param length
+	 *    длина фрагмента
+	 *    
+	 * @return
+	 *    созданный фрагмент
+	 */
+	public Fragment fragment(int observed, int hidden, int length) {
+		return new Fragment(this, observed, hidden, length);
+	}
 
+	/**
+	 * Создает список, состоящий из всех фрагментов фиксированной длины.
+	 * 
+	 * @param length
+	 *    длина фрагментов
+	 * @return
+	 *    список фрагментов заданной длины
+	 */
+	public List<Fragment> allFragments(int length) {
+		List<Fragment> fragments = new ArrayList<Fragment>();
+		
+		for (int i = 0; i < cPower[length]; i++) {
+			fragments.add(this.fragment(i % obsPower[length], i / obsPower[length], length));
+		}
+		
+		return fragments;
+	}
+	
 	/**
 	 * Создает фрагмент строки полных состояний на основе заданных последовательностей
 	 * наблюдаемых и скрытых состояний, а также положения фрагмента.
 	 * 
 	 * @param observed
-	 *        последовательность наблюдаемых состояний
+	 *    последовательность наблюдаемых состояний
 	 * @param hidden
-	 *        последовательность скрытых состояний
+	 *    последовательность скрытых состояний
 	 * @param start
-	 *        положение начального символа фрагмента с отсчетом от нуля
+	 *    положение начального символа фрагмента с отсчетом от нуля
 	 * @param length
-	 *        длина фрагмента
+	 *    длина фрагмента
 	 * 
 	 * @return
-	 *        фрагмент строки полных состояний
+	 *    фрагмент строки полных состояний
 	 */
 	public Fragment fragment(final byte[] observed, final byte[] hidden, int start, int length) {
 		int obsIndex = 0;
@@ -79,7 +150,35 @@ public class FragmentFactory {
 		for (int i = 0; i < length; i++)
 			hIndex += hidden[start + i] * hPower[length - i - 1];
 
-		return new Fragment(obsIndex, hIndex, length);
+		return this.fragment(obsIndex, hIndex, length);
+	}
+	
+	/**
+	 * Создает фрагмент строки полных состояний на основе заданных последовательностей
+	 * наблюдаемых и скрытых состояний, а также положения фрагмента.
+	 * 
+	 * @param observed
+	 *    последовательность наблюдаемых состояний
+	 * @param hidden
+	 *    последовательность скрытых состояний
+	 * @param start
+	 *    положение начального символа фрагмента с отсчетом от нуля
+	 * @param length
+	 *    длина фрагмента
+	 * @param output
+	 *    фрагмент, в который следует записать результат
+	 */
+	public void fragment(final byte[] observed, final byte[] hidden, int start, int length, Fragment output) {
+		int obsIndex = 0;
+		for (int i = 0; i < length; i++)
+			obsIndex += observed[start + i] * obsPower[length - i - 1];
+		int hIndex = 0;
+		for (int i = 0; i < length; i++)
+			hIndex += hidden[start + i] * hPower[length - i - 1];
+
+		output.observed = obsIndex;
+		output.hidden = hIndex;
+		output.length = length;
 	}
 
 	/**
@@ -87,17 +186,17 @@ public class FragmentFactory {
 	 * наблюдаемых состояний, индекса строки скрытых состояний, а также положения фрагмента.
 	 * 
 	 * @param observed
-	 *        последовательность наблюдаемых состояний
+	 *    последовательность наблюдаемых состояний
 	 * @param hIndex
-	 *        порядковый номер скрытой цепочки состояний среди всех строк скрытых состояний
-	 *        фиксированной длины
+	 *    порядковый номер скрытой цепочки состояний среди всех строк скрытых состояний
+	 *    фиксированной длины
 	 * @param start
-	 *        положение начального символа фрагмента с отсчетом от нуля
+	 *    положение начального символа фрагмента с отсчетом от нуля
 	 * @param length
-	 *        длина фрагмента
+	 *    длина фрагмента
 	 * 
 	 * @return
-	 *        фрагмент строки полных состояний
+	 *    фрагмент строки полных состояний
 	 */
 	public Fragment fragment(final byte[] observed, int hIndex, int start, int length) {
 		int obsIndex = 0;
@@ -105,7 +204,34 @@ public class FragmentFactory {
 			obsIndex += observed[start + i] * obsPower[length - i - 1];
 		}
 
-		return new Fragment(obsIndex, hIndex, length);
+		return this.fragment(obsIndex, hIndex, length);
+	}
+	
+	/**
+	 * Создает фрагмент строки полных состояний на основе заданной последовательности
+	 * наблюдаемых состояний, индекса строки скрытых состояний, а также положения фрагмента.
+	 * 
+	 * @param observed
+	 *    последовательность наблюдаемых состояний
+	 * @param hIndex
+	 *    порядковый номер скрытой цепочки состояний среди всех строк скрытых состояний
+	 *    фиксированной длины
+	 * @param start
+	 *    положение начального символа фрагмента с отсчетом от нуля
+	 * @param length
+	 *    длина фрагмента
+	 * @param output
+	 *    фрагмент, в который следует записать результат
+	 */
+	public void fragment(final byte[] observed, int hIndex, int start, int length, Fragment output) {
+		int obsIndex = 0;
+		for (int i = 0; i < length; i++) {
+			obsIndex += observed[start + i] * obsPower[length - i - 1];
+		}
+
+		output.observed = obsIndex;
+		output.hidden = hIndex;
+		output.length = length;
 	}
 
 	/**
@@ -118,10 +244,20 @@ public class FragmentFactory {
 	 * @return
 	 *    фрагмент, соответствующий строке {@code xy}
 	 */
-	public Fragment compose(Fragment x, Fragment y) {
+	Fragment compose(Fragment x, Fragment y) {
 		int obsIndex = x.observed * obsPower[y.length] + y.observed;
 		int hIndex = x.hidden * hPower[y.length] + y.hidden;
-		return new Fragment(obsIndex, hIndex, x.length + y.length);
+		
+		return this.fragment(obsIndex, hIndex, x.length + y.length);
+	}
+	
+	void compose(Fragment x, Fragment y, Fragment output) {
+		int observed = x.observed * obsPower[y.length] + y.observed;
+		int hidden = x.hidden * hPower[y.length] + y.hidden;
+		
+		output.length = x.length + y.length;
+		output.observed = observed;
+		output.hidden = hidden;
 	}
 
 	/**
@@ -134,13 +270,22 @@ public class FragmentFactory {
 	 *        
 	 * @return префикс фрагмента заданной длины
 	 */
-	public Fragment prefix(Fragment fragment, int length) {
+	Fragment prefix(Fragment fragment, int length) {
 		if (fragment.length == length)
 			return fragment;
 
 		int obsIndex = fragment.observed / obsPower[fragment.length - length];
 		int hIndex = fragment.hidden / hPower[fragment.length - length];
-		return new Fragment(obsIndex, hIndex, length);
+		return this.fragment(obsIndex, hIndex, length);
+	}
+	
+	void prefix(Fragment fragment, int length, Fragment output) {
+		int obsIndex = fragment.observed / obsPower[fragment.length - length];
+		int hIndex = fragment.hidden / hPower[fragment.length - length];
+		
+		output.length = length;
+		output.observed = obsIndex;
+		output.hidden = hIndex;
 	}
 
 	/**
@@ -153,79 +298,36 @@ public class FragmentFactory {
 	 *        
 	 * @return суффикс фрагмента заданной длины
 	 */
-	public Fragment suffix(Fragment fragment, int length) {
+	Fragment suffix(Fragment fragment, int length) {
 		if (fragment.length == length)
 			return fragment;
 
 		int obsIndex = fragment.observed % obsPower[length];
 		int hIndex = fragment.hidden % hPower[length];
-		return new Fragment(obsIndex, hIndex, length);
+		return this.fragment(obsIndex, hIndex, length);
 	}
-
-	/**
-	 * Разделяет фрагмент строки полных состояний на три части: префикс,
-	 * суффикс и середина. Префикс и суффикс могут пересекаться между собой;
-	 * в этом случае, средняя часть фрагмента будет равной {@code null}.
-	 * 
-	 * @param fragment
-	 *    базовый фрагмент строки полных состояний
-	 * @param left
-	 *    длина префикса
-	 * @param right
-	 *    длина суффикса
-	 * @return
-	 *    массив, состоящий из трех фрагментов - префикса, суффикса и серединной части 
-	 *    исходного фрагмента
-	 */
-	public Fragment[] split(Fragment fragment, int left, int right) {
-		Fragment rState = suffix(fragment, right);
-		Fragment lState = prefix(fragment, left);
-
-		Fragment mState = null;
-		if (fragment.length > left + right) {
-			int mLength = fragment.length - left - right;
-			int obsIndex = (fragment.observed / obsPower[right]) % obsPower[mLength];
-			int hIndex = (fragment.hidden / hPower[right]) % hPower[mLength];
-			mState = new Fragment(obsIndex, hIndex, mLength);
-		}
-
-		return new Fragment[] { lState, mState, rState };
+	
+	void suffix(Fragment fragment, int length, Fragment output) {
+		int obsIndex = fragment.observed % obsPower[length];
+		int hIndex = fragment.hidden % hPower[length];
+		
+		output.length = length;
+		output.observed = obsIndex;
+		output.hidden = hIndex;
 	}
-
+	
 	/**
 	 * Вычисляет позицию фрагмента в упорядоченном множестве фрагментов строк полных
 	 * состояний той же длины.
 	 * 
 	 * @param fragment
-	 *        фрагмент строки полных состояний
-	 * @return индекс (с отсчетом от нуля) фрагмента в упорядоченном множестве фрагментов
+	 *    фрагмент строки полных состояний
+	 * @return 
+	 *    индекс (с отсчетом от нуля) фрагмента в упорядоченном множестве фрагментов
 	 *    фиксированной длины
 	 */
-	public int getTotalIndex(Fragment fragment) {
+	int getTotalIndex(Fragment fragment) {
 		return fragment.observed + fragment.hidden * obsPower[fragment.length];
-	}
-
-	/**
-	 * Определяет индекс последовательности скрытых состояний, полученной в результате
-	 * сдвига рамки чтения вправо. В результате сдвига получается фрагмент с той же длиной,
-	 * что и текущая хвостовая цепочка состояний; новый фрагмент включает в себя всю головную
-	 * последовательность состояний и суффикс текущей хвостовой цепочки.
-	 * 
-	 * @param tail
-	 *        фрагмент, определяющий текущую хвостовую последовательность состояний
-	 * @param head
-	 *        фрагмент, определяющий текущую головную последовательность состояний
-	 * @return
-	 *    индекс (с отсчетом от нуля) скрытой цепочки состояний в фрагменте, полученном
-	 *    в результате сдвига, среди всех цепочек скрытых состояний той же длины
-	 */
-	public int shift(Fragment tail, Fragment head) {
-		if (head.length == 1) {
-			return (tail.hidden % hPower[tail.length - 1]) * hSize + head.hidden;
-		} else {
-			// TODO implement
-			return 0;
-		}
 	}
 
 	/**
@@ -244,16 +346,24 @@ public class FragmentFactory {
 	 *        фрагмент
 	 * @return строковое представление фрагмента
 	 */
-	public String toString(Fragment fragment) {
+	String toString(Fragment fragment) {
 		String result = "";
 		int obsIndex = fragment.observed, hIndex = fragment.hidden;
+		
 		for (int i = 0; i < fragment.length; i++) {
 			String symbol;
-			symbol = "" + alphabet.charAt(obsIndex % oSize) + hAlphabet.charAt(hIndex % hSize);
+			
+			if (completeStates == null) {
+				symbol = "" + observedStates.charAt(obsIndex % oSize) + hiddenStates.charAt(hIndex % hSize);
+			} else {
+				symbol = "" + completeStates.charAt((obsIndex % oSize) + (hIndex % hSize) * oSize);
+			}
+			
 			result = symbol + result;
 			obsIndex /= oSize;
 			hIndex /= hSize;
 		}
+		
 		return result;
 	}
 }

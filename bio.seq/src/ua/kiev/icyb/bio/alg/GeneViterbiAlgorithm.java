@@ -83,6 +83,7 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 		}
 
 		final FragmentFactory factory = chain.factory();
+		Fragment tail = factory.fragment(), head = factory.fragment(), shifted = factory.fragment();
 		
 		final int codonLength = validateCds ? 3 : 1;
 		double curProb[][] = new double[codonLength][nHiddenTails], nextProb[][] = new double[codonLength][nHiddenTails]; 
@@ -94,25 +95,28 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 		for (int rem = 0; rem < codonLength; rem++)
 			Arrays.fill(curProb[rem], Double.NEGATIVE_INFINITY);
 		for (int i = 0; i < nHiddenTails; i++) {
-			curProb[exonCharCount(i, order) % codonLength][i] = Math.log(chain.getInitialP(
-					factory.fragment(seq, i, 0, order)));
+			factory.fragment(seq, i, 0, order, tail);
+			curProb[exonCharCount(i, order) % codonLength][i] = 
+					Math.log(chain.getInitialP(tail));
 		}
 		
 		int ptrIdx = 0; // текущая позиция в массиве указателей
-		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength)
-		{
-			for (int rem = 0; rem < codonLength; rem++)
+		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength) {
+			for (int rem = 0; rem < codonLength; rem++) {
 				Arrays.fill(nextProb[rem], Double.NEGATIVE_INFINITY);
+			}
 			
-			for (int i = 0; i < nHiddenHeads; i++)
-			{
-				Fragment newState = factory.fragment(seq, i, pos, depLength);
+			for (int i = 0; i < nHiddenHeads; i++) {
+				factory.fragment(seq, i, pos, depLength, head);
 				int headRem = exonCharCount(i, depLength) % codonLength;
 				
 				for (short j = 0; j < nHiddenTails; j++) {
-					Fragment tailState = factory.fragment(seq, j, pos - order, order);
-					double val = Math.log(chain.getTransP(tailState, newState));
-					int idx = factory.shift(tailState, newState);
+					factory.fragment(seq, j, pos - order, order, tail);
+					double val = Math.log(chain.getTransP(tail, head));
+					
+					tail.append(head, shifted);
+					shifted.suffix(tail.length, shifted);
+					int idx = shifted.hidden;
 					
 					for (int rem = 0; rem < codonLength; rem++)
 						if (nextProb[(rem + headRem) % codonLength][idx] < val + curProb[rem][j]) {
@@ -122,8 +126,9 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 				}
 			}
 			
-			for (int rem = 0; rem < codonLength; rem++)
+			for (int rem = 0; rem < codonLength; rem++) {
 				curProb[rem] = Arrays.copyOf(nextProb[rem], nextProb[rem].length);
+			}
 			ptrIdx++;
 		}
 		
