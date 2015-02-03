@@ -69,25 +69,23 @@ public class MarkovMixture extends Mixture<Sequence> implements Representable {
 	 * @param set
 	 *    набор полных состояний, используемый для обучения марковских цепей в композиции
 	 */
-	public void randomFill(SequenceSet set) {
-		// XXX 
-		/*for (MarkovChain chain : chains)
-			chain.reset();
-		
-		int[] counts = new int[size()];
-		for (Sequence sequence : set) {
-			int idx = (int) Math.floor(size() * Math.random());
-			chains[idx].train(sequence);
-			counts[idx]++;
+	public void randomFill(SequenceSet set) { 
+		for (int i = 0; i < this.size(); i++) {
+			this.model(i).reset();
 		}
 		
-		for (int i = 0; i < size(); i++) {
-			weights[i] = 1.0 * counts[i] / set.size();
-		}*/
+		double[] counts = new double[size()];
+		for (Sequence sequence : set) {
+			int idx = (int) Math.floor(size() * Math.random());
+			this.model(idx).train(sequence);
+			counts[idx] += 1.0;
+		}
+		
+		this.setWeights(counts);
 	}
 
+	@Override
 	public String repr() {
-		// XXX move?
 		String repr = Messages.format("em.n_models", size());
 		if (size() > 0) {
 			repr += "\n" + Messages.format("em.weights", Arrays.toString(this.weights())) + "\n";
