@@ -34,7 +34,7 @@ public class IOTests {
 	 * @throws BioException
 	 */
 	@Test
-	public void testGenebank() throws IOException, BioException {
+	public void testGenbank() throws IOException, BioException {
 		Env env = new Env(CONF_FILE);
 		GenbankReader reader = new GenbankReader(SOURCE_SET_1);
 		reader.run(env);
