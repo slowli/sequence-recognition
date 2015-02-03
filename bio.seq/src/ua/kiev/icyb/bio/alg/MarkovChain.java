@@ -3,6 +3,7 @@ package ua.kiev.icyb.bio.alg;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,6 +82,10 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 		return Collections.unmodifiableMap(initial);
 	}
 	
+	public Collection<Fragment> getInitialStates() {
+		return Collections.unmodifiableSet(initial.keySet());
+	}
+	
 	/** Количество возможных различных зависимых цепочек состояний. */
 	private transient int headsCount;
 	
@@ -113,6 +118,10 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	 */
 	public Map<Fragment, double[]> getTransitionTable() {
 		return Collections.unmodifiableMap(transitions);
+	}
+	
+	public Collection<Fragment> getTransitionTails() {
+		return Collections.unmodifiableSet(transitions.keySet());
 	}
 	
 	/** Вероятностное распределение строк по длинам. */
@@ -482,5 +491,49 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 		}
 		
 		return logP;
+	}
+	
+	@Override
+	public Sequence generate() {
+		int length = -1;
+		while (length < this.order) {
+			length = this.lengthDistr.generate();
+		}
+		
+		byte[] observed = new byte[length], hidden = new byte[length];
+		Sequence sequence = new Sequence(observed, hidden);
+		
+		Collection<Fragment> tails = this.getInitialStates();
+		Fragment[] tailsArray = new Fragment[tails.size()];
+		double[] p = new double[tails.size()];
+		
+		int i = 0;
+		for (Fragment tail : tails) {
+			tailsArray[i] = tail;
+			p[i] = this.getInitialP(tail);
+			i++;
+		}
+		
+		Fragment tail = DistributionUtils.choose(tailsArray, p);
+		tail.embed(sequence, 0);
+		
+		Fragment[] heads = this.factory().allFragments(depLength()).toArray(new Fragment[0]);
+		p = new double[heads.length];
+		
+		for (int pos = this.order(); pos < length; pos += depLength()) {
+			i = 0;
+			for (Fragment head : heads) {
+				p[i] = this.getTransP(tail, head);
+				i++;
+			}
+			
+			Fragment chosenHead = DistributionUtils.choose(heads, p);
+			chosenHead.embed(sequence, pos);
+			
+			tail.append(chosenHead, tail);
+			tail.suffix(this.order(), tail);
+		}
+		
+		return sequence;
 	}
 }

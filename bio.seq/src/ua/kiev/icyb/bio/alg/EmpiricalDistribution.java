@@ -81,10 +81,25 @@ public class EmpiricalDistribution extends AbstractDistribution<Integer> {
 			return Math.log(tailP);
 		}
 	}
-
+	
 	@Override
-	public String toString() {
-		return String.format("Empirical(w=%d)", window);
+	public Integer generate() {
+		Integer[] outcomes = new Integer[this.bins.length];
+		for (int i = 0; i < outcomes.length; i++) {
+			outcomes[i] = i;
+		}
+		
+		double[] probabilities = new double[this.bins.length];
+		double sum = 0.0;
+		for (int i = 0; i < probabilities.length; i++) {
+			probabilities[i] = estimate(i);
+			sum += probabilities[i];
+		}
+		for (int i = 0; i < probabilities.length; i++) {
+			probabilities[i] /= sum;
+		}
+		
+		return DistributionUtils.choose(outcomes, probabilities);
 	}
 	
 	@Override
@@ -92,5 +107,10 @@ public class EmpiricalDistribution extends AbstractDistribution<Integer> {
 		EmpiricalDistribution other = (EmpiricalDistribution) super.clone();
 		other.bins = this.bins.clone();
 		return other;
+	}
+
+	@Override
+	public String toString() {
+		return String.format("Empirical(w=%d)", window);
 	}
 }
