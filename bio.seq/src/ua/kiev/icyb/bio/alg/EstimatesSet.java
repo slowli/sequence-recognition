@@ -64,7 +64,6 @@ class EstimatesSet extends SimpleSequenceSet {
 	
 	@Override
 	public void saveToFile(String fileName) throws IOException {
-		// TODO writeObject?
 		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
 		writer.write(hidden.length + "\n");
 		for (int i = 0; i < hidden.length; i++) {

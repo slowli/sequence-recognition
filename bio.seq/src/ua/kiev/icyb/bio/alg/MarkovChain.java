@@ -323,8 +323,7 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	 */
 	public double getTransP(Fragment tail, Fragment head) {
 		double[] trans = transitions.get(tail);
-		// Index of the head state among all complete states of the same length
-		int idx = factory.getTotalIndex(head);
+		int idx = head.index();
 		
 		return ((trans == null) || (trans[headsCount] == 0)) 
 				? 0 : (1.0 * trans[idx] / trans[headsCount]);

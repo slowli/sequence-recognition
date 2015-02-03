@@ -167,7 +167,7 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 			population = new HashSet<Organism>(initialPopulation);
 			populationFormed = false;
 		}
-		// Create cache
+		// Создать кэш оценок качества огранизмов
 		Map<Organism, Double> cache = weakCache ? 
 				new WeakHashMap<Organism, Double>() : new HashMap<Organism, Double>();
 		if (fitness == null) {
@@ -180,7 +180,7 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 			getEnv().debug(2, Messages.format("gen.cache", cache.size()));
 			
 			if (!populationFormed) {
-				// Crossbreed
+				// Скрещивание
 				List<Organism> list = new ArrayList<Organism>(population);
 				for (Organism item: list)
 					for (int i = 0; i < crossovers; i++) {
@@ -189,7 +189,7 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 						population.add(item.crossover(other));
 					};
 				
-				// Mutate
+				// Мутации
 				list = new ArrayList<Organism>(population);
 				for (Organism item: list)
 					for (int i = 0; i < mutations; i++)
@@ -200,7 +200,7 @@ public class GeneticAlgorithm extends AbstractLaunchable implements Representabl
 				populationFormed = true;
 			}
 			
-			// Choose most fitting items
+			// Отбор наилучших организмов
 			if (population.size() > maxSize) {
 				getEnv().debug(1, Messages.getString("gen.filter"));
 				

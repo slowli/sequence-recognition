@@ -162,7 +162,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 		
 		for (int t = this.iteration; t < nIterations; this.iteration = ++t) {
 			
-			// Expectation step
+			// Шаг ожидания
 			getEnv().debug(1, "\n" + Messages.format("em.e_step", t + 1));
 			
 			MixtureWeights mw = new MixtureWeights(mixture, set);
@@ -170,7 +170,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 			weights = mw.weights;
 			getEnv().debug(1, reprDistribution(weights));
 			
-			// Maximization step			
+			// Шаг максимизации			
 			getEnv().debug(1, Messages.format("em.m_step", t + 1));
 			MarkovMixture newMixture = (MarkovMixture) mixture.clearClone();
 			
@@ -180,7 +180,7 @@ public class EMAlgorithm extends AbstractLaunchable implements Representable {
 			for (int alg = 0; alg < count; alg++) {
 				double[] sampleWeights = new double[set.size()];
 				if (stochastic) {
-					// Transform weights to the set {0, 1}
+					// Преобразовать веса (т.е. апостериорные вероятности) к множеству {0, 1}
 					double r = 0;
 					for (int i = 0; i < set.size(); i++) {
 						r = random.nextDouble();

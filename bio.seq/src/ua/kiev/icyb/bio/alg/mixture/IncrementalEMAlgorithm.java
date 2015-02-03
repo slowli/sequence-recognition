@@ -156,7 +156,6 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 				break;
 			}
 			
-			// Find the samples with worst probabilities
 			int[] idx = worstSamples();
 			
 			MarkovChain chain = (MarkovChain) mixture.model(0).clearClone();

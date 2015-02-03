@@ -5,7 +5,7 @@ import java.util.Arrays;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.res.Messages;
 
-// TODO in a bad need of reworking
+// TODO переписать
 
 /**
  * Модификация марковской цепи с аппроксимацией неизвестных
@@ -122,9 +122,8 @@ public class FallthruChain extends MarkovChain {
 	
 	@Override
 	public double getInitialP(Fragment state) {
-		// TODO: implement different strategies
-		return super.getInitialP(state);
-		//return Math.max(super.getInitialP(state), iThreshold);
+		// TODO реализовать различные стратегии
+		return Math.max(super.getInitialP(state), iThreshold);
 	}
 	
 	@Override

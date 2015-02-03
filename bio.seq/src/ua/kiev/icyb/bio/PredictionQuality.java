@@ -86,7 +86,7 @@ public class PredictionQuality implements Serializable, Representable {
 	 *        усредненное значение метрики качества
 	 */
 	private double mean(int state) {
-		// Retrieve the name of the caller method
+		// Получить имя вызывающего метода
 		Throwable t = new Throwable();
 		t.fillInStackTrace();
 		String methodName = t.getStackTrace()[1].getMethodName();
@@ -129,14 +129,16 @@ public class PredictionQuality implements Serializable, Representable {
 	public void addSequence(byte[] refSeq, byte[] estSeq) {
 		nSeq++;
 		if (estSeq == null) {
-			// ignore the sequence
+			// отказ от распознавания
 			nDeniedSeq++;
 			return;
 		}
-		assert (refSeq.length == estSeq.length);
+		if (refSeq.length != estSeq.length) {
+			throw new IllegalArgumentException("Incomatible lengths of reference and predicted strings of states");
+		}
 		
-		for (int state = 0; state < hiddenStates.length(); state++) {		
-			// Calculate single state statistics
+		for (int state = 0; state < hiddenStates.length(); state++) {
+			// Вычислить статистику по отдельным состояниям
 			for (int pos = 0; pos < refSeq.length; pos++) {
 				if ((refSeq[pos] == state) && (estSeq[pos] == state))
 					truePos[state]++;
@@ -148,7 +150,7 @@ public class PredictionQuality implements Serializable, Representable {
 					falseNeg[state]++;
 			}
 			
-			// Now for region statistics
+			// Вычислить статистику по сегментам
 			for (int pos = 0; pos < refSeq.length - 1; pos++) {
 				if ((refSeq[pos] == state) && (refSeq[pos + 1] != state))
 					actRegion[state]++;
@@ -165,11 +167,11 @@ public class PredictionQuality implements Serializable, Representable {
 				if ((estSeq[pos] == state) && ((pos == 0) || (estSeq[pos - 1] != state)))
 					estStart = pos;
 				
-				if (	// the region in the actual sequence ends
+				if (	// конец сегмента в действительной строке состояний
 						(refSeq[pos] == state) && ((pos == refSeq.length - 1) || (refSeq[pos + 1] != state))							
-						&& // and so does the region in the estimated sequence 
+						&& // конец сегмента в предсказанной строке
 						(estSeq[pos] == state) && ((pos == refSeq.length - 1) || (estSeq[pos + 1] != state))
-						&& // and their starts coincide
+						&& // начала сегментов совпадают
 						(actStart == estStart))
 					
 					trueRegion[state]++;

@@ -75,7 +75,6 @@ public class EmpiricalDistribution extends AbstractDistribution<Integer> {
 		
 		if (nSamples > 0) {
 			mean /= nSamples;
-			// XXX fix?
 			return Math.max(Math.log(mean) - Math.log(weightSum), Math.log(tailP));
 		} else {
 			return Math.log(tailP);

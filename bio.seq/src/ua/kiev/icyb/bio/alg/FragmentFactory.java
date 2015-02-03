@@ -61,7 +61,7 @@ public class FragmentFactory implements Serializable {
 		this.oSize = observedStates.length();
 		this.hSize = hiddenStates.length();
 
-		maxLength++; // Powers go from zero, hence the increment
+		maxLength++; // Степени длин алфавитов начинаются с нулевой
 		obsPower = new int[maxLength];
 		obsPower[0] = 1;
 		for (int i = 1; i < maxLength; i++)

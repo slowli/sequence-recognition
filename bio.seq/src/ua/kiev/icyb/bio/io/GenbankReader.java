@@ -174,7 +174,7 @@ public class GenbankReader implements Launchable {
 		loc = loc.translate(-min);
 		byte[] seq = new byte[max - min + 1];
 		
-		Arrays.fill(seq, (byte) 1); // First, denote all symbols as beloging to introns
+		Arrays.fill(seq, (byte) 1); // Обозначить все нуклеотиды как принадлежащие интронам
 		
 		for (Iterator<Location> iter = loc.blockIterator(); iter.hasNext(); ) {
 			Location block = iter.next();
@@ -215,7 +215,7 @@ public class GenbankReader implements Launchable {
 			char nt = Character.toUpperCase(geneNts.charAt(i));
 			int idx = alphabet.indexOf(nt);
 			if (idx < 0) {
-				// Invalid symbol in nucleotide sequence
+				// Некорректный символ в последовательности нуклеотидов
 				return null;
 			}
 			seq[i] = (byte)idx;
