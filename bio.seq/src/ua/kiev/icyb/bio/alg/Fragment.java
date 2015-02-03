@@ -2,6 +2,8 @@ package ua.kiev.icyb.bio.alg;
 
 import java.io.Serializable;
 
+import ua.kiev.icyb.bio.Sequence;
+
 /**
  * Представление короткой последовательности полных состояний с помощью целых чисел.
  * 
@@ -219,6 +221,18 @@ public final class Fragment implements Serializable {
 	 */
 	public int index() {
 		return factory.getTotalIndex(this);
+	}
+	
+	/**
+	 * Включает этот фрагмент в последовательность. 
+	 * 
+	 * @param sequence
+	 *    последовательность, в которую встраивается фрагмент
+	 * @param start
+	 *    индекс (с отсчетом от нуля) начала фрагмента
+	 */
+	public void embed(Sequence sequence, int start) {
+		factory.embed(sequence, this, start);
 	}
 	
 	@Override

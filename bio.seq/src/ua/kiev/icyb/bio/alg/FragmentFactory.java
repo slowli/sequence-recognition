@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 
 /**
@@ -330,6 +331,28 @@ public class FragmentFactory implements Serializable {
 		return fragment.observed + fragment.hidden * obsPower[fragment.length];
 	}
 
+	/**
+	 * Включает фрагмент в последовательность полных состояний. 
+	 * 
+	 * @param sequence
+	 *    последовательность, в которую встраивается фрагмент
+	 * @param fragment
+	 *    фрагмент, который надо встроить в последовательность
+	 * @param start
+	 *    индекс (с отсчетом от нуля) начала фрагмента
+	 */
+	void embed(Sequence sequence, Fragment fragment, int start) {
+		int oIndex = fragment.observed, hIndex = fragment.hidden;
+		
+		for (int pos = fragment.length - 1; pos >= 0; pos--) {
+			sequence.observed[start + pos] = (byte) (oIndex % oSize);
+			sequence.hidden[start + pos] = (byte) (hIndex % hSize);
+			
+			oIndex /= oSize;
+			hIndex /= hSize;
+		}
+	}
+	
 	/**
 	 * Создает строковое представление для фрагмента строки полных состояний.
 	 * Строковое представление для отдельного полного состояния включает в себя
