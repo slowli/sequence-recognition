@@ -71,7 +71,7 @@ public class SetTests {
 		assertEquals("ACGT", set.observedStates());
 		assertEquals("xi", set.hiddenStates());
 		assertEquals("ACGTacgt", set.completeStates());
-		assertEquals(3531, set.size());
+		assertEquals(3749, set.size());
 		
 		checkSanity(set);
 	}
@@ -195,11 +195,11 @@ public class SetTests {
 		Env env = new Env(CONF_FILE);
 		
 		SequenceSet set1 = env.loadSet(SET_1);
-		assertEquals(3531, set1.size());
+		assertEquals(3749, set1.size());
 		checkSanity(set1);
 		
 		SequenceSet set2 = env.loadSet(SET_2);
-		assertEquals(4097, set2.size());
+		assertEquals(4397, set2.size());
 		checkSanity(set2);
 		
 		SequenceSet union = set1.join(set2);

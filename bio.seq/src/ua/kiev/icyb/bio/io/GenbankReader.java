@@ -40,7 +40,7 @@ public class GenbankReader implements Launchable {
 	/**
 	 * Имя базы данных, согласно которой последовательностям присваиваются идентификаторы.
 	 */
-	private static final String GENE_DB_NAME = "GeneID";
+	private static final String[] GENE_DB_NAMES = { "GeneID", "GI" };
 	
 	/**
 	 * Создает непрерывную локацию, покрывающую все нуклеотиды из заданной локации.
@@ -224,6 +224,28 @@ public class GenbankReader implements Launchable {
 	}
 	
 	/**
+	 * Извлекает идентификатор гена из записи.
+	 * 
+	 * @param feature
+	 *    запись, соответствующая гену или кодирующему участку гена
+	 * @return
+	 *    идентификатор гена или {@code null}, если идентификатор не содержится в записи
+	 */
+	private String getGeneID(RichFeature feature) {
+		for (Object obj : feature.getRankedCrossRefs()) {
+			if (obj instanceof RankedCrossRef) {
+				CrossRef ref = ((RankedCrossRef) obj).getCrossRef();
+				for (String dbName : GENE_DB_NAMES) {
+					if (dbName.equals(ref.getDbname())) {
+						return "GI:" + ref.getAccession() + "." + ref.getVersion();
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * Добавляет ген в выборку. Ген добавляется только если все его нуклеотиды
 	 * есть в алфавите наблюдаемых состояний выборки.
 	 * 
@@ -233,8 +255,10 @@ public class GenbankReader implements Launchable {
 	 *    позиция гена в ДНК
 	 * @param cds
 	 *    позиция кодирующей последовательности гена в ДНК
+	 * @param prefix
+	 *    префикс для идентификатора гена, если для него задана ссылка на базу данных GeneID
 	 */
-	private void addGene(SequenceSet set, RichFeature gene, RichFeature cds) {
+	private void addGene(SequenceSet set, RichFeature gene, RichFeature cds, String prefix) {
 		
 		byte[] hidden = getHiddenSequence(cds.getLocation());
 		byte[] observed = getObservedSequence(set.observedStates(), cds.getLocation());
@@ -245,20 +269,15 @@ public class GenbankReader implements Launchable {
 		}
 		
 		String id = null;
-		for (Object obj : gene.getRankedCrossRefs()) {
-			if (obj instanceof RankedCrossRef) {
-				CrossRef ref = ((RankedCrossRef) obj).getCrossRef();
-				if (GENE_DB_NAME.equals(ref.getDbname())) {
-					id = "GI:" + ref.getAccession() + "." + ref.getVersion();
-					if (protId != null) {
-						id += ";prot:" + protId;
-					}
-				}
-			}
-		}
+		id = getGeneID(gene);
+		if (id == null) id = getGeneID(cds);
 		
 		if (id == null) {
-			id = "unknown" + set.size();
+			id = prefix + set.size();
+		}
+		
+		if (protId != null) {
+			id += ";prot:" + protId;
 		}
 		
 		if ((observed != null) && (hidden != null)) {
@@ -281,6 +300,8 @@ public class GenbankReader implements Launchable {
 		env.debug(1, Messages.format("genbank.seq_name", rs.getName()));
 		env.debug(1, Messages.format("genbank.seq_descr", rs.getDescription()));
 		env.debug(1, "");
+		
+		String prefix = rs.getAccession() + "." + rs.getVersion() + ":";
 		
 		int geneIndex = 0;
 		Feature gene = null;
@@ -306,7 +327,7 @@ public class GenbankReader implements Launchable {
 				cdsFound = false;
 			} else if ((feat.getType().equals("CDS"))) {
 				if (!uniqueGenes || !cdsFound) {
-					addGene(set, (RichFeature) gene, (RichFeature) feat);
+					addGene(set, (RichFeature) gene, (RichFeature) feat, prefix);
 					cdsFound = true;
 				}
 			}
