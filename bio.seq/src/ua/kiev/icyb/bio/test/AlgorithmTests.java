@@ -37,7 +37,7 @@ public class AlgorithmTests {
 
 	private static final String SET_1 = "elegans-I";
 	
-	public static final String CONF_FILE = "tests/env.conf";
+	private static final String CONF_FILE = "tests/env.conf";
 	
 	private static void checkSanity(PredictionQuality q) {
 		assertTrue(q.symbolPrecision() > 0.5);
@@ -346,9 +346,6 @@ public class AlgorithmTests {
 		
 		CrossValidation cv = new CrossValidation(set, 5);
 		for (int f = 0; f < 10; f += 2) {
-			System.out.println(cv.getSet(f));
-			System.out.println(cv.getSet(f + 1));
-			
 			assertTrue(cv.getSet(f).size() > 0.6 * set.size());
 			assertTrue(cv.getSet(f).size() < 0.9 * set.size());
 			assertTrue(cv.getSet(f + 1).size() > 0.1 * set.size());
@@ -356,7 +353,7 @@ public class AlgorithmTests {
 			
 			assertEquals(set.size(), cv.getSet(f).size() + cv.getSet(f + 1).size());
 			
-			// check disjoint
+			// проверить, что обучающая и контрольная выборки не пересекаются
 			Set<String> trainIds = getIds(cv.getSet(f)), ctrlIds = getIds(cv.getSet(f + 1));
 			assertTrue(Collections.disjoint(trainIds, ctrlIds));
 		}
@@ -444,7 +441,7 @@ public class AlgorithmTests {
 	@Test
 	public void testFallthruAlgorithm() throws IOException {
 		testAlgorithm(new FallthruAlgorithm(
-				new Approximation(6, 3, Approximation.Strategy.MEAN)));
+				new Approximation(6, 3, Approximation.Strategy.FIRST)));
 	}
 	
 	/**

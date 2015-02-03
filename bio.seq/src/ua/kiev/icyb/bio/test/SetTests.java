@@ -1,13 +1,11 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,6 +14,7 @@ import org.junit.rules.TemporaryFolder;
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.SequenceUtils;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
 import ua.kiev.icyb.bio.filters.RandomFilter;
 
@@ -288,7 +287,6 @@ public class SetTests {
 	@Test
 	public void testSerializationAdvanced() throws IOException {
 		Env env = new Env(CONF_FILE);
-		
 		SequenceSet set1 = env.loadSet(SET_1), set2 = env.loadSet(SET_2);
 		
 		SequenceSet set = set1.join(set2).filter(new RandomFilter(0.4));
@@ -305,5 +303,62 @@ public class SetTests {
 		checkSubset(set, copy, 0);
 	}
 	
-	// TODO filters, translation
+	/**
+	 * Проверяет создание последовательностей с помощью метода
+	 * {@link SequenceUtils#parseSequence(SequenceSet, String)}.
+	 */
+	@Test
+	public void testSequenceCreation() {
+		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", null);
+		Sequence sequence = SequenceUtils.parseSequence(set, "GxAxTiAiGi");
+		assertNull(sequence.id);
+		assertSame(set, sequence.set);
+		assertEquals(5, sequence.length());
+		assertEquals(5, sequence.observed.length);
+		assertEquals(5, sequence.hidden.length);
+		assertEquals(2, sequence.observed[0]);
+		assertEquals(0, sequence.hidden[0]);
+		assertEquals(0, sequence.observed[3]);
+		assertEquals(1, sequence.hidden[3]);
+		
+		set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		
+		sequence = SequenceUtils.parseSequence(set, "AagaTc");
+		assertNull(sequence.id);
+		assertSame(set, sequence.set);
+		assertEquals(6, sequence.length());
+		assertEquals(6, sequence.observed.length);
+		assertEquals(6, sequence.hidden.length);
+		assertEquals(0, sequence.observed[0]);
+		assertEquals(0, sequence.hidden[0]);
+		assertEquals(1, sequence.observed[5]);
+		assertEquals(1, sequence.hidden[5]);
+	}
+	
+	/**
+	 * Проверяет разбиение последовательности состояний на сегменты.
+	 */
+	@Test
+	public void testSequenceSegmentation() {
+		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		Sequence sequence = SequenceUtils.parseSequence(set, "AagaggTCAc");
+		
+		List<Sequence.Segment> segments = sequence.segments();
+		assertEquals(4, segments.size());
+		
+		assertEquals(0, segments.get(0).start);
+		assertEquals(0, segments.get(0).end);
+		assertEquals(1, segments.get(0).length());
+		assertEquals(0, segments.get(0).state);
+		
+		assertEquals(1, segments.get(1).start);
+		assertEquals(5, segments.get(1).end);
+		assertEquals(5, segments.get(1).length());
+		assertEquals(1, segments.get(1).state);
+		
+		assertEquals(6, segments.get(2).start);
+		assertEquals(8, segments.get(2).end);
+		assertEquals(3, segments.get(2).length());
+		assertEquals(0, segments.get(2).state);
+	}
 }
