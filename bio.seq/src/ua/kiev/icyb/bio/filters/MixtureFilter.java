@@ -24,11 +24,30 @@ public class MixtureFilter implements SequenceSet.Filter {
 	
 	private double confidence;
 	
-	
+	/**
+	 * Создает фильтр с заданными параметрами.
+	 * 
+	 * @param mixture
+	 *    смесь распределений, используемая для вычисления апостериорных вероятностей
+	 * @param indices
+	 *    индексы компонент смеси, которые надо выбрать 
+	 * @param confidence
+	 *    минимальная апостериорная вероятность для выбора
+	 */
 	public MixtureFilter(MarkovMixture mixture, Set<Integer> indices, double confidence) {
 		init(mixture, indices, confidence);
 	}
 	
+	/**
+	 * Создает фильтр с заданными параметрами.
+	 * 
+	 * @param mixture
+	 *    смесь распределений, используемая для вычисления апостериорных вероятностей
+	 * @param index
+	 *    индекс компоненты смеси, которую надо выбрать
+	 * @param confidence
+	 *    минимальная апостериорная вероятность для выбора
+	 */
 	public MixtureFilter(MarkovMixture mixture, int index, double confidence) {
 		init(mixture, Collections.singleton(index), confidence);
 	}

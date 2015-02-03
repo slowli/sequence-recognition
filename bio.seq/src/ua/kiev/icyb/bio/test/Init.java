@@ -8,6 +8,9 @@ import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.io.DSSPReader;
 import ua.kiev.icyb.bio.io.GenbankReader;
 
+/**
+ * Инициализация выборок для тестов. Запускается из файла {@code tests/setup.sh}.
+ */
 public class Init {
 	
 	public static void main(String[] args) throws IOException {
