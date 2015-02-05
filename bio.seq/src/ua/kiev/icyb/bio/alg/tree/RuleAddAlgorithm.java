@@ -213,7 +213,7 @@ public class RuleAddAlgorithm extends AbstractLaunchable implements Representabl
 			final FragmentSet combination = entry.getKey();
 			
 			ContentPartitionRule rule = new ContentPartitionRule(combination, 0.0);
-			rule.setThreshold(combination.median(entropy.getSet()));
+			rule.setThreshold(combination.medianContent(entropy.getSet()));
 			double difference = entropy.fitness(rule);
 			getEnv().debug(2, Messages.format("misc.fitness", rule, difference));
 			entry.setValue(difference);

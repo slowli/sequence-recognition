@@ -115,7 +115,7 @@ public class FragmentSetWrapper extends FragmentSet implements Organism {
 	@Override
 	public double fitness() {
 		ContentPartitionRule rule = new ContentPartitionRule(this, 0.0);
-		rule.setThreshold(this.median(entropy.getSet()));
+		rule.setThreshold(this.medianContent(entropy.getSet()));
 		double fitness = entropy.fitness(rule);
 		return fitness;
 	}

@@ -1,9 +1,13 @@
 package ua.kiev.icyb.bio.alg.tree;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import ua.kiev.icyb.bio.Representable;
+import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.filters.LabelFilter;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -95,11 +99,32 @@ public class PartitionRuleTree implements Serializable, Representable {
 	 *    индексы (с отсчетом от нуля) частей разбиения, содержащих каждую наблюдаемую
 	 *    строку из выборки
 	 */
-	public int[] split(SequenceSet set) {
-		int[] result = new int[set.size()];
-		for (int i = 0; i < result.length; i++)
-			result[i] = getPart(set.observed(i));
-		return result;
+	public SequenceSet[] split(SequenceSet set) {
+		Map<String, Integer> labels = this.getLabels(set);
+		
+		SequenceSet[] subsets = new SequenceSet[this.size()];
+		for (int i = 0; i < subsets.length; i++) {
+			subsets[i] = set.filter(new LabelFilter(labels, i));
+		}
+		return subsets;
+	}
+	
+	/**
+	 * Возвращает метки для строк выборки согласно этому дереву разбиения.
+	 * 
+	 * @param set
+	 *    выборка для разбиения
+	 * @return
+	 *    метки для всех строк выборки, соответствующие номеру части разбиения, в которую
+	 *    попадает конкретная строка
+	 */
+	public Map<String, Integer> getLabels(SequenceSet set) {
+		Map<String, Integer> labels = new HashMap<String, Integer>();
+		for (Sequence sequence : set) {
+			labels.put(sequence.id, getPart(sequence.observed));
+		}
+		
+		return labels;
 	}
 	
 	/**
