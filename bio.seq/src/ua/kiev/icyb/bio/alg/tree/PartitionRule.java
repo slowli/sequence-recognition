@@ -1,22 +1,20 @@
 package ua.kiev.icyb.bio.alg.tree;
 
-import java.io.Serializable;
-
 import ua.kiev.icyb.bio.SequenceSet;
 
 
 /**
  * Предикат, определенный на пространстве строк наблюдаемых состояний.
  */
-public interface PartitionRule extends Serializable {
+public abstract class PartitionRule {
 
 	/**
 	 * Вычисляет значение предиката на заданной строке наблюдаемых состояний.
 	 * 
 	 * @param seq
-	 *        последовательность наблюдаемых состояний
+	 *    последовательность наблюдаемых состояний
 	 * @return
-	 *        значение предиката
+	 *    значение предиката
 	 */
 	public abstract boolean test(byte[] seq);
 
@@ -24,9 +22,35 @@ public interface PartitionRule extends Serializable {
 	 * Вычисляет значение предиката на заданном наборе строк наблюдаемых состояний.
 	 * 
 	 * @param set
-	 *        набор последовательностей
+	 *    набор последовательностей
 	 * @return
-	 *        значения предиката для всех строк в наборе
+	 *    значения предиката для всех строк в наборе
 	 */
-	public abstract boolean[] test(SequenceSet set);
+	public boolean[] test(SequenceSet set) {
+		boolean[] selector = new boolean[set.size()];
+		for (int i = 0; i < set.size(); i++) {
+			selector[i] = this.test(set.observed(i));
+		}
+		return selector;
+	}
+	
+	/**
+	 * Разбивает выборку на две части в соответствии со значениями предиката.
+	 * 
+	 * @param set
+	 *    выборка, которую надо разбить
+	 * @return
+	 *    две части выборки, первая из которых содержит строки, на которых предикат истиннен,
+	 *    а вторая - строки, на которых он ложен
+	 */
+	public SequenceSet[] split(SequenceSet set) {
+		boolean[] selector = this.test(set);
+		SequenceSet compliantSubset = set.filter(selector);
+		for (int i = 0; i < set.size(); i++) {
+			selector[i] = !selector[i];
+		}
+		SequenceSet otherSubset = set.filter(selector);
+
+		return new SequenceSet[] { compliantSubset, otherSubset };
+	}
 }

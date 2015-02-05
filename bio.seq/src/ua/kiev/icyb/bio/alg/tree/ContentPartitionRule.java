@@ -1,6 +1,6 @@
 package ua.kiev.icyb.bio.alg.tree;
 
-import ua.kiev.icyb.bio.SequenceSet;
+import java.io.Serializable;
 
 /**
  * Предикат, значение которого зависит от совместной концентрации
@@ -22,7 +22,7 @@ import ua.kiev.icyb.bio.SequenceSet;
  * assert(!rule.test(str)); // концентрация A и G равна 2/5 < 0,5
  * </pre> 
  */
-public class ContentPartitionRule implements PartitionRule {
+public class ContentPartitionRule extends PartitionRule implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -51,20 +51,13 @@ public class ContentPartitionRule implements PartitionRule {
 
 	@Override
 	public boolean test(byte[] seq) {
-		return (bases.calc(seq) > threshold);
+		return (bases.content(seq) > threshold);
 	}
 
-	@Override
-	public boolean[] test(SequenceSet set) {
-		boolean[] selector = new boolean[set.size()];
-
-		for (int i = 0; i < set.size(); i++) {
-			selector[i] = test(set.observed(i));
-		}
-
-		return selector;
+	public double getThreshold() {
+		return threshold;
 	}
-
+	
 	/**
 	 * Устанавливает значение пороговой концентрации.
 	 * 
