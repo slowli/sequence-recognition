@@ -2,6 +2,7 @@ package ua.kiev.icyb.bio.alg.tree;
 
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +28,67 @@ import ua.kiev.icyb.bio.res.Messages;
 public class RuleTreeGenerator extends AbstractLaunchable implements Representable {
 	
 	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * Запись, соовтетствующая вычислению качества предиката во время работы алгоритма
+	 * построения дерева.
+	 */
+	public static class Fitness implements Serializable {
+		
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * Выборка, на которой вычислялось качество предиката.
+		 */
+		public final SequenceSet set;
+		
+		/**
+		 * Предикат, качество которого вычислялось.
+		 */
+		public final PartitionRule rule;
+		
+		/**
+		 * Значение функционала качества.
+		 */
+		public final double fitness;
+		
+		/**
+		 * Номер итерации алгоритма (с отсчетом от нуля), в ходе которой было вычислено качество.
+		 */
+		public final int iteration;
+		
+		/**
+		 * Номер части разбиения (с отсчетом от нуля), для которой проверялся предикат.
+		 */
+		public final int partitionIndex;
+		
+		/**
+		 * Является ли предикат оптимальным для своей части разбиения?
+		 */
+		public boolean isOptimal = false;
+		
+		/**
+		 * Является ли предикат оптимальным для всех частей разбиения в целом?
+		 */
+		public boolean isGloballyOptimal = false;
+		
+		private Fitness(SequenceSet set, PartitionRule rule, double fitness, 
+				int iteration, int partitionIndex) {
+			
+			this.set = set;
+			this.rule = rule;
+			this.fitness = fitness;
+			this.iteration = iteration;
+			this.partitionIndex = partitionIndex;
+		}
+		
+		@Override
+		public String toString() {
+			return String.format("[iter=%d, part=%d: q(%s) = %.2f]", 
+					this.iteration, this.partitionIndex,
+					this.rule, this.fitness);
+		}
+	}
 
 	/** Количество правил в дереве, которое надо построить. */
 	public int treeSize;
@@ -68,12 +130,18 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	/**
 	 * Дерево предикатов, которое строится алгоритмом.
 	 */
-	private PartitionRuleTree tree;
+	public PartitionRuleTree tree;
 	
 	/**
 	 * Текущий индекс части разбиения для всех прецедентов из выборки.
 	 */
 	private int[] partIdx;
+	
+	/**
+	 * Вычисленные значения функционала качества для предикатов в ходе выполнения
+	 * алгоритма.
+	 */
+	public final Collection<Fitness> computedFitness = new ArrayList<Fitness>();
 	
 	/**
 	 * Максимальное значение функционала качества для разбиений каждой из текущих частей
@@ -111,11 +179,6 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	private Map<PartitionRule, Double> ruleFitness = null;
 	
 	/**
-	 * Объект, используемый для вычисления функционала качества предикатов.
-	 */
-	private transient RuleEntropy entropy;
-	
-	/**
 	 * Создает новый алгоритм построения дерева предикатов.
 	 */
 	public RuleTreeGenerator() {
@@ -127,11 +190,8 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 	 * @return
 	 *    объект для оценки функционала качества
 	 */
-	private RuleEntropy getEntropy() {
-		if (entropy == null) {
-			entropy = new RuleEntropy(set, order);
-		}
-		return entropy;
+	private RuleEntropy getEntropy(SequenceSet set) {
+		return new RuleEntropy(set, order);
 	}
 
 	/**
@@ -156,7 +216,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 		}
 		
 		ExecutorService executor = getEnv().executor();
-		RuleEntropy entropy = getEntropy();
+		RuleEntropy entropy = getEntropy(set);
 		List<RuleTask> tasks = new ArrayList<RuleTask>();
 		for (Map.Entry<PartitionRule, Double> entry : this.ruleFitness.entrySet()) {
 			if (entry.getValue().isNaN()) {
@@ -230,7 +290,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 
 			double[] vars = new double[set.size()];
 			for (int i = 0; i < set.size(); i++)
-				vars[i] = comb.calc(set.observed(i));
+				vars[i] = comb.content(set.observed(i));
 			Arrays.sort(vars);
 
 			for (int i = 0; i < percentages.length; i++) {
@@ -274,6 +334,11 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			}
 			
 			entry.setValue(fitness);
+			
+			synchronized(computedFitness) {
+				computedFitness.add(new Fitness(fullSet, rule, fitness, tree.size(), currentPart));
+			}
+			
 			return null;	
 		}
 	}
@@ -309,7 +374,7 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 					b[i] = (partIdx[i] == p);
 				}
 				
-				// Currently viewed part of the set
+				// Текущая часть выборки
 				SequenceSet partSet = set.filter(b);
 				List<PartitionRule> rules = inferRules(partSet);
 				save();
@@ -328,6 +393,14 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 				optRule[p] = partMaxRule;
 				getEnv().debug(1, Messages.format("tree.opt_rule",
 						p + 1, optRule[p], maxFitness[p]));
+				
+				for (Fitness f: computedFitness) {
+					if ((f.iteration == tree.size()) && (f.partitionIndex == p) 
+							&& (f.fitness == maxFitness[p])) {
+						
+						f.isOptimal = true;
+					}
+				}
 				
 				rulesInferred = false;
 				partRules.clear();
@@ -351,6 +424,14 @@ public class RuleTreeGenerator extends AbstractLaunchable implements Representab
 			if (maxFitness[p] > overallMax) {
 				overallMax = maxFitness[p];
 				maxPart = p;
+			}
+		}
+		
+		for (Fitness f: computedFitness) {
+			if ((f.iteration <= tree.size()) && f.isOptimal 
+					&& (f.fitness == overallMax)) {
+				
+				f.isGloballyOptimal = true;
 			}
 		}
 		
