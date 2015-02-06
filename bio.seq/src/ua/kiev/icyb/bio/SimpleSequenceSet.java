@@ -7,8 +7,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -44,9 +46,25 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	
 	private static final long serialVersionUID = 1L;
 	
+	/**
+	 * Скрытые последовательности выборки.
+	 */
 	private List<byte[]> hiddenSeq = new ArrayList<byte[]>();
+	
+	/**
+	 * Наблюдаемые последовательности выборки.
+	 */
 	private List<byte[]> observedSeq = new ArrayList<byte[]>();
+	
+	/**
+	 * Идентификаторы прецедентов выборки.
+	 */
 	private List<String> ids = new ArrayList<String>();
+	
+	/**
+	 * Множество идентификаторов прецедентов, входящих в эту выборку.
+	 */
+	private transient Set<String> idSet = new HashSet<String>(); 
 
 	/** Алфавит наблюдаемых состояний. */
 	private String observedStates;
@@ -88,25 +106,29 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		read(reader);
 	}
 
-	
+	/**
+	 * Копирующий конструктор.
+	 * 
+	 * @param other
+	 *    выборка, которую необходимо скопировать
+	 */
 	protected SimpleSequenceSet(SequenceSet other) {
 		this(other.observedStates(), other.hiddenStates(), other.completeStates());
 		this.addSet(other);
 	}
 	
 	/**
-	 * Создает отстутствующие идентификаторы для строк выборки. Идентификатор состоит из
-	 * заданного префикса, за которым следует порядковый номер строки в выборке.
+	 * Возвращает автоматически сгенерированный идентификатор прецедента.
+	 * Используется в методе {@link #read(BufferedReader)} для прецедентов,
+	 * у которых явно не задан идентификатор. 
 	 * 
-	 * @param prefix
-	 *    префикс для идентификаторов
+	 * <p>Реализация по умолчанию возвращает номер прецедента в выборке.
+	 * 
+	 * @return
+	 *    идентификатор прецедента
 	 */
-	protected void fillMissingIds(String prefix) {
-		for (int i = 0; i < this.size(); i++) {
-			if (this.ids.get(i) == null) {
-				this.ids.set(i, prefix + i);
-			}
-		}
+	protected String autoID() {
+		return "" + this.size();
 	}
 
 	/**
@@ -130,7 +152,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		}
 
 		byte[] lastObservedSeq = null;
-		String lastReadId = null;
+		String id = null;
 		
 		while ((line = reader.readLine()) != null) {
 			String key = line.substring(0, line.indexOf(':')).trim();
@@ -139,11 +161,11 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 			if (key.equals("o")) {
 				lastObservedSeq = decode(value, observedStates);
 			} else if (key.equals("i")) {
-				lastReadId = value;
+				id = value;
 			} else if (key.equals("h")) {
 				this.doAdd(new Sequence(
-						lastReadId, lastObservedSeq, decode(value, hiddenStates)));
-				lastReadId = null;
+						(id == null) ? autoID() : id, lastObservedSeq, decode(value, hiddenStates)));
+				id = null;
 			} else if (key.equals("c")) {
 				byte[] complete = decode(value, completeStates);
 				byte[] observed = new byte[complete.length], hidden = new byte[complete.length];
@@ -153,8 +175,8 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 					hidden[pos] = (byte) (complete[pos] / observedStates.length());
 				}
 				
-				this.doAdd(new Sequence(lastReadId, observed, hidden));
-				lastReadId = null;
+				this.doAdd(new Sequence((id == null) ? autoID() : id, observed, hidden));
+				id = null;
 			}
 		}
 		((ArrayList<byte[]>) observedSeq).trimToSize();
@@ -312,10 +334,16 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	 * @param sequence
 	 *    добавляемый объект
 	 */
-	protected void doAdd(Sequence sequence) {
+	protected boolean doAdd(Sequence sequence) {
+		if (this.contains(sequence)) {
+			return false;
+		}
+		
 		this.observedSeq.add(sequence.observed);
 		this.hiddenSeq.add(sequence.hidden);
 		this.ids.add(sequence.id);
+		this.idSet.add(sequence.id);
+		return true;
 	}
 
 	/**
@@ -345,6 +373,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 			this.observedSeq = new ArrayList<byte[]>();
 			this.ids = new ArrayList<String>();
 		}
+		this.idSet = new HashSet<String>(this.ids);
 	}
 	
 	private void writeObject(ObjectOutputStream out) throws IOException {
@@ -389,15 +418,27 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 				observedStates(), hiddenStates());
 	}
 
+	/**
+	 * Итератор по прецедентам, входящим в выборку.
+	 */
 	private static class SetIterator implements Iterator<Sequence> {
 
 		private final SimpleSequenceSet set;
 		
+		/**
+		 * Индекс текущего элемента выборки (с отсчетом от нуля).
+		 */
 		private int index;
+		
+		/**
+		 * Был ли текущий элемент удален методом {@link #remove()}?
+		 */
+		private boolean removed;
 		
 		public SetIterator(SimpleSequenceSet set) {
 			this.set = set;
 			this.index = 0;
+			this.removed = false;
 		}
 		
 		@Override
@@ -407,12 +448,19 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 
 		@Override
 		public Sequence next() {
+			this.removed = false;
 			return this.set.get(this.index++);
 		}
 
 		@Override
 		public void remove() {
+			if (this.removed) {
+				throw new IllegalStateException();
+			}
+			
 			this.set.remove(this.index - 1);
+			this.removed = true;
+			this.index--;
 		}
 		
 	}
@@ -423,10 +471,17 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	}
 	
 	@Override
+	public boolean contains(Object obj) {
+		Sequence sequence = (Sequence) obj;
+		return idSet.contains(sequence.id);
+	}
+	
+	@Override
 	public void clear() {
 		this.observedSeq.clear();
 		this.hiddenSeq.clear();
 		this.ids.clear();
+		this.idSet.clear();
 	}
 	
 	/**
@@ -438,8 +493,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	 */
 	@Override
 	public boolean add(Sequence sequence) {
-		this.doAdd(sequence);
-		return true;
+		return this.doAdd(sequence);
 	}
 	
 	/**
@@ -453,7 +507,8 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		
 		this.observedSeq.remove(index);
 		this.hiddenSeq.remove(index);
-		this.ids.remove(index);
+		String id = this.ids.remove(index);
+		this.idSet.remove(id);
 		
 		return sequence;
 	}

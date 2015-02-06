@@ -47,10 +47,15 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 	 *    если указанное имя выборки не соответствует файлу 
 	 */
 	public NamedSequenceSet(String datasetName, Env env) throws IOException {
-		super(env.resolveDataset(datasetName));
+		super("", "", null);
 		this.writeContent = false;
 		this.datasetName = datasetName;
-		fillMissingIds(this.datasetName + ":");
+		read(env.resolveDataset(datasetName));
+	}
+	
+	@Override
+	protected String autoID() {
+		return this.datasetName + ":" + this.size();
 	}
 	
 	/**
