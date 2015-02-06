@@ -8,6 +8,10 @@ import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Прецедент — пара из наблюдаемой и скрытой строк состояний. 
+ * 
+ * <p>Для ускорения вычислений и уменьшения объема памяти, потребляемой алгоритмами,
+ * каждый прецедент обладает идентификатором. Два прецедента равны тогда и только тогда,
+ * когда их идентификаторы совпадают (фактическое содержимое прецедентов при этом может различаться).
  */
 public class Sequence {
 	
@@ -115,8 +119,11 @@ public class Sequence {
 	 * Создает прецедент с заданными параметрами.
 	 * 
 	 * @param id
+	 *   идентификатор прецедента
 	 * @param observed
+	 *    строка наблюдаемых состояний
 	 * @param hidden
+	 *    строка скрытых состояний
 	 */
 	public Sequence(String id, byte[] observed, byte[] hidden) {
 		this.set = null;
@@ -128,14 +135,17 @@ public class Sequence {
 	
 	/**
 	 * Создает прецедент с заданными строками наблюдаемых и скрытых состояний.
+	 * Идентификатор прецедента генерируется автоматически случайным образом.
 	 * 
 	 * @param observed
 	 *    строка наблюдаемых состояний
 	 * @param hidden
 	 *    строка скрытых состояний
+	 *    
+	 * @see SequenceUtils#newID()
 	 */
 	public Sequence(byte[] observed, byte[] hidden) {
-		this(null, observed, hidden);
+		this(SequenceUtils.newID(), observed, hidden);
 	}
 	
 	/**

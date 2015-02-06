@@ -10,6 +10,32 @@ import ua.kiev.icyb.bio.res.Messages;
  */
 public class SequenceUtils {
 	
+	private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	
+	private static final int AUTO_ID_LENGTH = 20;
+	
+	/**
+	 * Создает случайный идентификатор. Идентификатор состоит из 20 символов; в него могут входить
+	 * символы из кодировки base64 (заглавные и строчные латинские буквы, цифры 
+	 * и знаки {@code '+'} и {@code '/'}).
+	 * 
+	 * @return
+	 *    случайный идентификатор длиной 20 символов
+	 */
+	public static synchronized String newID() {
+		StringBuilder uuid = new StringBuilder(36);
+		int rnd = 0, r = 0;
+		
+		for (int i = 0; i < AUTO_ID_LENGTH; i ++ ) {
+			if (rnd <= 0x02) rnd = 0x2000000 + (int)( Math.random() * 0x1000000 ) | 0;
+			r = rnd & 63;
+			rnd = rnd >> 6;
+			uuid.append(CHARS.charAt(r));
+		}
+
+		return uuid.toString();
+	}
+	
 	/**
 	 * Создает последовательность по ее текстовому представлению и выборке, в которую последовательность
 	 * потенциально может входить.
