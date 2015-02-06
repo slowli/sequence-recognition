@@ -52,6 +52,21 @@ public class PartitionRuleTree implements Serializable, Representable {
 	}
 	
 	/**
+	 * Возвращает правило, входящее в это дерево.
+	 * 
+	 * @param index
+	 *    индекс правила (с отсчетом от нуля)
+	 * @return
+	 *    правило с заданным индексом
+	 */
+	public PartitionRule rule(int index) {
+		if (index >= size()) {
+			throw new IndexOutOfBoundsException("Invalid index: " + index);
+		}
+		return this.rules[index];
+	}
+	
+	/**
 	 * Создает пустое дерево предикатов.
 	 */
 	public PartitionRuleTree() {
@@ -66,7 +81,10 @@ public class PartitionRuleTree implements Serializable, Representable {
 	 *    индекс (с отсчетом от нуля) части выборки, которое правило разбивает
 	 */
 	public void add(PartitionRule rule, int part) {
-		assert(part <= nRules);
+		if (part > nRules) {
+			throw new IndexOutOfBoundsException("Invalid number of part to split: " + part);
+		}
+		
 		parts[nRules] = part;
 		rules[nRules] = rule;
 		nRules++;
@@ -128,18 +146,20 @@ public class PartitionRuleTree implements Serializable, Representable {
 	}
 	
 	/**
-	 * Обрезает дерево.
+	 * Обрезает дерево, удаляя из него правила, начиная с последнего.
 	 * 
 	 * @param newSize
-	 *    новый размер дерева
+	 *    новый размер дерева, то есть количество правил в нем
 	 */
 	public void trim(int newSize) {
-		assert(newSize >= 0);
-		for (int i = newSize; i < nRules; i++) {
-			rules[i] = null; // Free memory
+		if (newSize <= 0) {
+			throw new IllegalArgumentException("Tree size must be positive: " + newSize);
 		}
-		nRules = Math.min(nRules, newSize);
-		nRules = Math.max(nRules, 0);
+		
+		for (int i = newSize; i < nRules; i++) {
+			rules[i] = null; // Освободить память
+		}
+		this.nRules = Math.min(nRules, newSize);
 	}
 	
 	public String repr() {
