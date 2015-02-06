@@ -5,7 +5,10 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -99,6 +102,9 @@ public class SetTests {
 		}
 	}
 	
+	/**
+	 * Проверяет выборку с возможностью добавления прецедентов.
+	 */
 	@Test
 	public void testMutableSet() {
 		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
@@ -124,6 +130,9 @@ public class SetTests {
 		checkSanity(set);
 	}
 	
+	/**
+	 * Проверяет очистку выборки.
+	 */
 	@Test
 	public void testMutableSetClear() {
 		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
@@ -134,9 +143,91 @@ public class SetTests {
 		
 		assertEquals(1000, set.size());
 		checkSanity(set);
+		for (int i = 0; i < set.size(); i++) {
+			assertTrue(set.contains(set.get(i)));
+		}
 		
+		Sequence[] sequences = set.toArray(new Sequence[0]);
 		set.clear();
 		assertEquals(0, set.size());
+		for (Sequence seq : sequences) {
+			assertFalse(set.contains(seq));
+		}
+	}
+	
+	/**
+	 * Проверяет метод {@link SequenceSet#contains(Object)}.
+	 */
+	@Test
+	public void testSetContains() {
+		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		Sequence seq = new Sequence("1", new byte[100], new byte[100]);
+		set.add(seq);
+		assertTrue(set.contains(seq));
+		
+		Sequence seq2 = new Sequence("1", new byte[50], new byte[50]);
+		assertTrue(set.contains(seq2));
+		
+		seq2 = new Sequence("2", new byte[100], new byte[100]);
+		assertFalse(set.contains(seq2));
+		
+		set.add(seq2);
+		assertTrue(set.contains(seq2));
+		
+		set.remove(0);
+		assertFalse(set.contains(seq));
+		assertTrue(set.contains(seq2));
+	}
+	
+	/**
+	 * Проверяет удаление прецедентов из выборки.
+	 */
+	@Test
+	public void testSetRemove() {
+		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		for (int i = 0; i < 100; i++) {
+			Sequence seq = new Sequence("" + i, new byte[100], new byte[100]);
+			set.add(seq);
+		}
+		
+		Sequence seq = set.remove(10);
+		assertEquals(99, set.size());
+		assertEquals("10", seq.id);
+		
+		seq = new Sequence("20", new byte[0], new byte[0]);
+		boolean result = set.remove(seq);
+		assertTrue(result);
+		assertEquals(98, set.size());
+		assertFalse(set.contains(seq));
+		assertEquals("22", set.get(20).id);
+	}
+	
+	/**
+	 * Проверяет удаление прецедентов из выборки с помощью итератора.
+	 */
+	@Test
+	public void testSetIteratorRemove() {
+		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		for (int i = 0; i < 100; i++) {
+			Sequence seq = new Sequence("" + i, new byte[100], new byte[100]);
+			set.add(seq);
+		}
+		
+		int count = 0;
+		Iterator<Sequence> iter = set.iterator();
+		while (iter.hasNext()) {
+			assertEquals("" +  count, iter.next().id);
+			if (count % 2 == 0) {
+				iter.remove();
+			}
+			count++;
+		}
+		
+		count = 0;
+		for (Sequence seq : set) {
+			assertEquals("" + (2 * count + 1), seq.id);
+			count++;
+		}
 	}
 	
 	@Test(expected = IndexOutOfBoundsException.class)
@@ -360,5 +451,19 @@ public class SetTests {
 		assertEquals(8, segments.get(2).end);
 		assertEquals(3, segments.get(2).length());
 		assertEquals(0, segments.get(2).state);
+	}
+	
+	@Test
+	public void testSequenceAutoIds() {
+		byte[] observed = new byte[] { 0 };
+		final int nSamples = 10000;
+		
+		Set<String> ids = new HashSet<String>(nSamples);
+		
+		for (int i = 0; i < nSamples; i++) {
+			Sequence seq = new Sequence(observed, null);
+			ids.add(seq.id);
+		}
+		assertEquals(nSamples, ids.size());
 	}
 }
