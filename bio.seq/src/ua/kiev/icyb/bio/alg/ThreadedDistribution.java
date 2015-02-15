@@ -39,6 +39,24 @@ public class ThreadedDistribution<T> extends AbstractDistribution<T> {
 		}
 	}
 	
+	private class GenerateTask implements Callable<Void> {
+
+		private final Collection<T> output;
+		
+		public GenerateTask(Collection<T> output) {
+			this.output = output;
+		}
+		
+		@Override
+		public Void call() throws Exception {
+			T sample = ThreadedDistribution.this.generate();
+			synchronized(output) {
+				output.add(sample);
+			}
+			return null;
+		}
+	}
+	
 	/** Базовое вероятностное распределение. */
 	private final Distribution<T> base;
 	
@@ -72,6 +90,11 @@ public class ThreadedDistribution<T> extends AbstractDistribution<T> {
 	public double estimate(T point) {
 		return this.base.estimate(point);
 	}
+	
+	@Override
+	public T generate() {
+		return this.base.generate();
+	}
 
 	@Override
 	public double estimate(Collection<? extends T> points) {
@@ -92,5 +115,33 @@ public class ThreadedDistribution<T> extends AbstractDistribution<T> {
 		}
 		
 		return logP;
+	}
+	
+	/**
+	 * Генерирует выборку заданного размера
+	 * 
+	 * @param size
+	 *    размер выборки
+	 * @return
+	 *    выборка, состоящая из независимых прецедентов, распределенных согласно этому распределению
+	 */
+	public Collection<T> generateSet(int size) {
+		List<T> samples = new ArrayList<T>();
+		List<GenerateTask> tasks = new ArrayList<GenerateTask>();
+		for (int i = 0; i < size; i++) {
+			tasks.add(new GenerateTask(samples));
+		}
+		
+		try {
+			for (Future<Void> f : env.executor().invokeAll(tasks)) {
+				f.get();
+			}
+		} catch (InterruptedException e) {
+			env.exception(e);
+		} catch (ExecutionException e) {
+			env.exception(e);
+		}
+		
+		return samples;
 	}
 }

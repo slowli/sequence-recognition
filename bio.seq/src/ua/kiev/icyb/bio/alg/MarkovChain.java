@@ -502,18 +502,16 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 		byte[] observed = new byte[length], hidden = new byte[length];
 		Sequence sequence = new Sequence(observed, hidden);
 		
-		Collection<Fragment> tails = this.getInitialStates();
-		Fragment[] tailsArray = new Fragment[tails.size()];
-		double[] p = new double[tails.size()];
+		Fragment[] tails = this.getInitialStates().toArray(new Fragment[0]);
+		double[] p = new double[tails.length];
 		
 		int i = 0;
 		for (Fragment tail : tails) {
-			tailsArray[i] = tail;
 			p[i] = this.getInitialP(tail);
 			i++;
 		}
 		
-		Fragment tail = DistributionUtils.choose(tailsArray, p);
+		Fragment tail = DistributionUtils.choose(tails, p).clone();
 		tail.embed(sequence, 0);
 		
 		Fragment[] heads = this.factory().allFragments(depLength()).toArray(new Fragment[0]);

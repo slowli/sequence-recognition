@@ -1,10 +1,14 @@
 package ua.kiev.icyb.bio.alg;
 
+import java.util.Random;
+
 /**
  * Инструменты для работы с вероятностными распределениями.
  */
 public class DistributionUtils {
 
+	private static final Random random = new Random();
+	
 	/**
 	 * Возвращает один из объектов в соответствии с вероятностным распрделением на конечном
 	 * множестве.
@@ -27,7 +31,11 @@ public class DistributionUtils {
 			cummulativeP[i] = cummulativeP[i - 1] + probabilities[i]; 
 		}
 		
-		double r = Math.random();
+		double r = 0.0;
+		synchronized(random) {
+			r = random.nextDouble();
+		}
+		
 		int idx;
 		for (idx = 0; (idx < objects.length) && (cummulativeP[idx] < r); idx++) ;
 		if (idx >= objects.length) idx--;
