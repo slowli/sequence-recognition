@@ -1,7 +1,9 @@
 package ua.kiev.icyb.bio.alg.tree;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ua.kiev.icyb.bio.Representable;
@@ -40,6 +42,12 @@ public class PartitionRuleTree implements Serializable, Representable {
 	private int nRules = 0;
 	
 	/**
+	 * Создает пустое дерево предикатов.
+	 */
+	public PartitionRuleTree() {
+	}
+
+	/**
 	 * Возвращает число частей, на которые это дерево делит пространство
 	 * строк наблюдаемых состояний. Это число на единицу больше количество правил
 	 * в дереве.
@@ -67,9 +75,36 @@ public class PartitionRuleTree implements Serializable, Representable {
 	}
 	
 	/**
-	 * Создает пустое дерево предикатов.
+	 * Возовращает корневую вершину этого дерева разбиения.
+	 * 
+	 * @return
+	 *    корень дерева разбиения
 	 */
-	public PartitionRuleTree() {
+	public Partition root() {
+		Partition root = new Partition();
+		
+		for (int i = 0; i < this.size() - 1; i++) {
+			for (Partition part : root.leaves()) {
+				if (part.index() == this.parts[i]) {
+					part.split(this.rule(i));
+					break;
+				}
+			}
+		}
+		
+		return root;
+	}
+	
+	/**
+	 * Возвращает терминальные вершины дерева разбиения.
+	 * 
+	 * @return
+	 *    список терминальных вершин. Порядок перечисления вершин соответствует их индексам.
+	 */
+	public List<Partition> leaves() {
+		List<Partition> leaves = this.root().leaves();
+		Collections.sort(leaves, Partition.INDEX_SORTER);
+		return leaves;
 	}
 	
 	/**

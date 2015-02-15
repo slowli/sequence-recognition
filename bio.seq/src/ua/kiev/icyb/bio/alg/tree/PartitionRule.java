@@ -53,4 +53,116 @@ public abstract class PartitionRule {
 
 		return new SequenceSet[] { compliantSubset, otherSubset };
 	}
+	
+	/**
+	 * Возвращает предикат, значение которого на произвольной строке противоположно
+	 * значению этого предиката.
+	 * 
+	 * @return
+	 *    отрицание этого предиката
+	 */
+	public PartitionRule not() {
+		return new NegationPartitionRule(this);
+	}
+	
+	/**
+	 * Возвращает конъюнкцию этого предиката и другого.
+	 * 
+	 * @param other
+	 *    другой предикат
+	 * @return
+	 *    конъюнкция этого предиката и другого
+	 */
+	public PartitionRule and(PartitionRule other) {
+		return new IntersectionPartitionRule(this, other);
+	}
+}
+
+/**
+ * Предикат, ялвяющийся отрицанием другого предиката.
+ */
+class NegationPartitionRule extends PartitionRule {
+	
+	/** Базовый предикат. */
+	private final PartitionRule base;
+	
+	/**
+	 * Создает предикат, который является отрицанием заданного предиката.
+	 * 
+	 * @param base
+	 *    базовый предикат
+	 */
+	public NegationPartitionRule(PartitionRule base) {
+		this.base = base;
+	}
+
+	@Override
+	public boolean test(byte[] seq) {
+		return !this.base.test(seq);
+	}
+	
+	@Override
+	public String toString() {
+		return "!" + base.toString();
+	}
+}
+
+/**
+ * Предикат, являющийся конъюнкцией нескольких предикатов.
+ */
+class IntersectionPartitionRule extends PartitionRule {
+	
+	/** Базовые предикаты. */
+	private final PartitionRule[] clauses;
+	
+	/**
+	 * Создает конъюнкцию на основе базовых предикатов.
+	 * 
+	 * @param clauses
+	 *    базовые предикаты
+	 */
+	public IntersectionPartitionRule(PartitionRule... clauses) {
+		this.clauses = clauses;
+	}
+	
+	@Override
+	public boolean test(byte[] seq) {
+		for (int i = 0; i < clauses.length; i++) {
+			if (!clauses[i].test(seq)) return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public String toString() {
+		String str = "";
+		for (int i = 0; i < clauses.length; i++) {
+			str += clauses[i].toString();
+			if (i < clauses.length - 1) {
+				str += " & ";
+			}
+		}
+		return str;
+	}
+}
+
+/**
+ * Тривиальный предикат, равный {@code true} на произвольной строке наблюдаемых состояний.
+ */
+class TrivialPartitionRule extends PartitionRule {
+
+	@Override
+	public boolean test(byte[] seq) {
+		return true;
+	}
+	
+	@Override
+	public PartitionRule and(PartitionRule other) {
+		return other;
+	}
+	
+	@Override
+	public String toString() {
+		return "true";
+	}
 }

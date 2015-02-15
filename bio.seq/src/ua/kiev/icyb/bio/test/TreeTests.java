@@ -16,6 +16,7 @@ import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
 import ua.kiev.icyb.bio.alg.tree.ContentPartitionRule;
 import ua.kiev.icyb.bio.alg.tree.FragmentSet;
+import ua.kiev.icyb.bio.alg.tree.Partition;
 import ua.kiev.icyb.bio.alg.tree.PartitionRule;
 import ua.kiev.icyb.bio.alg.tree.PartitionRuleTree;
 import ua.kiev.icyb.bio.alg.tree.RuleEntropy;
@@ -42,6 +43,19 @@ public class TreeTests {
 		public boolean test(byte[] seq) {
 			return (Math.random() < p);
 		}
+		
+		@Override
+		public String toString() {
+			return "Random(" + p + ")";
+		}
+	}
+	
+	private static byte[] randomSequence(int alphabetSize, int length) {
+		byte[] seq = new byte[length];
+		for (int i = 0; i < length; i++) {
+			seq[i] = (byte) Math.floor(Math.random() * alphabetSize);
+		}
+		return seq;
 	}
 	
 	/**
@@ -217,6 +231,43 @@ public class TreeTests {
 	}
 	
 	/**
+	 * Тестирует поиск компонент разбиения.
+	 */
+	@Test
+	public void testParititionRuleTreePartitions() {
+		final FragmentSet frag = new FragmentSet("ACGT", 1);
+		frag.add(1);
+		frag.add(2); // frag ~ {c, g}
+		
+		PartitionRuleTree tree = new PartitionRuleTree();
+		PartitionRule rule1 = new ContentPartitionRule(frag, 0.475);
+		tree.add(rule1, 0);
+		PartitionRule rule2 = new ContentPartitionRule(frag, 0.525);
+		tree.add(rule2, 1);
+		
+		List<Partition> leaves = tree.leaves();
+		assertEquals(tree.size(), leaves.size());
+		
+		int[] counts = new int[leaves.size()];
+		for (Partition part : leaves) {
+			counts[part.index()]++;
+		}
+		for (int i = 0; i < counts.length; i++) {
+			assertEquals(1, counts[i]);
+		}
+		
+		final int nSamples = 10000;
+		for (int i = 0; i < nSamples; i++) {
+			byte[] seq = randomSequence(4, 100);
+			int partIdx = tree.getPart(seq);
+			
+			for (Partition part : leaves) {
+				assertEquals(partIdx == part.index(), part.rule().test(seq));
+			}
+		}
+	}
+	
+	/**
 	 * Тестирует метод {@link PartitionRuleTree#getPart(byte[])}.
 	 */
 	@Test
@@ -228,7 +279,7 @@ public class TreeTests {
 		tree.add(rule1, 0);
 		PartitionRule rule2 = new RandomPartitionRule(0.3);
 		tree.add(rule2, 0);
-				
+		
 		byte[] seq = new byte[] { 1, 2, 3 };
 		int[] counts = new int[tree.size()];
 		final int nSamples = 100000;
@@ -241,6 +292,47 @@ public class TreeTests {
 		assertEquals((1 - 0.6) * (1 - 0.3), 1.0 * counts[0] / nSamples, dev);
 		assertEquals(0.6, 1.0 * counts[1] / nSamples, dev);
 		assertEquals((1 - 0.6) * 0.3, 1.0 * counts[2] / nSamples, dev);
+	}
+	
+	/**
+	 * Тестирует уменьшение размера дерева разбиения.
+	 */
+	@Test
+	public void testPartitionRuleTreeTrim() {
+		PartitionRuleTree tree = new PartitionRuleTree();
+		
+		PartitionRule rule1 = new RandomPartitionRule(0.6);
+		tree.add(rule1, 0);
+		PartitionRule rule2 = new RandomPartitionRule(0.3);
+		tree.add(rule2, 0);
+		
+		assertEquals(3, tree.size());
+		
+		tree.trim(5);
+		assertEquals(3, tree.size());
+		assertSame(rule1, tree.rule(0));
+		assertSame(rule2, tree.rule(1));
+		
+		tree.trim(2);
+		assertEquals(3, tree.size());
+		assertSame(rule1, tree.rule(0));
+		assertSame(rule2, tree.rule(1));
+		
+		tree.trim(1);
+		assertEquals(2, tree.size());
+		assertSame(rule1, tree.rule(0));
+		
+		byte[] seq = new byte[] { 1, 2, 3 };
+		int[] counts = new int[tree.size()];
+		final int nSamples = 100000;
+		
+		for (int i = 0; i < nSamples; i++) {
+			counts[tree.getPart(seq)]++;
+		}
+		
+		final double dev = 3.0 / Math.sqrt(nSamples);
+		assertEquals(0.4, 1.0 * counts[0] / nSamples, dev);
+		assertEquals(0.6, 1.0 * counts[1] / nSamples, dev);
 	}
 	
 	/**
