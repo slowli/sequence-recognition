@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import ua.kiev.icyb.bio.alg.AbstractDistribution;
 import ua.kiev.icyb.bio.alg.Distribution;
+import ua.kiev.icyb.bio.alg.DistributionUtils;
 
 /**
  * Линейная смесь вероятностных распределений. Как и составляющие, смесь сама по себе
@@ -275,5 +276,15 @@ public class Mixture<T> extends AbstractDistribution<T> {
 		for (Distribution<T> model : this.models) {
 			model.reset();
 		}
+	}
+	
+	@Override
+	public T generate() {
+		Integer[] indices = new Integer[this.size()];
+		for (int i = 0; i < indices.length; i++) {
+			indices[i] = i;
+		}
+		int idx = DistributionUtils.choose(indices, this.weights);
+		return this.model(idx).generate();
 	}
 }
