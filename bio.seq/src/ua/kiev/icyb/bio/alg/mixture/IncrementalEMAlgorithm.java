@@ -69,6 +69,13 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 	public int maxModels = 3;
 	
 	/**
+	 * Следует ли применять EM-алгоритм к начальной смеси, не увеличивая число ее компонент.
+	 * Если значение поля равно {@code false}, алгоритм немедленно приступает к поиску "плохих"
+	 * прецедентов.
+	 */
+	public boolean fitInitialMixture = true;
+	
+	/**
 	 * Поиск в выборке прецедентов, хуже всего описывающихся композицией вероятностных моделей.
 	 * Метод поиска зависит от заданных параметров алгоритма.
 	 *  
@@ -146,10 +153,14 @@ public class IncrementalEMAlgorithm extends EMAlgorithm {
 	 * новая компонента строится на основе прецедентов, которые хуже всего описываются этой композицией.
 	 */
 	protected void incrementalRun() {
+		boolean fitMixture = this.fitInitialMixture;
+		
 		while (mixture.size() <= maxModels) {
-			if (mixture.size() > 1) {
+			if ((mixture.size() > 1) && fitMixture) {
 				ordinaryRun();
 			}
+
+			fitMixture = true;
 			resetIteration();
 			
 			if (mixture.size() == maxModels) {
