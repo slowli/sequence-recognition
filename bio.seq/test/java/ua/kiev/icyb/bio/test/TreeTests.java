@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ua.kiev.icyb.bio.Env;
@@ -27,9 +28,16 @@ import ua.kiev.icyb.bio.alg.tree.RuleTreeGenerator;
  */
 public class TreeTests {
 
-	private static final String SET_1 = "elegans-I";
+	private static Env env;
 	
-	private static final String CONF_FILE = "tests/env.conf";
+	private static SequenceSet set1;
+	
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		set1 = env.loadSet("elegans-I");
+	}
 	
 	private static class RandomPartitionRule extends PartitionRule {
 		
@@ -181,13 +189,10 @@ public class TreeTests {
 	
 	/**
 	 * Тестирует разбиение выборки предикатом.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testContentPartitionRuleSplit() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+	public void testContentPartitionRuleSplit() {
+		final SequenceSet set = set1;
 		
 		FragmentSet frag = new FragmentSet("ACGT", 1);
 		frag.add(1);
@@ -365,13 +370,10 @@ public class TreeTests {
 	
 	/**
 	 * Тестирует вычисление информационной энтропии.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testEntropy() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+	public void testEntropy() {
+		final SequenceSet set = set1;
 		
 		RuleEntropy entropy = new RuleEntropy(set, 5);
 		
@@ -393,8 +395,7 @@ public class TreeTests {
 	
 	@Test
 	public void testFitnessForSubsets() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		RuleEntropy entropy = new RuleEntropy(set, 5);
 		
@@ -414,14 +415,11 @@ public class TreeTests {
 	
 	/**
 	 * Тестирует унимодальность функционала качества разбиения для семейства предикатов,
-	 * различающихся пороговым значением концентрации. 
-	 * 
-	 * @throws IOException
+	 * различающихся пороговым значением концентрации.
 	 */
 	@Test
 	public void testEntropyUnimodality() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		RuleEntropy entropy = new RuleEntropy(set, 5);
 		final FragmentSet frag = new FragmentSet(set.observedStates(), 1);
@@ -454,13 +452,10 @@ public class TreeTests {
 	
 	/**
 	 * Тестирует генерирование дерева разбиения на основе выборки.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testTreeGen() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+	public void testTreeGen() {
+		final SequenceSet set = set1;
 		
 		final FragmentSet frag = new FragmentSet(set.observedStates(), 1);
 		frag.add(1);

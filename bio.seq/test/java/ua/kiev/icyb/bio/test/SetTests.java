@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,11 +27,18 @@ import ua.kiev.icyb.bio.filters.RandomFilter;
  */
 public class SetTests {
 
-	private static final String SET_1 = "elegans-I";
+	private static Env env;
 	
-	private static final String SET_2 = "elegans-II";
+	private static SequenceSet set1;
+	private static SequenceSet set2;
 	
-	public static final String CONF_FILE = "tests/env.conf";
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		set1 = env.loadSet("elegans-I");
+		set2 = env.loadSet("elegans-II");
+	}
 	
 	@Rule
 	public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -63,31 +71,24 @@ public class SetTests {
 	
 	/**
 	 * Проверяет единичную выборку данных.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testSingleSet() throws IOException {
-		Env env = new Env(CONF_FILE);
-		
-		SequenceSet set = env.loadSet(SET_1);
+	public void testSingleSet() {
+		final SequenceSet set = set1;
 		assertEquals("ACGT", set.observedStates());
 		assertEquals("xi", set.hiddenStates());
 		assertEquals("ACGTacgt", set.completeStates());
-		assertEquals(3749, set.size());
+		assertTrue(set.size() > 3000);
 		
 		checkSanity(set);
 	}
 	
 	/**
 	 * Проверяет единичную выборку данных.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testIterator() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+	public void testIterator() {
+		SequenceSet set = set1;
 		
 		boolean[] selector = new  boolean[set.size()];
 		for (int i = 0; i < 10; i++) {
@@ -237,60 +238,41 @@ public class SetTests {
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void testSetUnsupportedAdd() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+	public void testSetUnsupportedAdd() {
+		final SequenceSet set = set1;
 		set.add(new Sequence("1", new byte[10], new byte[10]));
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void testSetUnsupportedRemove() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+	public void testSetUnsupportedRemove() {
+		final SequenceSet set = set1;
 		set.remove(new Sequence("1", new byte[10], new byte[10]));
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void testSetUnsupportedAddAll() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+	public void testSetUnsupportedAddAll() {
+		final SequenceSet set = set1;
 		set.addAll(new ArrayList<Sequence>());
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void testSetUnsupportedRemoveAll() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+	public void testSetUnsupportedRemoveAll(){
+		final SequenceSet set = set1;
 		set.removeAll(new ArrayList<Sequence>());
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void testSetUnsupportedRetainAll() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+	public void testSetUnsupportedRetainAll() {
+		final SequenceSet set = set1;		
 		set.retainAll(new ArrayList<Sequence>());
 	}
 	
 	/**
 	 * Проверяет объединение выборок.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testSetUnion() throws IOException {
-		Env env = new Env(CONF_FILE);
-		
-		SequenceSet set1 = env.loadSet(SET_1);
-		assertEquals(3749, set1.size());
+	public void testSetUnion() {
 		checkSanity(set1);
-		
-		SequenceSet set2 = env.loadSet(SET_2);
-		assertEquals(4397, set2.size());
 		checkSanity(set2);
 		
 		SequenceSet union = set1.join(set2);
@@ -302,14 +284,10 @@ public class SetTests {
 	
 	/**
 	 * Проверяет фильтрацию выборок.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testFiltering() throws IOException {
-		Env env = new Env(CONF_FILE);
-		
-		SequenceSet set = env.loadSet(SET_1);
+	public void testFiltering() {
+		final SequenceSet set = set1;
 		boolean[] selector = new boolean[set.size()];
 		
 		int cnt = 0;
@@ -340,10 +318,8 @@ public class SetTests {
 	 */
 	@Test
 	public void testLoadedCache() throws IOException {
-		Env env = new Env(CONF_FILE);
-		
-		SequenceSet set1 = env.loadSet(SET_1);
-		SequenceSet set2 = env.loadSet(SET_1);
+		SequenceSet set1 = SetTests.set1;
+		SequenceSet set2 = env.loadSet("elegans-I");
 		assertSame(set1, set2);
 	}
 	
@@ -354,10 +330,8 @@ public class SetTests {
 	 */
 	@Test
 	public void testSerializationSimple() throws IOException {
-		Env env = new Env(CONF_FILE);
-		
 		File file = tempFolder.newFile();
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		env.save(set, file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
@@ -377,9 +351,6 @@ public class SetTests {
 	 */
 	@Test
 	public void testSerializationAdvanced() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1), set2 = env.loadSet(SET_2);
-		
 		SequenceSet set = set1.join(set2).filter(new RandomFilter(0.4));
 		
 		File file = tempFolder.newFile();

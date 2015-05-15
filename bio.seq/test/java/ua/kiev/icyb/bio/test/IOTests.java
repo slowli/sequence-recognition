@@ -1,14 +1,13 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.biojava.bio.BioException;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ua.kiev.icyb.bio.Env;
@@ -21,11 +20,19 @@ import ua.kiev.icyb.bio.io.GenbankReader;
  */
 public class IOTests {
 	
-	private static final String SOURCE_SET_1 = "tests/I.gb.gz";
+	private static Env env;
 	
-	private static final String SOURCE_DSSP_DIR = "tests/dssp";
+	private static String setFilename;
 	
-	public static final String CONF_FILE = "tests/env.conf";
+	private static String dsspDir;
+	
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		setFilename = testDir + "/I.gb.gz";
+		dsspDir = testDir + "/dssp";
+	}
 	
 	/**
 	 * Тестирует обработчик файлов Genbank (гены).
@@ -35,8 +42,7 @@ public class IOTests {
 	 */
 	@Test
 	public void testGenbank() throws IOException, BioException {
-		Env env = new Env(CONF_FILE);
-		GenbankReader reader = new GenbankReader(SOURCE_SET_1);
+		GenbankReader reader = new GenbankReader(setFilename);
 		reader.run(env);
 		SequenceSet set = reader.set;
 		
@@ -54,9 +60,7 @@ public class IOTests {
 	 */
 	@Test
 	public void testDSSP() {
-		Env env = new Env();
-		
-		File dir = new File(SOURCE_DSSP_DIR);
+		File dir = new File(dsspDir);
 		String[] filenames = dir.list(new FilenameFilter() {
 
 			@Override

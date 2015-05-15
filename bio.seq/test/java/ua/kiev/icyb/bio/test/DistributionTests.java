@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -24,9 +25,16 @@ import ua.kiev.icyb.bio.alg.MarkovChain;
  */
 public class DistributionTests {
 	
-	private static final String SET_1 = "elegans-I";
+private static Env env;
 	
-	private static final String CONF_FILE = "tests/env.conf";
+	private static SequenceSet set1;
+	
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		set1 = env.loadSet("elegans-I");
+	}
 	
 	@Rule
 	public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -210,14 +218,13 @@ public class DistributionTests {
 	 */
 	@Test
 	public void testMarkovChainTrainOnSet() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		MarkovChain chain = new MarkovChain(1, 4, set);
 		chain.train(set);
 		final FragmentFactory factory = chain.factory();
 		
-		assertEquals(6, chain.getInitialTable().size());
+		assertEquals(7, chain.getInitialTable().size());
 		int nVars = 0;
 		
 		List<Fragment> heads = factory.allFragments(1);
@@ -264,8 +271,7 @@ public class DistributionTests {
 	 */
 	@Test
 	public void testMarkovChainEstimateOnSet() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		MarkovChain chain = new MarkovChain(1, 4, set);
 		chain.train(set);
@@ -285,8 +291,7 @@ public class DistributionTests {
 	 */
 	@Test
 	public void testMarkovChainSerialization() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		MarkovChain chain = new MarkovChain(1, 5, set);
 		chain.train(set);
@@ -307,8 +312,7 @@ public class DistributionTests {
 	 */
 	@Test
 	public void testMarkovChainClearSerialization() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		MarkovChain chain = new MarkovChain(1, 5, set);
 		chain.train(set);
@@ -399,9 +403,8 @@ public class DistributionTests {
 	 * @throws IOException
 	 */
 	@Test
-	public void testMarkovChainGenetate() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+	public void testMarkovChainGenerate() throws IOException {
+		final SequenceSet set = set1;
 		
 		MarkovChain chain = new MarkovChain(1, 4, set);
 		chain.train(set);

@@ -1,15 +1,10 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ua.kiev.icyb.bio.Env;
@@ -27,11 +22,18 @@ import ua.kiev.icyb.bio.alg.mixture.MixtureWeights;
  */
 public class MixtureTests {
 
-	private static final String SET_1 = "elegans-I";
+	private static Env env;
 	
-	private static final String SET_2 = "elegans-II";
+	private static SequenceSet set1;
+	private static SequenceSet set2;
 	
-	public static final String CONF_FILE = "tests/env.conf";
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		set1 = env.loadSet("elegans-I");
+		set2 = env.loadSet("elegans-II");
+	}
 	
 	/**
 	 * Проверяет добавление компонент в модель.
@@ -120,8 +122,7 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureRandomFill() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		final SequenceSet set = set1;
 		
 		MarkovMixture mixture = new MarkovMixture(3, 5, set);
 		mixture.randomFill(set);
@@ -145,10 +146,6 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureEstimate() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1);
-		SequenceSet set2 = env.loadSet(SET_2);
-		
 		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
@@ -176,10 +173,6 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixturePosteriors() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1);
-		SequenceSet set2 = env.loadSet(SET_2);
-		
 		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
@@ -208,10 +201,6 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureWeights() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1);
-		SequenceSet set2 = env.loadSet(SET_2);
-		
 		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
@@ -259,10 +248,6 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testEMAlgorithm() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1);
-		SequenceSet set2 = env.loadSet(SET_2);
-		
 		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
@@ -271,8 +256,6 @@ public class MixtureTests {
 		alg.set = set1;
 		alg.mixture = mixture;
 		alg.nIterations = 10;
-		
-		env.setDebugLevel(1);
 		alg.run(env);
 		
 		MarkovMixture newMixture = alg.mixture;
@@ -293,9 +276,6 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testIncEMAlgorithm() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set1 = env.loadSet(SET_1);
-		
 		MarkovMixture mixture = new MarkovMixture(1, 6, set1);
 		mixture.model(0).train(set1);
 		
@@ -304,8 +284,6 @@ public class MixtureTests {
 		alg.mixture = mixture;
 		alg.nIterations = 10;
 		alg.maxModels = 3;
-		
-		env.setDebugLevel(1);
 		alg.run(env);
 		
 		MarkovMixture newMixture = alg.mixture;
@@ -316,22 +294,5 @@ public class MixtureTests {
 		System.out.format("logP(init) = %.0f\n", logP);
 		System.out.format("logP(final) = %.0f\n", newLogP);
 		assertTrue(newLogP - logP > 50000.0);
-	}
-	
-	/**
-	 * Тестирует EM-алгоритм для поиска оптимальной смеси марковских распределений
-	 * с последовательным удалением компонент.
-	 */
-	@Test
-	public void testDecEMAlgorithm() {
-		fail("Not implemented");
-	}
-	
-	/**
-	 * Тестирует алгоритм распознавания на основе смесей распределений. 
-	 */
-	@Test
-	public void testMixtureAlgorithm() {
-		fail("Not implemented");
 	}
 }

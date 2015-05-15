@@ -1,11 +1,6 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -34,10 +30,17 @@ import ua.kiev.icyb.bio.alg.tree.PriorityCompAlgorithm;
  * Тестирование алгоритмов распознавания.
  */
 public class AlgorithmTests {
-
-	private static final String SET_1 = "elegans-I";
 	
-	private static final String CONF_FILE = "tests/env.conf";
+	private static Env env;
+	
+	private static SequenceSet set1;
+	
+	@BeforeClass
+	public static void setup() throws IOException {
+		final String testDir = System.getProperty("testdir", "test");
+		env = new Env(testDir + "/env.conf");
+		set1 = env.loadSet("elegans-I");
+	}
 	
 	private static void checkSanity(PredictionQuality q) {
 		assertTrue(q.symbolPrecision() > 0.5);
@@ -67,10 +70,7 @@ public class AlgorithmTests {
 	 * @throws IOException
 	 */
 	public static void testAlgorithm(SeqAlgorithm algorithm) throws IOException {
-		Env env = new Env(CONF_FILE);
-		env.setDebugLevel(1);
-		
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 1000; i++) {
 			selector[i] = true;
@@ -102,9 +102,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testAlgorithmNoData() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+		SequenceSet set = set1;
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		byte[] result = alg.run(set.get(0));
 		assertNull(result);
@@ -117,9 +115,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testAlgorithmRun() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
-		
+		SequenceSet set = set1;
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		alg.train(set);
 		byte[] result = alg.run(set.get(0));
@@ -133,8 +129,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testAlgorithmClone() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		Sequence seq = set.get(0);
 		
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
@@ -156,8 +151,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testAlgorithmSerialization() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		alg.train(set);
@@ -179,8 +173,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testAlgorithmClearSerialization() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		alg.train(set);
@@ -206,8 +199,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testEstimatesNoData() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		
@@ -241,8 +233,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testEstimates() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		ViterbiAlgorithm alg = new ViterbiAlgorithm(1, 6);
 		alg.train(set);
@@ -275,8 +266,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testQuality() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 10; i++) {
@@ -299,8 +289,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testQualitySave() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 10; i++) {
@@ -341,8 +330,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testCVSets() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		CrossValidation cv = new CrossValidation(set, 5);
 		for (int f = 0; f < 10; f += 2) {
@@ -366,8 +354,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testCV() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 1000; i++) {
@@ -389,8 +376,7 @@ public class AlgorithmTests {
 	 */
 	@Test
 	public void testCVSave() throws IOException {
-		Env env = new Env(CONF_FILE);
-		SequenceSet set = env.loadSet(SET_1);
+		SequenceSet set = set1;
 		
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 1000; i++) {
