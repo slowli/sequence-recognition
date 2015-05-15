@@ -263,7 +263,14 @@ public class GenbankReader implements Launchable {
 		byte[] hidden = getHiddenSequence(cds.getLocation());
 		byte[] observed = getObservedSequence(set.observedStates(), cds.getLocation());
 		
-		Object protId = cds.getRichAnnotation().getProperty("protein_id");
+		if (gene.getRichAnnotation().containsProperty("pseudogene")) {
+			// Псевдоген
+			env.debugInline(2, "P");
+			return;
+		}
+		
+		Object protId = cds.getRichAnnotation().containsProperty("protein_id")
+				? cds.getRichAnnotation().getProperty("protein_id") : null;
 		if (protId == null) {
 			env.debug(1, "Missing protein id for the CDS");
 		}
