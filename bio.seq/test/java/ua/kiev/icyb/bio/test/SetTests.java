@@ -1,10 +1,18 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +76,166 @@ public class SetTests {
 			assertTrue(subset.hidden(i) == set.hidden(i + offset));
 		}
 	}
+
+	/**
+	 * Проверяет создание идентификаторов с помощью метода
+	 * {@link SequenceUtils#newID()}.
+	 */
+	@Test
+	public void testNewID() {
+		int nRuns = 100000;
+		Set<String> ids = new HashSet<String>(nRuns);
+		for (int i = 0; i < nRuns; i++) {
+			ids.add(SequenceUtils.newID());
+		}
+		assertEquals(nRuns, ids.size());
+	}
 	
+	/**
+	 * Проверяет сравнение последовательностей.
+	 */
+	@Test
+	public void testSequenceEquals() {
+		Sequence seq = new Sequence(null, new byte[10], new byte[10]);
+		Sequence seq2 = new Sequence(null, new byte[10], new byte[10]);
+		assertEquals(seq, seq2);
+		
+		seq = new Sequence(null, new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence(null, new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertEquals(seq, seq2);
+		
+		seq = new Sequence("1", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence("2", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertNotEquals(seq, seq2);
+		
+		seq = new Sequence(new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence(new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertNotEquals(seq, seq2);
+		
+		seq = new Sequence("1", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence("1", new byte[] { 3, 2, 1, 0 }, new byte[] { 1, 1, 1, 1 });
+		assertEquals(seq, seq2);
+	}
+	
+	/**
+	 * Проверяет вычисление хэш-кода последовательности.
+	 */
+	@Test
+	public void testSequenceHashCode() {
+		Sequence seq = new Sequence(null, new byte[10], new byte[10]);
+		Sequence seq2 = new Sequence(null, new byte[10], new byte[10]);
+		assertEquals(seq.hashCode(), seq2.hashCode());
+		
+		seq = new Sequence(null, new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence(null, new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertEquals(seq.hashCode(), seq2.hashCode());
+		
+		seq = new Sequence("1", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence("2", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertNotEquals(seq.hashCode(), seq2.hashCode());
+		
+		seq = new Sequence(new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence(new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		assertNotEquals(seq.hashCode(), seq2.hashCode());
+		
+		seq = new Sequence("1", new byte[] { 0, 1, 2, 3 }, new byte[] { 0, 1, 0, 1 });
+		seq2 = new Sequence("1", new byte[] { 3, 2, 1, 0 }, new byte[] { 1, 1, 1, 1 });
+		assertEquals(seq.hashCode(), seq2.hashCode());
+	}
+	
+	/**
+	 * Проверяет создание последовательностей с помощью метода
+	 * {@link SequenceUtils#parseSequence(SequenceSet, String)}.
+	 */
+	@Test
+	public void testSequenceCreation() {
+		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", null);
+		Sequence sequence = SequenceUtils.parseSequence(set, "GxAxTiAiGi");
+		assertNull(sequence.id);
+		assertSame(set, sequence.set);
+		assertEquals(5, sequence.length());
+		assertEquals(5, sequence.observed.length);
+		assertEquals(5, sequence.hidden.length);
+		assertEquals(2, sequence.observed[0]);
+		assertEquals(0, sequence.hidden[0]);
+		assertEquals(0, sequence.observed[3]);
+		assertEquals(1, sequence.hidden[3]);
+		
+		set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		
+		sequence = SequenceUtils.parseSequence(set, "AagaTc");
+		assertNull(sequence.id);
+		assertSame(set, sequence.set);
+		assertEquals(6, sequence.length());
+		assertEquals(6, sequence.observed.length);
+		assertEquals(6, sequence.hidden.length);
+		assertEquals(0, sequence.observed[0]);
+		assertEquals(0, sequence.hidden[0]);
+		assertEquals(1, sequence.observed[5]);
+		assertEquals(1, sequence.hidden[5]);
+	}
+	
+	/**
+	 * Проверяет разбиение последовательности состояний на сегменты.
+	 */
+	@Test
+	public void testSequenceSegmentation() {
+		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		Sequence sequence = SequenceUtils.parseSequence(set, "AagaggTCAc");
+		
+		List<Sequence.Segment> segments = sequence.segments();
+		assertEquals(4, segments.size());
+		
+		assertEquals(0, segments.get(0).start);
+		assertEquals(0, segments.get(0).end);
+		assertEquals(1, segments.get(0).length());
+		assertEquals(0, segments.get(0).state);
+		
+		assertEquals(1, segments.get(1).start);
+		assertEquals(5, segments.get(1).end);
+		assertEquals(5, segments.get(1).length());
+		assertEquals(1, segments.get(1).state);
+		
+		assertEquals(6, segments.get(2).start);
+		assertEquals(8, segments.get(2).end);
+		assertEquals(3, segments.get(2).length());
+		assertEquals(0, segments.get(2).state);
+	}
+	
+	@Test
+	public void testSequenceSegmentationRealData() {
+		final SequenceSet set = set1;
+		for (Sequence seq : set) {
+			List<Sequence.Segment> segments = seq.segments();
+			assertTrue(segments.size() > 0);
+			assertTrue(segments.size() * 10 < seq.length());
+			
+			assertEquals(0, segments.get(0).start);
+			assertEquals(seq.length() - 1, segments.get(segments.size() - 1).end);
+			for (int i = 0; i < segments.size() - 1; i++) {
+				assertEquals(segments.get(i).end + 1, segments.get(i + 1).start);
+				assertNotEquals(segments.get(i).state, segments.get(i + 1).state);
+			}
+		}
+	}
+	
+	/**
+	 * Проверяет автоматическую генерацию идентификаторов строк выборки.
+	 */
+	@Test
+	public void testSequenceAutoIds() {
+		byte[] observed = new byte[] { 0 };
+		final int nSamples = 10000;
+		
+		Set<String> ids = new HashSet<String>(nSamples);
+		
+		for (int i = 0; i < nSamples; i++) {
+			Sequence seq = new Sequence(observed, null);
+			ids.add(seq.id);
+		}
+		assertEquals(nSamples, ids.size());
+	}
+
 	/**
 	 * Проверяет единичную выборку данных.
 	 */
@@ -84,7 +251,7 @@ public class SetTests {
 	}
 	
 	/**
-	 * Проверяет единичную выборку данных.
+	 * Проверяет итератор выборки.
 	 */
 	@Test
 	public void testIterator() {
@@ -178,6 +345,88 @@ public class SetTests {
 		set.remove(0);
 		assertFalse(set.contains(seq));
 		assertTrue(set.contains(seq2));
+	}
+	
+	@Test
+	public void testSetMultipleAdd() {
+		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		Sequence seq = new Sequence("1", new byte[100], new byte[100]);
+		assertTrue(set.add(seq));
+		assertFalse(set.add(seq));
+		assertEquals(1, set.size());
+		seq = new Sequence("1", new byte[10], new byte[10]);
+		assertFalse(set.add(seq));
+		assertEquals(1, set.size());
+		seq = new Sequence("2", new byte[10], new byte[10]);
+		assertTrue(set.add(seq));
+		assertEquals(2, set.size());
+	}
+	
+	@Test
+	public void testSetEquals() {
+		SimpleSequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		SimpleSequenceSet set2 = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		
+		Sequence seq = new Sequence("1", new byte[100], new byte[100]);
+		set.add(seq);
+		set2.add(seq);
+		assertEquals(set, set2);
+		
+		seq = new Sequence("2", new byte[10], new byte[10]);
+		set.add(seq);
+		assertNotEquals(set, set2);
+		set2.add(seq);
+		assertEquals(set, set2);
+		
+		set2.remove(1);
+		seq = new Sequence("3", new byte[10], new byte[10]);
+		set2.add(seq);
+		assertNotEquals(set, set2);
+	}
+	
+	@Test
+	public void testSetEqualsAfterFiltering() {
+		final SequenceSet set = set1;
+		boolean[] selector = new boolean[set.size()];
+		Arrays.fill(selector, true);
+		SequenceSet filtered = set.filter(selector);
+		assertEquals(set, filtered);
+		
+		for (int i = 0; i < set.size() / 3; i++) {
+			selector[i] = false;
+		}
+		filtered = set.filter(selector);
+		final SequenceSet filtered2 = set.filter(selector);
+		assertNotSame(filtered, filtered2);
+		assertEquals(filtered, filtered2);
+		assertNotEquals(set, filtered);
+		assertNotEquals(set, filtered2);
+	}
+	
+	@Test
+	public void testSetNotEqualsAfterFiltering() {
+		final SequenceSet set = set1;
+		boolean[] selector = new boolean[set.size()];
+		Arrays.fill(selector, true);
+		selector[set.size() / 2] = false;
+		
+		final SequenceSet filtered = set.filter(selector);
+		assertNotEquals(set, filtered);
+	}
+	
+	@Test
+	public void testSetHashCode() {
+		final SequenceSet set = set1;
+		boolean[] selector = new boolean[set.size()];
+		Arrays.fill(selector, true);
+		
+		for (int i = 0; i < set.size() / 3; i++) {
+			selector[i] = false;
+		}
+		
+		SequenceSet filtered = set.filter(selector);
+		SequenceSet filtered2 = set.filter(selector);
+		assertEquals(filtered.hashCode(), filtered2.hashCode());
 	}
 	
 	/**
@@ -335,7 +584,6 @@ public class SetTests {
 		env.save(set, file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
-		System.out.println("len = " + file.length());
 		assertTrue(file.length() < 1000);
 		
 		SequenceSet copy = env.load(file.getAbsolutePath());
@@ -363,78 +611,5 @@ public class SetTests {
 		checkSanity(copy);
 		assertEquals(set.size(), copy.size());
 		checkSubset(set, copy, 0);
-	}
-	
-	/**
-	 * Проверяет создание последовательностей с помощью метода
-	 * {@link SequenceUtils#parseSequence(SequenceSet, String)}.
-	 */
-	@Test
-	public void testSequenceCreation() {
-		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", null);
-		Sequence sequence = SequenceUtils.parseSequence(set, "GxAxTiAiGi");
-		assertNull(sequence.id);
-		assertSame(set, sequence.set);
-		assertEquals(5, sequence.length());
-		assertEquals(5, sequence.observed.length);
-		assertEquals(5, sequence.hidden.length);
-		assertEquals(2, sequence.observed[0]);
-		assertEquals(0, sequence.hidden[0]);
-		assertEquals(0, sequence.observed[3]);
-		assertEquals(1, sequence.hidden[3]);
-		
-		set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
-		
-		sequence = SequenceUtils.parseSequence(set, "AagaTc");
-		assertNull(sequence.id);
-		assertSame(set, sequence.set);
-		assertEquals(6, sequence.length());
-		assertEquals(6, sequence.observed.length);
-		assertEquals(6, sequence.hidden.length);
-		assertEquals(0, sequence.observed[0]);
-		assertEquals(0, sequence.hidden[0]);
-		assertEquals(1, sequence.observed[5]);
-		assertEquals(1, sequence.hidden[5]);
-	}
-	
-	/**
-	 * Проверяет разбиение последовательности состояний на сегменты.
-	 */
-	@Test
-	public void testSequenceSegmentation() {
-		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
-		Sequence sequence = SequenceUtils.parseSequence(set, "AagaggTCAc");
-		
-		List<Sequence.Segment> segments = sequence.segments();
-		assertEquals(4, segments.size());
-		
-		assertEquals(0, segments.get(0).start);
-		assertEquals(0, segments.get(0).end);
-		assertEquals(1, segments.get(0).length());
-		assertEquals(0, segments.get(0).state);
-		
-		assertEquals(1, segments.get(1).start);
-		assertEquals(5, segments.get(1).end);
-		assertEquals(5, segments.get(1).length());
-		assertEquals(1, segments.get(1).state);
-		
-		assertEquals(6, segments.get(2).start);
-		assertEquals(8, segments.get(2).end);
-		assertEquals(3, segments.get(2).length());
-		assertEquals(0, segments.get(2).state);
-	}
-	
-	@Test
-	public void testSequenceAutoIds() {
-		byte[] observed = new byte[] { 0 };
-		final int nSamples = 10000;
-		
-		Set<String> ids = new HashSet<String>(nSamples);
-		
-		for (int i = 0; i < nSamples; i++) {
-			Sequence seq = new Sequence(observed, null);
-			ids.add(seq.id);
-		}
-		assertEquals(nSamples, ids.size());
 	}
 }
