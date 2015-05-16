@@ -1,0 +1,38 @@
+#!/bin/bash
+
+function usage() {
+cat <<EOF
+Usage: `basename $0` [OPTION...] FILE
+
+Runs the algorithm or task saved in file.
+
+Options:
+    -h, --help
+               print this help and quit
+    -e, --env
+               set the configuration file for environment
+EOF
+}
+
+. `dirname $0`/setenv.sh
+
+RUN_CLASS=ua.kiev.icyb.bio.tools.Run
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage; exit 0 ;;
+		-e | --env)
+			shift; ENV_FILE=$1; shift ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+if [[ $# == 0 ]]; then
+	echo "Missing required argument. Type '`basename $0` -h' to get help."
+	exit 1
+fi
+
+java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE $1
+

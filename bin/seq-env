@@ -1,0 +1,42 @@
+#!/bin/bash
+
+function usage() {
+cat <<EOF
+Usage: `basename $0` [OPTION...] [FILE]
+
+Prints information about environment configuration file. If the file 
+is not specified, the default configuration file is used. 
+The default configuration file is 'env.conf' file 
+in the current directory; if this file doesn't exist, then the file
+in the installation directory is used.
+
+Options:
+    -h, --help
+               print this help and quit
+EOF
+}
+
+. `dirname $0`/setenv.sh
+
+PRINT_CLASS=ua.kiev.icyb.bio.tools.PrintEnv
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage; exit 0 ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+if [[ "x$1" != "x" ]]; then
+	ENV_FILE=$1
+fi
+
+if [[ ! -f $ENV_FILE ]]; then
+	echo "'$ENV_FILE' is not a valid file. Type '`basename $0` -h' to get help."
+	exit 1
+fi
+
+java $JAVAOPTS -cp $CLASSPATH $PRINT_CLASS $ENV_FILE
+

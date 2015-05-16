@@ -1,0 +1,69 @@
+#!/bin/bash
+
+function usage() {
+cat <<EOF
+Usage: `basename $0` [OPTION...] DATASET TREE-FILE
+
+Generates the binary partition tree for a specified dataset.
+The tree is saved to a specified file.
+
+Options:
+    -h, --help
+               print this help and quit
+    -e, --env
+               set the configuration file for environment
+    -m, --min-size
+               specify the minimal size of a partition (default is 1000)
+    -o, --save
+               specify the name of the file to save algorithm data to.
+               Default filename is '[TREE-FILE].run'.
+    -O, --order
+               use the specified order of Markov chains (default is 5)
+    -t, --size
+               specify the desired tree size (default is 5)
+EOF
+}
+
+. `dirname $0`/setenv.sh
+
+RUN_CLASS=ua.kiev.icyb.bio.tools.TreeGen
+
+MIN_SIZE=1000
+ALG_FILE=
+CHAIN_ORDER=5
+TREE_SIZE=5
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage; exit 0 ;;
+		-e | --env)
+			shift; ENV_FILE=$1; shift ;;
+		-m | --min-size)
+			shift; MIN_SIZE=$1; shift ;;
+		-o | --save)
+			shift; ALG_FILE=$1; shift ;;
+		-O | --order)
+			shift; CHAIN_ORDER=$1; shift ;;
+		-t | --size)
+			shift; TREE_SIZE=$1; shift ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+if [ $# -lt 2 ]; then
+	echo "Missing required argument. Type '`basename $0` -h' to get help."
+	exit 1
+fi
+
+if [[ "x$ALG_FILE" == "x" ]]; then
+	ALG_FILE="$2.run"
+fi
+
+java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE "$1" "$ALG_FILE" \
+	"order=$CHAIN_ORDER" \
+	"minPartSize=$MIN_SIZE" \
+	"treeSize=$TREE_SIZE" \
+	"treeFile=$2"
+

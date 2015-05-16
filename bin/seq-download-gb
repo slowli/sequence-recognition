@@ -1,0 +1,70 @@
+#!/bin/bash
+
+function usage() {
+cat <<EOF
+Usage: `basename $0` [OPTION...] NAME:ID ... NAME:ID
+
+Downloads chromosome data in Genbank format from NCBI database.
+ID should be a valid sequence ID in the NCBI database.
+NAME determines the name of the file output for the sequence; it
+is compressed with gzip and named NAME.gb.gz.
+
+Options:
+    -h, --help
+               print this help and quit
+    -d, --output
+               set the output directory (default is .)
+EOF
+}
+
+T_DOWNLOAD="http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi\
+	?tool=portal\
+	&sendto=on\
+	&log\$=seqview\
+	&db=nuccore\
+	&dopt=gbwithparts\
+	&sort=\
+	&val=SEQID\
+	&from=begin\
+	&to=end\
+	&extrafeat=976"
+
+T_DOWNLOAD=`echo $T_DOWNLOAD | tr -d [:space:]`
+
+function download_seq() {
+	local seqname="$1"
+	local seqid="$2"
+	local link="${T_DOWNLOAD/SEQID/$seqid}"
+	local output="$outdir/$seqname.gb"
+
+	echo "Sequence ID: $seqid"
+	echo "Output file: $output"
+	echo "Downloading sequence from NCBI GenBank database..."
+	wget -O "$output" "$link"
+	echo "Compressing sequence..."
+	gzip -8 "$output"
+}
+
+outdir=.
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-d | --output)
+			shift; outdir=$1 ;;
+		-h | --help)
+			usage; exit 0 ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+if [[ ! -d $outdir ]]; then
+	echo "Output directory '$outdir' does not exist!"
+	exit 1
+fi
+
+params=("$@")
+for seq in "${params[@]}"; do
+	download_seq `echo $seq | tr ":" " "`
+done
+

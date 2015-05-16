@@ -1,0 +1,109 @@
+#!/bin/bash
+
+function usage() {
+cat <<EOF
+Usage: `basename $0` [OPTION...] DATASET TEMPLATE
+
+Runs the EM algorithm to build a Markov model mixture on a sequence set 
+with incremental addition of components.
+
+Results are saved to the files specified by TEMPLATE.
+The following substitutions are performed:
+    '{n}' - the current number of components in the mixture
+    '{i}' - the 1-based index of the iteration
+
+Options:
+    -h, --help
+               print this help and quit
+    -e, --env
+               set the configuration file for environment
+    -o, --save
+               specify the name of the file to save algorithm data to.
+               Default filename is '[DATASET]-em.run'.
+    -i, --init
+               specify the initial mixture stored in a file
+    -O, --order
+               use the specified order of Markov chains (default is 5).
+               Ignored if the initial mixture is set.
+    -s, --size
+               specify the desired mixture size (default is 5)
+    -n, --iter
+               specify number of iterations (default is 15)
+    -M, --bad-seq
+               method for selecting bad sequences to form new mixture components.
+               Valid values are: 'fixed', 'mean', 'median' (default is 'mean')
+    -I, --i-offset
+               index offset when selecting bad sequences (default is 0)
+    -V, --val-offset
+               value offset when selecting bad sequences (default is 0.0)
+EOF
+}
+
+. `dirname $0`/setenv.sh
+
+RUN_CLASS=ua.kiev.icyb.bio.tools.EMInc
+
+ALG_FILE=
+INITIAL_MIXTURE=
+CHAIN_ORDER=5
+MIXTURE_SIZE=5
+N_ITERATIONS=15
+SELECTION_METHOD=mean
+INDEX_OFFSET=0
+VALUE_OFFSET=0.0
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage; exit 0 ;;
+		-e | --env)
+			shift; ENV_FILE=$1; shift ;;
+		-o | --save)
+			shift; ALG_FILE=$1; shift ;;
+		-i | --init)
+			shift; INITIAL_MIXTURE=$1; shift ;;
+		-O | --order)
+			shift; CHAIN_ORDER=$1; shift ;;
+		-s | --size)
+			shift; MIXTURE_SIZE=$1; shift ;;
+		-n | --iter)
+			shift; N_ITERATIONS=$1; shift ;;
+		-M | --bad-seq)
+			shift; SELECTION_METHOD=$1; shift ;;
+		-I | --i-offset)
+			shift; INDEX_OFFSET=$1; shift ;;
+		-V | --val-offset)
+			shift; VALUE_OFFSET=$1; shift ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+if [ $# -lt 2 ]; then
+	echo "Missing required argument. Type '`basename $0` -h' to get help."
+	exit 1
+fi
+
+if [[ "x$ALG_FILE" == "x" ]]; then
+	ALG_FILE="$1-em.run"
+fi
+
+INIT_OPT="order=$CHAIN_ORDER"
+if [[ ! "x$INITIAL_MIXTURE" == "x" ]]; then
+	if [[ ! -f $INITIAL_MIXTURE ]]; then
+		echo "'$INITIAL_MIXTURE' is not a valid file"
+		exit 1
+	else
+		INIT_OPT="mixture=$INITIAL_MIXTURE"
+	fi
+fi
+
+java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE "$1" "$ALG_FILE" \
+	$INIT_OPT \
+	"maxModels=$MIXTURE_SIZE" \
+	"saveTemplate=$2" \
+	"nIterations=$N_ITERATIONS" \
+	"selectionMethod=$SELECTION_METHOD" \
+	"indexOffset=$INDEX_OFFSET" \
+	"valueOffset=$VALUE_OFFSET"
+
