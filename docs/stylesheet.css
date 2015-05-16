@@ -6,7 +6,7 @@ body {
     background-color:#ffffff;
     color:#353833;
     font-family:Arial, Helvetica, sans-serif;
-    font-size:76%;
+    font-size:14px;
     margin:0;
 }
 a:link, a:visited {
@@ -29,7 +29,7 @@ a[name]:hover {
     color:#353833;
 }
 pre {
-    font-size:1.3em;
+    font-size:12px;
 }
 h1 {
     font-size:1.8em;
@@ -53,13 +53,13 @@ ul {
     list-style-type:disc;
 }
 code, tt {
-    font-size:1.2em;
+    font-size:12px;
 }
 dt code {
-    font-size:1.2em;
+    font-size:12px;
 }
 table tr td dt code {
-    font-size:1.2em;
+    font-size:12px;
     vertical-align:top;
 }
 sup {
