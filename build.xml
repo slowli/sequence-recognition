@@ -8,8 +8,8 @@
 
   <!-- Compiler settings -->
   <property name="javac.debug" value="source,lines,vars"/>
-  <property name="javac.target" value="1.6"/>
-  <property name="javac.source" value="1.6"/>
+  <property name="javac.target" value="1.7"/>
+  <property name="javac.source" value="1.7"/>
 
   <path id="basedir-os">
     <pathelement location="${basedir}" />
@@ -43,7 +43,7 @@
   </tstamp>
 
   <target name="env" description="Prints build parameters">
-     <echo>
+    <echo>
   Input Directories:
     Source:         ${src.main}
     Test source:    ${src.test}
@@ -51,7 +51,7 @@
   Output Directories:
     Classes:        ${build.dest}
     Javadoc:        ${build.javadoc}
-     </echo>
+    </echo>
   </target>
 
   <target name="compile-main" description="Compiles library (independent code)">
@@ -139,7 +139,7 @@
       <classpath refid="cp.test"/>
     </javac>
 
-    <junit haltonerror="yes" haltonfailure="yes">
+    <junit haltonerror="yes" haltonfailure="yes" fork="yes">
       <classpath refid="cp.test"/>
       <sysproperty key="testdir" value="${bio.seq.dir}/bio.seq/test"/>
 
@@ -261,8 +261,8 @@ env.encoding = UTF-8
 </echo>
 
     <replaceregexp file="${build.dir}/setenv.sh" 
-        match="^LIBVER=.*$" 
-        replace="LIBVER=${version}" />
+        match="lib_version=.*"
+        replace="lib_version=${version}" />
   </target>
 
   <!-- Clean targets -->
@@ -298,5 +298,8 @@ env.encoding = UTF-8
   <!-- Default target -->
 
   <target name="build-all" description="Builds library, jars, and documentation" depends="env,compile,test,jar,javadoc,build-aux">
+  </target>
+
+  <target name="build-notest" description="Builds library, jars, and documentation" depends="env,compile,jar,javadoc,build-aux">
   </target>
 </project>
