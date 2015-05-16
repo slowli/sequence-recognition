@@ -7,8 +7,10 @@ Usage: `basename $0` [OPTIONS]
 Initializes files for unit testing.
 
 Options:
-    -h         print this help and quit
-    -c         clean files
+    -h, --help
+               print this help and quit
+    -c, --clean
+               clean files
 EOF
 }
 
@@ -18,21 +20,15 @@ function clean() {
 	rm -Rf dssp
 }
 
-while getopts ":ch" opt; do
-	case $opt in
-		h) 
-			usage
-			exit 0
-			;;
-		c)
-			clean
-			exit 0
-			;;
-		\?) 
-			echo "Invalid option: -$OPTARG" >&2
-			echo "Type '`basename $0` -h' to get help."
-			exit 1
-			;;
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h | --help)
+			usage; exit 0 ;;
+		-c | --clean)
+			clean; exit 0 ;;
+		-*) echo "Unknown option: $1"; exit 1 ;;
+		*) break ;;
 	esac
 done
 
@@ -43,7 +39,7 @@ ROOT=../..
 # DNA
 ####################
 
-DL_SCRIPT=$ROOT/tools/download-gb.sh
+DL_SCRIPT=$ROOT/bin/seq-download-gb
 
 if [[ ! -f I.gb.gz ]]; then
 	echo "Downloading C. elegans chromosome I ..."

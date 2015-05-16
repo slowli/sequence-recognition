@@ -1,7 +1,4 @@
 /*
 !/src/*
-!/.settings
-!/.classpath
-!/.project
-!/.gitignore
-!/tests/setup.sh
+!/test/java/*
+!/test/setup.sh

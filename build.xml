@@ -4,7 +4,7 @@
 <project name="bio.seq library" default="build-all" basedir=".">
 
   <!-- Project settings -->
-  <property name="version" value="0.9.0"/>
+  <property name="version" value="0.10.0"/>
 
   <!-- Compiler settings -->
   <property name="javac.debug" value="source,lines,vars"/>
@@ -18,13 +18,17 @@
 
   <!-- Source directories -->
   <property name="src.main" value="${bio.seq.dir}/bio.seq/src"/>
+  <property name="src.test" value="${bio.seq.dir}/bio.seq/test/java"/>
   <property name="lib.dir" value="${bio.seq.dir}/lib"/>
+  <!-- You may need to specify location of the jUnit4 jar here. -->
+  <property name="lib.junit" value="${ant.library.dir}/junit.jar"/>
 
   <!-- Output directories -->
-  <property name="build.dir" value="${bio.seq.dir}/build"/>
+  <property name="build.dir" value="${bio.seq.dir}/bin"/>
   <property name="build.dest" value="${build.dir}/classes"/>
   <property name="build.dest.main" value="${build.dest}/bio.seq"/>
   <property name="build.dest.io" value="${build.dest}/bio.seq.io"/>
+  <property name="build.dest.test" value="${build.dest}/test"/>
   <property name="build.javadoc" value="${bio.seq.dir}/docs"/>
   <property name="build.deps" value="${build.dir}/deps"/>
 
@@ -42,6 +46,7 @@
      <echo>
   Input Directories:
     Source:         ${src.main}
+    Test source:    ${src.test}
     Libraries:      ${lib.dir}
   Output Directories:
     Classes:        ${build.dest}
@@ -71,8 +76,7 @@
         target="${javac.target}">
       
       <src path="${src.main}"/>
-      <!-- exclude tests and IO library -->
-      <exclude name="**/test/**" />
+      <!-- exclude IO library -->
       <exclude name="**/io/**" />
       
       <classpath refid="cp.main"/>
@@ -112,6 +116,39 @@
 
   <target name="compile" description="Compiles all files" depends="compile-io">
   </target>
+
+  <!-- Testing -->
+
+  <target name="test" description="Test main library" depends="compile">
+    <mkdir dir="${build.dest.test}"/>
+
+    <path id="cp.test">
+      <pathelement location="${build.dest.test}"/>
+      <path refid="cp.io"/>
+      <pathelement location="${lib.junit}"/>
+    </path>
+
+    <javac debug="true" 
+       debuglevel="${javac.debug}" 
+       destdir="${build.dest.test}" 
+       includeantruntime="false" 
+       source="${javac.source}"
+       target="${javac.target}">
+
+      <src path="${src.test}"/>
+      <classpath refid="cp.test"/>
+    </javac>
+
+    <junit haltonerror="yes" haltonfailure="yes">
+      <classpath refid="cp.test"/>
+      <sysproperty key="testdir" value="${bio.seq.dir}/bio.seq/test"/>
+
+      <formatter type="plain" usefile="false"/>
+      <test name="ua.kiev.icyb.bio.test.FastTestSuite"/>
+      <test name="ua.kiev.icyb.bio.test.SlowTestSuite"/>
+    </junit>
+  </target>
+
 
   <!-- JAR-related targets -->
 
@@ -182,7 +219,7 @@
         docencoding="UTF-8"
         charset="UTF-8"
         classpathref="cp.io"
-        bottom="&#169;2011-${build.year} Alexei Ostrovski">
+        stylesheetfile="${build.javadoc}/stylesheet.css">
 
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
       <link href="http://www.biojava.org/docs/api1.9.0/"/>
@@ -222,6 +259,10 @@ env.encoding = UTF-8
 #    [имя выборки] = [файл, содержащий выборку]
 #set_name = /path/to/file.gz
 </echo>
+
+    <replaceregexp file="${build.dir}/setenv.sh" 
+        match="^LIBVER=.*$" 
+        replace="LIBVER=${version}" />
   </target>
 
   <!-- Clean targets -->
@@ -240,7 +281,9 @@ env.encoding = UTF-8
   </target>
 
   <target name="clean-doc" description="Cleans after generating documentation">
-    <delete dir="${build.javadoc}"/>
+    <delete includeemptydirs="true">
+      <fileset dir="${build.javadoc}" includes="**/*" excludes="stylesheet.css" />
+    </delete>
     <delete file="${build.dir}/${jar.javadoc}"/>
   </target>
 
@@ -254,6 +297,6 @@ env.encoding = UTF-8
 
   <!-- Default target -->
 
-  <target name="build-all" description="Builds library, jars, and documentation" depends="env,compile,jar,javadoc,build-aux">
+  <target name="build-all" description="Builds library, jars, and documentation" depends="env,compile,test,jar,javadoc,build-aux">
   </target>
 </project>
