@@ -9,6 +9,7 @@ import java.io.IOException;
 import org.biojava.bio.BioException;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.SequenceSet;
@@ -41,6 +42,7 @@ public class IOTests {
 	 * @throws BioException
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testGenbank() throws IOException, BioException {
 		GenbankReader reader = new GenbankReader(setFilename);
 		reader.run(env);
@@ -51,7 +53,6 @@ public class IOTests {
 		assertEquals("xi", set.hiddenStates());
 		assertEquals("ACGTacgt", set.completeStates());
 		
-		System.out.println(set.repr());
 		assertTrue(set.size() > 2000);
 	}
 
@@ -90,8 +91,6 @@ public class IOTests {
 			assertTrue(set.get(i).length() > 50);
 			assertTrue(set.get(i).length() < 5000);
 		}
-		
-		System.out.println(set.repr());
 	}
 	
 	// TODO settings

@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
@@ -247,6 +248,7 @@ public class MixtureTests {
 	 * @throws IOException
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testEMAlgorithm() throws IOException {
 		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
 		mixture.model(0).train(set1);
@@ -263,8 +265,6 @@ public class MixtureTests {
 		
 		assertNotEquals(0.5, newMixture.weight(0), 1e-6);
 		double logP = mixture.estimate(set1), newLogP = newMixture.estimate(set1);
-		System.out.format("logP(init) = %.0f\n", logP);
-		System.out.format("logP(final) = %.0f\n", newLogP);
 		assertTrue(newLogP - logP > 50000.0);
 	}
 	
@@ -275,6 +275,7 @@ public class MixtureTests {
 	 * @throws IOException
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testIncEMAlgorithm() throws IOException {
 		MarkovMixture mixture = new MarkovMixture(1, 6, set1);
 		mixture.model(0).train(set1);
@@ -291,8 +292,6 @@ public class MixtureTests {
 		checkSanity(newMixture);
 		
 		double logP = mixture.estimate(set1), newLogP = newMixture.estimate(set1);
-		System.out.format("logP(init) = %.0f\n", logP);
-		System.out.format("logP(final) = %.0f\n", newLogP);
 		assertTrue(newLogP - logP > 50000.0);
 	}
 }

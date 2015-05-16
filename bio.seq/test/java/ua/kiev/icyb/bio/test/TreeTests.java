@@ -1,6 +1,9 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,6 +13,7 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
@@ -418,6 +422,7 @@ public class TreeTests {
 	 * различающихся пороговым значением концентрации.
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testEntropyUnimodality() throws IOException {
 		final SequenceSet set = set1;
 		
@@ -454,6 +459,7 @@ public class TreeTests {
 	 * Тестирует генерирование дерева разбиения на основе выборки.
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testTreeGen() {
 		final SequenceSet set = set1;
 		
