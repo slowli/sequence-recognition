@@ -14,10 +14,15 @@ Options:
                print this help and quit
     -d, --output
                set the output directory (default is .)
+
+Example:
+    `basename $0` -d out I:453231596 II:453231901
+               Downloads first two sequences of C. elegans genome
+               and stores them in files I.gb.gz and II.gb.gz, respectively.
 EOF
 }
 
-T_DOWNLOAD="http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi\
+t_download="http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi\
 	?tool=portal\
 	&sendto=on\
 	&log\$=seqview\
@@ -29,12 +34,12 @@ T_DOWNLOAD="http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi\
 	&to=end\
 	&extrafeat=976"
 
-T_DOWNLOAD=`echo $T_DOWNLOAD | tr -d [:space:]`
+t_download=`echo $t_download | tr -d [:space:]`
 
 function download_seq() {
 	local seqname="$1"
 	local seqid="$2"
-	local link="${T_DOWNLOAD/SEQID/$seqid}"
+	local link="${t_download/SEQID/$seqid}"
 	local output="$outdir/$seqname.gb"
 
 	echo "Sequence ID: $seqid"
@@ -50,7 +55,7 @@ outdir=.
 while [ $# -gt 0 ]; do
 	case "$1" in
 		-d | --output)
-			shift; outdir=$1 ;;
+			shift; outdir=$1; shift ;;
 		-h | --help)
 			usage; exit 0 ;;
 		-*) echo "Unknown option: $1"; exit 1 ;;

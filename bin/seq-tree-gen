@@ -16,22 +16,30 @@ Options:
                specify the minimal size of a partition (default is 1000)
     -o, --save
                specify the name of the file to save algorithm data to.
-               Default filename is '[TREE-FILE].run'.
+               Default filename is TREE-FILE.run.
     -O, --order
                use the specified order of Markov chains (default is 5)
     -t, --size
                specify the desired tree size (default is 5)
+
+Example:
+    `basename $0` -m 500 -O 6 -t 4 elegans elegans.tree
+               Creates a tree consisting of four predicates using 6th order
+               Markov chains from "elegans" dataset; the minimal size
+               of a partition is set to 500. The resulting tree is saved to
+               "elegans.tree", and the algorithm data is stored in
+               "elegans.tree.run".
 EOF
 }
 
 . `dirname $0`/setenv.sh
 
-RUN_CLASS=ua.kiev.icyb.bio.tools.TreeGen
+run_class=ua.kiev.icyb.bio.tools.TreeGen
 
-MIN_SIZE=1000
-ALG_FILE=
-CHAIN_ORDER=5
-TREE_SIZE=5
+min_size=1000
+alg_file=
+chain_order=5
+tree_size=5
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -40,13 +48,13 @@ while [ $# -gt 0 ]; do
 		-e | --env)
 			shift; ENV_FILE=$1; shift ;;
 		-m | --min-size)
-			shift; MIN_SIZE=$1; shift ;;
+			shift; min_size=$1; shift ;;
 		-o | --save)
-			shift; ALG_FILE=$1; shift ;;
+			shift; alg_file=$1; shift ;;
 		-O | --order)
-			shift; CHAIN_ORDER=$1; shift ;;
+			shift; chain_order=$1; shift ;;
 		-t | --size)
-			shift; TREE_SIZE=$1; shift ;;
+			shift; tree_size=$1; shift ;;
 		-*) echo "Unknown option: $1"; exit 1 ;;
 		*) break ;;
 	esac
@@ -57,13 +65,13 @@ if [ $# -lt 2 ]; then
 	exit 1
 fi
 
-if [[ "x$ALG_FILE" == "x" ]]; then
-	ALG_FILE="$2.run"
+if [[ "x$alg_file" == "x" ]]; then
+	alg_file="$2.run"
 fi
 
-java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE "$1" "$ALG_FILE" \
-	"order=$CHAIN_ORDER" \
-	"minPartSize=$MIN_SIZE" \
-	"treeSize=$TREE_SIZE" \
+java $JAVAOPTS -cp $CLASSPATH $run_class $ENV_FILE "$1" "$alg_file" \
+	"order=$chain_order" \
+	"minPartSize=$min_size" \
+	"treeSize=$tree_size" \
 	"treeFile=$2"
 

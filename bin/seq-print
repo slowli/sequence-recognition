@@ -11,6 +11,10 @@ Options:
                print this help and quit
     -e, --env
                set the configuration file for environment
+
+Example:
+    `basename $0` test.obj
+               Prints information about file "test.obj".
 EOF
 }
 

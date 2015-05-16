@@ -13,12 +13,19 @@ in the installation directory is used.
 Options:
     -h, --help
                print this help and quit
+
+Examples:
+    `basename $0`
+               Prints information about default configuration.
+    `basename $0` test.conf
+               Prints information about default configuration stored in file 
+               "test.conf".
 EOF
 }
 
 . `dirname $0`/setenv.sh
 
-PRINT_CLASS=ua.kiev.icyb.bio.tools.PrintEnv
+print_class=ua.kiev.icyb.bio.tools.PrintEnv
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -38,5 +45,5 @@ if [[ ! -f $ENV_FILE ]]; then
 	exit 1
 fi
 
-java $JAVAOPTS -cp $CLASSPATH $PRINT_CLASS $ENV_FILE
+java $JAVAOPTS -cp $CLASSPATH $print_class "$ENV_FILE"
 

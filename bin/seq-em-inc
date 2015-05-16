@@ -36,21 +36,28 @@ Options:
                index offset when selecting bad sequences (default is 0)
     -V, --val-offset
                value offset when selecting bad sequences (default is 0.0)
+
+Example:
+    `basename $0` -O 4 -s 3 --iter 20 -I -2000 elegans "el.{n}-{i}"
+               Creates a mixture consisting of three 4th order Markov chains using
+               "elegans" dataset. The number of bad samples used to create 
+               new distributions is lower than default. The intermediate mixtures 
+               are stored in files "el.1-1", "el.1-2", ..., "el.3-20".
 EOF
 }
 
 . `dirname $0`/setenv.sh
 
-RUN_CLASS=ua.kiev.icyb.bio.tools.EMInc
+run_class=ua.kiev.icyb.bio.tools.EMInc
 
-ALG_FILE=
-INITIAL_MIXTURE=
-CHAIN_ORDER=5
-MIXTURE_SIZE=5
-N_ITERATIONS=15
-SELECTION_METHOD=mean
-INDEX_OFFSET=0
-VALUE_OFFSET=0.0
+alg_file=
+initial_mixture=
+chain_order=5
+mixture_size=5
+n_iterations=15
+selection_method=mean
+index_offset=0
+value_offset=0.0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -59,21 +66,21 @@ while [ $# -gt 0 ]; do
 		-e | --env)
 			shift; ENV_FILE=$1; shift ;;
 		-o | --save)
-			shift; ALG_FILE=$1; shift ;;
+			shift; alg_file=$1; shift ;;
 		-i | --init)
-			shift; INITIAL_MIXTURE=$1; shift ;;
+			shift; initial_mixture=$1; shift ;;
 		-O | --order)
-			shift; CHAIN_ORDER=$1; shift ;;
+			shift; chain_order=$1; shift ;;
 		-s | --size)
-			shift; MIXTURE_SIZE=$1; shift ;;
+			shift; mixture_size=$1; shift ;;
 		-n | --iter)
-			shift; N_ITERATIONS=$1; shift ;;
+			shift; n_iterations=$1; shift ;;
 		-M | --bad-seq)
-			shift; SELECTION_METHOD=$1; shift ;;
+			shift; selection_method=$1; shift ;;
 		-I | --i-offset)
-			shift; INDEX_OFFSET=$1; shift ;;
+			shift; index_offset=$1; shift ;;
 		-V | --val-offset)
-			shift; VALUE_OFFSET=$1; shift ;;
+			shift; value_offset=$1; shift ;;
 		-*) echo "Unknown option: $1"; exit 1 ;;
 		*) break ;;
 	esac
@@ -84,26 +91,26 @@ if [ $# -lt 2 ]; then
 	exit 1
 fi
 
-if [[ "x$ALG_FILE" == "x" ]]; then
-	ALG_FILE="$1-em.run"
+if [[ "x$alg_file" == "x" ]]; then
+	alg_file="$1-em.run"
 fi
 
-INIT_OPT="order=$CHAIN_ORDER"
-if [[ ! "x$INITIAL_MIXTURE" == "x" ]]; then
-	if [[ ! -f $INITIAL_MIXTURE ]]; then
-		echo "'$INITIAL_MIXTURE' is not a valid file"
+init_opt="order=$chain_order"
+if [[ ! "x$initial_mixture" == "x" ]]; then
+	if [[ ! -f $initial_mixture ]]; then
+		echo "'$initial_mixture' is not a valid file"
 		exit 1
 	else
-		INIT_OPT="mixture=$INITIAL_MIXTURE"
+		init_opt="mixture=$initial_mixture"
 	fi
 fi
 
-java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE "$1" "$ALG_FILE" \
-	$INIT_OPT \
-	"maxModels=$MIXTURE_SIZE" \
+java $JAVAOPTS -cp $CLASSPATH $run_class "$ENV_FILE" "$1" "$alg_file" \
+	$init_opt \
+	"maxModels=$mixture_size" \
 	"saveTemplate=$2" \
-	"nIterations=$N_ITERATIONS" \
-	"selectionMethod=$SELECTION_METHOD" \
-	"indexOffset=$INDEX_OFFSET" \
-	"valueOffset=$VALUE_OFFSET"
+	"nIterations=$n_iterations" \
+	"selectionMethod=$selection_method" \
+	"indexOffset=$index_offset" \
+	"valueOffset=$value_offset"
 

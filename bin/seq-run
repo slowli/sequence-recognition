@@ -11,12 +11,16 @@ Options:
                print this help and quit
     -e, --env
                set the configuration file for environment
+
+Example:
+    `basename $0` test.run
+               Launches runnable object stored in file "test.run".
 EOF
 }
 
 . `dirname $0`/setenv.sh
 
-RUN_CLASS=ua.kiev.icyb.bio.tools.Run
+run_class=ua.kiev.icyb.bio.tools.Run
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -34,5 +38,5 @@ if [[ $# == 0 ]]; then
 	exit 1
 fi
 
-java $JAVAOPTS -cp $CLASSPATH $RUN_CLASS $ENV_FILE $1
+java $JAVAOPTS -cp $CLASSPATH $run_class "$ENV_FILE" $1
 
