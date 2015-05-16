@@ -512,4 +512,19 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		
 		return sequence;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) return false;
+		if (obj.getClass() != this.getClass()) return false;
+		
+		SimpleSequenceSet other = (SimpleSequenceSet) obj;
+		if (this.size() != other.size()) return false;
+		return this.idSet.equals(other.idSet);
+	}
+	
+	@Override
+	public int hashCode() {
+		return this.idSet.hashCode();
+	}
 }

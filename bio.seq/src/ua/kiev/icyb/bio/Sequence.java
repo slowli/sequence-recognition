@@ -196,6 +196,17 @@ public class Sequence {
 	}
 	
 	@Override
+	public int hashCode() {
+		if (this.id != null) return this.id.hashCode();
+		
+		int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(this.hidden);
+		result = prime * result + Arrays.hashCode(this.observed);
+		return result;
+	}
+	
+	@Override
 	public String toString() {
 		String args = (id == null) ? "" : "ID='" + id + "',";
 		
