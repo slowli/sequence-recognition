@@ -11,6 +11,7 @@ import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 import ua.kiev.icyb.bio.CrossValidation;
@@ -21,10 +22,14 @@ import ua.kiev.icyb.bio.SeqAlgorithm;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.alg.Approximation;
+import ua.kiev.icyb.bio.alg.Distribution;
 import ua.kiev.icyb.bio.alg.FallthruAlgorithm;
+import ua.kiev.icyb.bio.alg.FallthruChain;
 import ua.kiev.icyb.bio.alg.GeneViterbiAlgorithm;
+import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.tree.PriorityCompAlgorithm;
+import ua.kiev.icyb.bio.filters.RandomFilter;
 
 /**
  * Тестирование алгоритмов распознавания.
@@ -57,8 +62,6 @@ public class AlgorithmTests {
 		assertTrue(q.symbolCC(1) > 0.5);
 		assertTrue(q.regionSens(1) > 0.25);
 		assertTrue(q.regionSpec(1) > 0.25);
-	
-		System.out.println(q.repr());
 	}
 
 	/**
@@ -69,7 +72,7 @@ public class AlgorithmTests {
 	 *    
 	 * @throws IOException
 	 */
-	public static void testAlgorithm(SeqAlgorithm algorithm) throws IOException {
+	public static void testAlgorithm(SeqAlgorithm algorithm) {
 		SequenceSet set = set1;
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 1000; i++) {
@@ -81,6 +84,38 @@ public class AlgorithmTests {
 		cv.attachAlgorithm(algorithm);
 		cv.run(env);
 		checkSanity(cv.meanControl());
+	}
+	
+	public static void testAlgorithmFit(SeqAlgorithm algorithm, Distribution<Sequence> distr) {
+		SequenceSet set = set1;
+		algorithm.reset();
+		distr.reset();
+		algorithm.train(set);
+		distr.train(set);
+		
+		set = set.filter(new RandomFilter(0.1));
+		
+		double trueToEst = 0.0, estToTrue = 0.0;
+		int count = 0;
+		for (Sequence seq : set) {
+			byte[] hidden = algorithm.run(seq);
+			if (hidden != null) {
+				double trueP = distr.estimate(seq);
+				double estP = distr.estimate(new Sequence("", seq.observed, hidden));
+				trueToEst += Math.max(0.0, trueP - estP);
+				estToTrue += Math.max(0.0, estP - trueP);
+				count++;
+			}
+		}
+		
+		trueToEst /= count;
+		estToTrue /= count;
+		
+		assertTrue(trueToEst < 10.0);
+		assertTrue(estToTrue > 0.0);
+		assertTrue(estToTrue < 50.0);
+		
+		//System.out.println(trueToEst + " " + estToTrue);
 	}
 
 	@Rule
@@ -160,7 +195,8 @@ public class AlgorithmTests {
 		env.save(alg, file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
-		System.out.println("File length: " + file.length());
+		// Файл большого размера, т.к. содержит данные обучения
+		assertTrue(file.length() > 50000);
 		
 		ViterbiAlgorithm copy = env.load(file.getAbsolutePath());
 		assertArrayEquals(alg.run(set.get(0)), copy.run(set.get(0)));
@@ -182,7 +218,6 @@ public class AlgorithmTests {
 		env.save((ViterbiAlgorithm) alg.clearClone(), file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
-		System.out.println("File length: " + file.length());
 		assertTrue(file.length() < 2000);
 		
 		ViterbiAlgorithm copy = env.load(file.getAbsolutePath());
@@ -208,7 +243,6 @@ public class AlgorithmTests {
 			selector[i] = true;
 		}
 		SequenceSet subset = set.filter(selector);
-		System.out.println(subset.repr());
 		
 		SequenceSet estimates = alg.runSet(subset);
 		assertEquals(set.observedStates(), estimates.observedStates());
@@ -245,7 +279,6 @@ public class AlgorithmTests {
 			selector[i] = true;
 		}
 		SequenceSet subset = set.filter(selector);
-		System.out.println(subset.repr());
 		
 		SequenceSet estimates = alg.runSet(subset);
 		assertEquals(set.observedStates(), estimates.observedStates());
@@ -306,7 +339,6 @@ public class AlgorithmTests {
 		env.save(est, file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
-		System.out.println("File length: " + file.length());
 		assertTrue(file.length() < 2000);
 		
 		est = env.load(file.getAbsolutePath());
@@ -353,6 +385,7 @@ public class AlgorithmTests {
 	 * @throws IOException
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testCV() throws IOException {
 		SequenceSet set = set1;
 		
@@ -375,6 +408,7 @@ public class AlgorithmTests {
 	 * @throws IOException
 	 */
 	@Test
+	@Category(SlowTest.class)
 	public void testCVSave() throws IOException {
 		SequenceSet set = set1;
 		
@@ -391,7 +425,6 @@ public class AlgorithmTests {
 		env.save(cv, file.getAbsolutePath());
 		
 		assertTrue(file.isFile());
-		System.out.println("File length: " + file.length());
 		assertTrue(file.length() < 10000);
 		
 		cv = env.load(file.getAbsolutePath());
@@ -401,33 +434,62 @@ public class AlgorithmTests {
 	
 	/**
 	 * Проверка алгоритма Витерби.
-	 * 
-	 * @throws IOException
 	 */
 	@Test
-	public void testViterbiAlgorithm() throws IOException {
+	@Category(SlowTest.class)
+	public void testViterbiAlgorithm() {
 		testAlgorithm(new ViterbiAlgorithm(1, 6));
 	}
 	
 	/**
-	 * Проверка алгоритма Витерби (модификация для генов).
-	 * 
-	 * @throws IOException
+	 * Проверка качества оптимизации лограифмического правдоподобия алгоритмом Витерби.
 	 */
 	@Test
-	public void testGeneViterbiAlgorithm() throws IOException {
+	@Category(SlowTest.class)
+	public void testViterbiAlogrithmFit() {
+		SeqAlgorithm alg = new ViterbiAlgorithm(1, 6);
+		Distribution<Sequence> distr = new MarkovChain(1, 6, set1);
+		testAlgorithmFit(alg, distr);
+	}
+	
+	/**
+	 * Проверка алгоритма Витерби (модификация для генов).
+	 */
+	@Test
+	@Category(SlowTest.class)
+	public void testGeneViterbiAlgorithm() {
 		testAlgorithm(new GeneViterbiAlgorithm(6, true));
 	}
 	
 	/**
-	 * Проверка алгоритма Витерби с цепями переменного порядка.
-	 * 
-	 * @throws IOException
+	 * Проверка качества оптимизации лограифмического правдоподобия алгоритмом Витерби для генов.
 	 */
 	@Test
-	public void testFallthruAlgorithm() throws IOException {
+	@Category(SlowTest.class)
+	public void testGeneViterbiAlgorithmFit() {
+		SeqAlgorithm alg = new GeneViterbiAlgorithm(6, true);
+		Distribution<Sequence> distr = new MarkovChain(1, 6, set1);
+		testAlgorithmFit(alg, distr);
+	}
+	
+	/**
+	 * Проверка алгоритма Витерби с цепями переменного порядка.
+	 */
+	@Test
+	@Category(SlowTest.class)
+	public void testFallthruAlgorithm() {
 		testAlgorithm(new FallthruAlgorithm(
 				new Approximation(6, 3, Approximation.Strategy.FIRST)));
+	}
+	
+	@Test
+	@Category(SlowTest.class)
+	public void testFallthruAlgorithmFit() {
+		final Approximation approx = new Approximation(6, 3, Approximation.Strategy.FIRST);
+		SeqAlgorithm alg = new FallthruAlgorithm(approx);
+		Distribution<Sequence> distr = new FallthruChain(approx, 
+				set1.observedStates(), set1.hiddenStates(), set1.completeStates());
+		testAlgorithmFit(alg, distr);
 	}
 	
 	/**
@@ -436,7 +498,8 @@ public class AlgorithmTests {
 	 * @throws IOException
 	 */
 	@Test
-	public void testPriorityCompAlgorithm() throws IOException {
+	@Category(SlowTest.class)
+	public void testPriorityCompAlgorithm() {
 		testAlgorithm(new PriorityCompAlgorithm(3, 6));
 	}
 }
