@@ -11,10 +11,10 @@ public class RandomFilter implements SequenceSet.Filter {
 	private double passP;
 	
 	/**
-	 * Создает новый фильтр
+	 * Создает новый фильтр.
 	 * 
 	 * @param passP
-	 *    вероятность прохождения строкой фильтра
+	 *    вероятность прохождения фильтра строкой
 	 */
 	public RandomFilter(double passP) {
 		this.passP = passP;

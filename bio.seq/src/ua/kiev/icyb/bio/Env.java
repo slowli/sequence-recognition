@@ -30,7 +30,7 @@ import java.util.zip.GZIPOutputStream;
 import ua.kiev.icyb.bio.res.Messages;
 
 /**
- * Набор инструментов для работы с окруженим.
+ * Набор инструментов для работы с окружением.
  */
 public class Env implements Representable {
 	
