@@ -80,7 +80,7 @@ public class SetTests {
 		int nRuns = 100000;
 		Set<String> ids = new HashSet<String>(nRuns);
 		for (int i = 0; i < nRuns; i++) {
-			ids.add(SequenceUtils.newID());
+			ids.add(Sequence.newID());
 		}
 		assertEquals(nRuns, ids.size());
 	}
@@ -139,12 +139,12 @@ public class SetTests {
 	
 	/**
 	 * Проверяет создание последовательностей с помощью метода
-	 * {@link SequenceUtils#parseSequence(SequenceSet, String)}.
+	 * {@link SequenceUtils#parse(SequenceSet, String)}.
 	 */
 	@Test
 	public void testSequenceCreation() {
 		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", null);
-		Sequence sequence = SequenceUtils.parseSequence(set, "GxAxTiAiGi");
+		Sequence sequence = Sequence.parse(set.states(), "GxAxTiAiGi");
 		assertEquals(5, sequence.length());
 		assertEquals(5, sequence.observed.length);
 		assertEquals(5, sequence.hidden.length);
@@ -155,7 +155,7 @@ public class SetTests {
 		
 		set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
 		
-		sequence = SequenceUtils.parseSequence(set, "AagaTc");
+		sequence = Sequence.parse(set.states(), "AagaTc");
 		assertEquals(6, sequence.length());
 		assertEquals(6, sequence.observed.length);
 		assertEquals(6, sequence.hidden.length);
@@ -171,7 +171,7 @@ public class SetTests {
 	@Test
 	public void testSequenceSegmentation() {
 		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
-		Sequence sequence = SequenceUtils.parseSequence(set, "AagaggTCAc");
+		Sequence sequence = Sequence.parse(set.states(), "AagaggTCAc");
 		
 		List<Sequence.Segment> segments = sequence.segments();
 		assertEquals(4, segments.size());

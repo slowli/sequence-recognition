@@ -18,7 +18,6 @@ import org.junit.rules.TemporaryFolder;
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.SequenceUtils;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.Transform;
@@ -296,18 +295,18 @@ public class FilterTests {
 	 */
 	@Test
 	public void testValidGenesFilter() {
-		SequenceSet dummySet = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
 		
 		ValidGenesFilter filter = new ValidGenesFilter(false);
-		Sequence seq = SequenceUtils.parseSequence(dummySet, "ATGTAA");
+		Sequence seq = Sequence.parse(states, "ATGTAA");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGAA");
+		seq = Sequence.parse(states, "ATGAA");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGtaG");
+		seq = Sequence.parse(states, "ATGtaG");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATTGtaG");
+		seq = Sequence.parse(states, "ATTGtaG");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATgacgtagtga");
+		seq = Sequence.parse(states, "ATgacgtagtga");
 		assertTrue(filter.eval(seq));
 	}
 	
@@ -316,22 +315,22 @@ public class FilterTests {
 	 */
 	@Test
 	public void testValidGenesFilterWithCustomStates() {
-		SequenceSet dummySet = new SimpleSequenceSet("CGNAT", "xi", "CGNATcgnat");
+		StatesDescription states = StatesDescription.create("CGNAT", "xi", "CGNATcgnat");
 		
 		ValidGenesFilter filter = new ValidGenesFilter(false);
-		Sequence seq = SequenceUtils.parseSequence(dummySet, "ATGTAA");
+		Sequence seq = Sequence.parse(states, "ATGTAA");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGAA");
+		seq = Sequence.parse(states, "ATGAA");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGtaG");
+		seq = Sequence.parse(states, "ATGtaG");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATTGtaG");
+		seq = Sequence.parse(states, "ATTGtaG");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATgacgtagtga");
+		seq = Sequence.parse(states, "ATgacgtagtga");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGnNnTAG");
+		seq = Sequence.parse(states, "ATGnNnTAG");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "AnGTAA");
+		seq = Sequence.parse(states, "AnGTAA");
 		assertFalse(filter.eval(seq));
 	}
 	
@@ -340,28 +339,28 @@ public class FilterTests {
 	 */
 	@Test
 	public void testValidGenesFilterIntrons() {
-		SequenceSet dummySet = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
 		
 		ValidGenesFilter filter = new ValidGenesFilter(true);
-		Sequence seq = SequenceUtils.parseSequence(dummySet, "ATGTAA");
+		Sequence seq = Sequence.parse(states, "ATGTAA");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGAA");
+		seq = Sequence.parse(states, "ATGAA");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGtaG");
+		seq = Sequence.parse(states, "ATGtaG");
 		assertFalse(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATTGtaG");
-		assertFalse(filter.eval(seq));
-		
-		seq = SequenceUtils.parseSequence(dummySet, "ATGgtagTGA");
-		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATgtagTGA");
-		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGgtgTGA");
+		seq = Sequence.parse(states, "ATTGtaG");
 		assertFalse(filter.eval(seq));
 		
-		seq = SequenceUtils.parseSequence(dummySet, "ATGgttttagTgtaaagTGA");
+		seq = Sequence.parse(states, "ATGgtagTGA");
 		assertTrue(filter.eval(seq));
-		seq = SequenceUtils.parseSequence(dummySet, "ATGgtctcagTGtaaagTGA");
+		seq = Sequence.parse(states, "ATgtagTGA");
+		assertTrue(filter.eval(seq));
+		seq = Sequence.parse(states, "ATGgtgTGA");
+		assertFalse(filter.eval(seq));
+		
+		seq = Sequence.parse(states, "ATGgttttagTgtaaagTGA");
+		assertTrue(filter.eval(seq));
+		seq = Sequence.parse(states, "ATGgtctcagTGtaaagTGA");
 		assertFalse(filter.eval(seq));
 	}
 	
@@ -514,7 +513,7 @@ public class FilterTests {
 		assertEquals("ACGT$acgt$", tStates.complete());
 		
 		SimpleSequenceSet set = new SimpleSequenceSet(states);
-		set.add(SequenceUtils.parseSequence(set, "ACGttt"));
+		set.add(Sequence.parse(states, "ACGttt"));
 		Sequence seq = set.get(0);
 		Sequence tSeq = transform.sequence(seq);
 		assertEquals(seq.length() + 1, tSeq.length());
@@ -532,8 +531,8 @@ public class FilterTests {
 	public void testTailTransformOnSet() {
 		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
 		SimpleSequenceSet set = new SimpleSequenceSet(states);
-		set.add(SequenceUtils.parseSequence(set, "ACGttt"));
-		set.add(SequenceUtils.parseSequence(set, "aaTA"));
+		set.add(Sequence.parse(states, "ACGttt"));
+		set.add(Sequence.parse(states, "aaTA"));
 		
 		SequenceSet tSet = set.transform(new TerminalTransform());
 		assertEquals(tSet.size(), set.size());
@@ -585,7 +584,7 @@ public class FilterTests {
 		assertNull(tStates.complete());
 		
 		SimpleSequenceSet set = new SimpleSequenceSet(states);
-		set.add(SequenceUtils.parseSequence(set, "ACtttGTAG"));
+		set.add(Sequence.parse(states, "ACtttGTAG"));
 		Sequence seq = set.get(0);
 		Sequence tSeq = transform.sequence(seq);
 		assertEquals(seq.length(), tSeq.length());
@@ -629,7 +628,7 @@ public class FilterTests {
 		assertNull(tStates.complete());
 		
 		SimpleSequenceSet set = new SimpleSequenceSet(states);
-		set.add(SequenceUtils.parseSequence(set, "ACtttGTAG"));
+		set.add(Sequence.parse(states, "ACtttGTAG"));
 		Sequence seq = set.get(0);
 		Sequence tSeq = transform.sequence(seq);
 		assertEquals(seq.length() + 1, tSeq.length());

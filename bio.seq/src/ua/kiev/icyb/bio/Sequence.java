@@ -69,6 +69,92 @@ public class Sequence {
 	}
 	
 	/**
+	 * Символы, которые могут содержаться в сгенерированных идентификаторах. 
+	 */
+	private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	
+	/**
+	 * Длина идентификатора.
+	 */
+	private static final int AUTO_ID_LENGTH = 20;
+	
+	/**
+	 * Создает случайный идентификатор. Идентификатор состоит из 20 символов; в него могут входить
+	 * символы из кодировки base64 (заглавные и строчные латинские буквы, цифры 
+	 * и знаки {@code '+'} и {@code '/'}).
+	 * 
+	 * @return
+	 *    случайный идентификатор длиной 20 символов
+	 */
+	public static synchronized String newID() {
+		StringBuilder uuid = new StringBuilder(36);
+		int rnd = 0, r = 0;
+		
+		for (int i = 0; i < AUTO_ID_LENGTH; i ++ ) {
+			if (rnd <= 0x02) rnd = 0x2000000 + (int)( Math.random() * 0x1000000 ) | 0;
+			r = rnd & 63;
+			rnd = rnd >> 6;
+			uuid.append(CHARS.charAt(r));
+		}
+
+		return uuid.toString();
+	}
+	
+	/**
+	 * Создает последовательность по ее текстовому представлению и выборке, в которую последовательность
+	 * потенциально может входить.
+	 * 
+	 * Если выборка задает алфавит полных состояний, то представление состоит из полных состояний;
+	 * в противном случае представление состоит из чередующихся между собой наблюдаемых и скрытых
+	 * состояний.
+	 * 
+	 * @param states
+	 *    спецификация множеств наблюдаемых и скрытых состояний
+	 * @param text
+	 *    текстовое представление последовательности
+	 * @return
+	 *    последовательность, соответствующая текстовому представлению
+	 */
+	public static Sequence parse(StatesDescription states, String text) {
+		byte[] observed, hidden;
+		
+		if (states.complete() != null) {
+			observed = new byte[text.length()];
+			hidden = new byte[text.length()];
+			
+			final int oSize = states.nObserved();
+			
+			for (int pos = 0; pos < text.length(); pos++) {
+				int idx = states.complete().indexOf(text.charAt(pos));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in complete states");
+				}
+				observed[pos] = (byte)(idx % oSize);
+				hidden[pos] = (byte)(idx / oSize);
+			}
+		} else {
+			observed = new byte[text.length() / 2];
+			hidden = new byte[text.length() / 2];
+			
+			for (int pos = 0; pos < text.length(); pos += 2) {
+				int idx = states.observed().indexOf(text.charAt(pos));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in observed states");
+				}
+				observed[pos / 2] = (byte) idx;
+				
+				idx = states.hidden().indexOf(text.charAt(pos + 1));
+				if (idx < 0) {
+					throw new IllegalArgumentException("'" + text.charAt(pos) + "' not in hidden states");
+				}
+				hidden[pos / 2] = (byte) idx;
+			}
+		}
+		
+		return new Sequence(observed, hidden).setStates(states);
+	}
+	
+	/**
 	 * Последовательность наблюдаемых состояний.
 	 */
 	public final byte[] observed;
@@ -87,12 +173,7 @@ public class Sequence {
 	/**
 	 * Номер прецедента в содержащей его выборке.
 	 */
-	public final int index;
-	
-	/**
-	 * Выборка, содержащая прецедент.
-	 */
-	public final SequenceSet set; // TODO remove?
+	public final int index; // TODO remove?
 	
 	private StatesDescription states;
 	
@@ -110,7 +191,6 @@ public class Sequence {
 			throw new IllegalArgumentException(Messages.getString("dataset.e_length"));
 		}
 		
-		this.set = set;
 		this.index = index;
 		this.id = id;
 		this.observed = observed;
@@ -129,7 +209,6 @@ public class Sequence {
 	 *    строка скрытых состояний
 	 */
 	public Sequence(String id, byte[] observed, byte[] hidden) {
-		this.set = null;
 		this.index = -1;
 		this.id = id;
 		this.observed = observed;
@@ -145,10 +224,10 @@ public class Sequence {
 	 * @param hidden
 	 *    строка скрытых состояний
 	 *    
-	 * @see SequenceUtils#newID()
+	 * @see newID()
 	 */
 	public Sequence(byte[] observed, byte[] hidden) {
-		this(SequenceUtils.newID(), observed, hidden);
+		this(newID(), observed, hidden);
 	}
 	
 	/**
