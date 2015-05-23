@@ -30,6 +30,12 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 	private boolean[] selector = null;
 	
 	/**
+	 * Преобразование, которое использовалось при создании выборки путем трансформации.
+	 * Если выборка не была получена преобразованием, значение поля равно {@code null}.
+	 */
+	private Transform transform;
+	
+	/**
 	 * Части, из которых составлена эта выборка.
 	 */
 	private SequenceSet[] setParts = null;
@@ -91,6 +97,14 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 		return filtered;
 	}
 	
+	@Override
+	public SequenceSet transform(Transform transform) {
+		NamedSequenceSet transformed = new NamedSequenceSet(super.transform(transform));
+		transformed.unfilteredSet = this;
+		transformed.transform = transform;
+		return transformed;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * 
@@ -123,8 +137,10 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 		String args = "";
 		if (this.datasetName != null) {
 			args = "'" + this.datasetName + "'";
-		} else if (this.unfilteredSet != null) {
-			args = this.unfilteredSet + "," + this.size();
+		} else if (this.selector != null) {
+			args = this.unfilteredSet + "[" + this.size() + "]";
+		} else if (this.transform != null) {
+			args = this.unfilteredSet + ">" + this.transform;
 		} else if (this.setParts != null) {
 			args += this.setParts[0];
 			for (int i = 1; i < this.setParts.length; i++) {
@@ -160,9 +176,12 @@ public class NamedSequenceSet extends SimpleSequenceSet {
 			} catch (IOException e) {
 				// TODO do smth
 			}
-		} else if (unfilteredSet != null) {
+		} else if (selector != null) {
 			SequenceSet filtered = unfilteredSet.filter(selector);
 			this.addSet(filtered);
+		} else if (transform != null) {
+			SequenceSet transformed = unfilteredSet.transform(transform);
+			this.addSet(transformed);
 		} else if (setParts != null) {
 			for (SequenceSet part : setParts) {
 				this.addSet(part);
