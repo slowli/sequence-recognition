@@ -74,11 +74,12 @@ public class ValidGenesFilter implements SequenceSet.Filter {
 	@Override
 	public boolean eval(Sequence sequence) {
 		final byte[] observed = sequence.observed;
+		final String oStates = sequence.states().observed();
 		
-		final byte[] startSeq = getSymbols("ATG", sequence.set.observedStates());
-		final byte[] termSeq1 = getSymbols("TGA", sequence.set.observedStates()),
-			termSeq2 = getSymbols("TAG", sequence.set.observedStates()),
-			termSeq3 = getSymbols("TAA", sequence.set.observedStates());
+		final byte[] startSeq = getSymbols("ATG", oStates);
+		final byte[] termSeq1 = getSymbols("TGA", oStates),
+			termSeq2 = getSymbols("TAG", oStates),
+			termSeq3 = getSymbols("TAA", oStates);
 		
 		boolean validStart = checkSubstring(observed, startSeq, 0);
 		if (!validStart) return false;
@@ -91,8 +92,8 @@ public class ValidGenesFilter implements SequenceSet.Filter {
 		
 		if (!validateIntrons) return true;
 		
-		final byte[] intronStart = getSymbols("GT", sequence.set.observedStates()),
-				intronEnd = getSymbols("AG", sequence.set.observedStates());
+		final byte[] intronStart = getSymbols("GT", oStates),
+				intronEnd = getSymbols("AG", oStates);
 		
 		for (Sequence.Segment segment : sequence.segments()) {
 			if (segment.stateChar() == 'i') {

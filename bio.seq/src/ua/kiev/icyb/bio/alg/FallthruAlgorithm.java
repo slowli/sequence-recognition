@@ -1,6 +1,7 @@
 package ua.kiev.icyb.bio.alg;
 
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
 /**
@@ -29,8 +30,8 @@ public class FallthruAlgorithm extends ViterbiAlgorithm {
 	}
 	
 	@Override
-	protected MarkovChain createChain(SequenceSet set) {
-		return new FallthruChain(approx, set.states());
+	protected MarkovChain createChain(StatesDescription states) {
+		return new FallthruChain(approx, states);
 	}
 	
 	@Override

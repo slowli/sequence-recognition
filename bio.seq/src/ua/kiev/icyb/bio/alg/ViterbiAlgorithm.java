@@ -5,6 +5,7 @@ import java.util.Collection;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -39,9 +40,13 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 */
 	protected MarkovChain chain;
 	
-	private int depLength;
 	
-	private int order;
+	protected int depLength;
+	
+	/**
+	 * Порядок модели, используемой алгоритмом. 
+	 */
+	protected int order;
 	
 	/**
 	 * Создает новый алгоритм распознавания с заданными параметрами вероятностной модели.
@@ -67,19 +72,18 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 * Созданная модель используется в алгоритме Витерби для получения сведений 
 	 * о начальных и переходных вероятностях.
 	 * 
-	 * @param set
-	 *    выборка
+	 * @param states
 	 * @return
 	 *    созданная модель
 	 */
-	protected MarkovChain createChain(SequenceSet set) {
-		return new MarkovChain(depLength, order, set.states());
+	protected MarkovChain createChain(StatesDescription states) {
+		return new MarkovChain(depLength, order, states);
 	}
 	
 	@Override
 	public void train(Sequence sequence) {
 		if (chain == null) {
-			chain = createChain(sequence.set);
+			chain = this.createChain(sequence.states());
 		}
 		chain.train(sequence);
 	}
@@ -87,7 +91,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	@Override
 	public void train(Collection<? extends Sequence> set) {
 		if (chain == null) {
-			chain = createChain((SequenceSet) set);
+			chain = this.createChain(((SequenceSet) set).states());
 		}
 		chain.train(set);
 	}

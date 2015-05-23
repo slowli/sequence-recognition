@@ -60,7 +60,7 @@ public class Sequence {
 		 *    если символьное представление не определено  
 		 */
 		public char stateChar() {
-			return (Sequence.this.set == null) ? '\0' : Sequence.this.set.hiddenStates().charAt(this.state);
+			return (Sequence.this.states() == null) ? '\0' : Sequence.this.states().hidden(this.state);
 		}
 		
 		public String toString() {
@@ -92,7 +92,9 @@ public class Sequence {
 	/**
 	 * Выборка, содержащая прецедент.
 	 */
-	public final SequenceSet set;
+	public final SequenceSet set; // TODO remove?
+	
+	private StatesDescription states;
 	
 	/**
 	 * Создает прецедент с заданными параметрами.
@@ -113,6 +115,7 @@ public class Sequence {
 		this.id = id;
 		this.observed = observed;
 		this.hidden = hidden;
+		this.states = set.states();
 	}
 	
 	/**
@@ -156,6 +159,29 @@ public class Sequence {
 	 */
 	public int length() {
 		return observed.length;
+	}
+	
+	/**
+	 * Возвращает описание состояний для этой последовательности.
+	 * 
+	 * @return
+	 *    описание состояний
+	 */
+	public StatesDescription states() {
+		return this.states;
+	}
+	
+	/**
+	 * Устанавливает описание состояний для последовательности.
+	 * 
+	 * @param states
+	 *    описание состояний
+	 * @return
+	 *    эта последовательность
+	 */
+	public Sequence setStates(StatesDescription states) {
+		this.states = states;
+		return this;
 	}
 	
 	private transient List<Segment> segments;
@@ -210,15 +236,15 @@ public class Sequence {
 	public String toString() {
 		String args = (id == null) ? "" : "ID='" + id + "',";
 		
-		if (set == null) {
-			args += "[" + length() + " symbols]";
+		if (states() == null) {
+			args += "[" + this.length() + " symbols]";
 		} else {
-			String oStates = set.observedStates(), hStates = set.hiddenStates(), 
-					cStates = set.completeStates();
+			String oStates = states().observed(), hStates = states().hidden(), 
+					cStates = states().complete();
 			StringBuilder builder = (cStates != null)
-					? new StringBuilder(length()) : new StringBuilder(2 * length());
+					? new StringBuilder(this.length()) : new StringBuilder(2 * this.length());
 			
-			for (int i = 0; i < length(); i++) {
+			for (int i = 0; i < this.length(); i++) {
 				if (cStates != null) {
 					builder.append("" + cStates.charAt(hidden[i] * oStates.length() + observed[i]));
 				} else { 
