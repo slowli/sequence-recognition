@@ -119,7 +119,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	 *    выборка, которую необходимо скопировать
 	 */
 	protected SimpleSequenceSet(SequenceSet other) {
-		this(other.observedStates(), other.hiddenStates(), other.completeStates());
+		this(other.states());
 		this.addSet(other);
 	}
 	
@@ -255,7 +255,8 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	@Override
 	public StatesDescription states() {
 		if (this.states == null) {
-			this.states = new StatesDescription(this.observedStates, this.hiddenStates, this.completeStates);
+			this.states = StatesDescription.create(this.observedStates, 
+					this.hiddenStates, this.completeStates);
 		}
 		return this.states;
 	}

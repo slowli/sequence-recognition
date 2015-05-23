@@ -1,6 +1,8 @@
 package ua.kiev.icyb.bio;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Конфигурация состояний, из которых состоят строки определенной выборки.
@@ -10,10 +12,39 @@ public class StatesDescription implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
+	/** Символы для разделения частей конфигурации. */
+	private static final String DELIM = "\n";
 	
-	private final String observedStates;
-	private final String hiddenStates;
-	private final String completeStates;
+	/**
+	 * Кэш конфигураций.
+	 */
+	private static final Map<String, StatesDescription> cache = new HashMap<String, StatesDescription>();
+	
+	/**
+	 * Создает конфигурацию на основе наблюдаемых, скрытых и полных состояний.
+	 * 
+	 * @param observed
+	 *    символы, обозначающие наблюдаемые состояния
+	 * @param hidden
+	 *    символы, обозначающие скрытые состояния
+	 * @param complete
+	 *    символы, обозначающие полные состояния (может быть {@code null})
+	 *    
+	 * @throws IllegalArgumentException
+	 *    если полные состояния имеют явные обозначения ({@code complete != null}) и число обозначений
+	 *    не совпадает с числом полных состояний
+	 */
+	public static StatesDescription create(String observed, String hidden, String complete) {
+		String key = observed + DELIM + hidden;
+		if (complete != null) key += DELIM + complete; 
+		
+		StatesDescription states = cache.get(key);
+		if (states == null) {
+			states = new StatesDescription(observed, hidden, complete);
+			cache.put(key, states);
+		}
+		return states;
+	}
 	
 	/**
 	 * Создает конфигурацию на основе наблюдаемых и скрытых состояний.
@@ -24,9 +55,13 @@ public class StatesDescription implements Serializable {
 	 * @param hidden
 	 *    символы, обозначающие скрытые состояния
 	 */
-	public StatesDescription(String observed, String hidden) {
-		this(observed, hidden, null);
+	public static StatesDescription create(String observed, String hidden) {
+		return create(observed, hidden, null);
 	}
+	
+	private final String observedStates;
+	private final String hiddenStates;
+	private final String completeStates;
 
 	/**
 	 * Создает конфигурацию на основе наблюдаемых, скрытых и полных состояний.
@@ -42,7 +77,7 @@ public class StatesDescription implements Serializable {
 	 *    если полные состояния имеют явные обозначения ({@code complete != null}) и число обозначений
 	 *    не совпадает с числом полных состояний
 	 */
-	public StatesDescription(String observed, String hidden, String complete) {
+	private StatesDescription(String observed, String hidden, String complete) {
 		this.observedStates = observed;
 		this.hiddenStates = hidden;
 		
@@ -141,7 +176,7 @@ public class StatesDescription implements Serializable {
 	public int nComplete() {
 		return this.nObserved() * this.nHidden();
 	}
-
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
