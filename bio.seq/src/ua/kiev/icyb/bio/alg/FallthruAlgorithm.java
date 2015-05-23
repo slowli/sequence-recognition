@@ -30,8 +30,7 @@ public class FallthruAlgorithm extends ViterbiAlgorithm {
 	
 	@Override
 	protected MarkovChain createChain(SequenceSet set) {
-		return new FallthruChain(approx, 
-				set.observedStates(), set.hiddenStates(), set.completeStates());
+		return new FallthruChain(approx, set.states());
 	}
 	
 	@Override

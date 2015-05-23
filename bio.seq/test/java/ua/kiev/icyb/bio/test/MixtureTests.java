@@ -11,7 +11,7 @@ import org.junit.experimental.categories.Category;
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.SimpleSequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.alg.mixture.EMAlgorithm;
 import ua.kiev.icyb.bio.alg.mixture.IncrementalEMAlgorithm;
@@ -28,6 +28,8 @@ public class MixtureTests {
 	private static SequenceSet set1;
 	private static SequenceSet set2;
 	
+	private static final StatesDescription STATES = new StatesDescription("ACGT", "xi", "ACGTacgt");
+	
 	@BeforeClass
 	public static void setup() throws IOException {
 		final String testDir = System.getProperty("testdir", "test");
@@ -42,13 +44,13 @@ public class MixtureTests {
 	@Test
 	public void testMixtureAdd() {
 		MarkovMixture mixture = new MarkovMixture();
-		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc1 = new MarkovChain(1, 6, STATES);
 		mixture.add(mc1, 1.0);
 		
 		assertEquals(1, mixture.size());
 		assertEquals(1.0, mixture.weight(0), 1e-6);
 		
-		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc2 = new MarkovChain(1, 5, STATES);
 		mixture.add(mc2, 0.5);
 		
 		assertEquals(2, mixture.size());
@@ -57,7 +59,7 @@ public class MixtureTests {
 		assertSame(mc1, mixture.model(0));
 		assertSame(mc2, mixture.model(1));
 		
-		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc3 = new MarkovChain(1, 5, STATES);
 		mixture.add(mc3, 0.5);
 		
 		assertEquals(3, mixture.size());
@@ -73,11 +75,11 @@ public class MixtureTests {
 	@Test
 	public void testMixtureDelete() {
 		MarkovMixture mixture = new MarkovMixture();
-		MarkovChain mc1 = new MarkovChain(1, 6, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc1 = new MarkovChain(1, 6, STATES);
 		mixture.add(mc1, 1.0);
-		MarkovChain mc2 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc2 = new MarkovChain(1, 5, STATES);
 		mixture.add(mc2, 0.5);
-		MarkovChain mc3 = new MarkovChain(1, 5, "ACGT", "xi", "ACGTacgt");
+		MarkovChain mc3 = new MarkovChain(1, 5, STATES);
 		mixture.add(mc3, 0.5);
 		
 		assertEquals(0.25, mixture.weight(0), 1e-6);
@@ -102,8 +104,7 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureNew() {
-		SequenceSet dummySet = new SimpleSequenceSet("ACGT", "xi", null);
-		MarkovMixture mixture = new MarkovMixture(4, 6, dummySet);
+		MarkovMixture mixture = new MarkovMixture(4, 6, STATES);
 		
 		assertEquals(4, mixture.size());
 		for (int i = 0; i < 4; i++) {
@@ -125,7 +126,7 @@ public class MixtureTests {
 	public void testMixtureRandomFill() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovMixture mixture = new MarkovMixture(3, 5, set);
+		MarkovMixture mixture = new MarkovMixture(3, 5, set.states());
 		mixture.randomFill(set);
 		checkSanity(mixture);
 		for (int i = 0; i < mixture.size(); i++) {
@@ -147,7 +148,7 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureEstimate() throws IOException {
-		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
+		MarkovMixture mixture = new MarkovMixture(2, 5, set1.states());
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
 		
@@ -174,7 +175,7 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixturePosteriors() throws IOException {
-		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
+		MarkovMixture mixture = new MarkovMixture(2, 5, set1.states());
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
 		
@@ -202,7 +203,7 @@ public class MixtureTests {
 	 */
 	@Test
 	public void testMixtureWeights() throws IOException {
-		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
+		MarkovMixture mixture = new MarkovMixture(2, 5, set1.states());
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
 		
@@ -250,7 +251,7 @@ public class MixtureTests {
 	@Test
 	@Category(SlowTest.class)
 	public void testEMAlgorithm() throws IOException {
-		MarkovMixture mixture = new MarkovMixture(2, 5, set1);
+		MarkovMixture mixture = new MarkovMixture(2, 5, set1.states());
 		mixture.model(0).train(set1);
 		mixture.model(1).train(set2);
 		
@@ -277,7 +278,7 @@ public class MixtureTests {
 	@Test
 	@Category(SlowTest.class)
 	public void testIncEMAlgorithm() throws IOException {
-		MarkovMixture mixture = new MarkovMixture(1, 6, set1);
+		MarkovMixture mixture = new MarkovMixture(1, 6, set1.states());
 		mixture.model(0).train(set1);
 		
 		IncrementalEMAlgorithm alg = new IncrementalEMAlgorithm();

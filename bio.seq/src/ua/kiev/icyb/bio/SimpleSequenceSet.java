@@ -73,6 +73,8 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	/** Алфавит полных состояний. */
 	private String completeStates;
 	
+	private transient StatesDescription states;
+	
 	/**
 	 * Следует ли записывать содержимое выборки при сериализации.
 	 */
@@ -92,6 +94,10 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		this.observedStates = observedStates;
 		this.hiddenStates = hiddenStates;
 		this.completeStates = completeStates;
+	}
+	
+	public SimpleSequenceSet(StatesDescription states) {
+		this(states.observed(), states.hidden(), states.complete());
 	}
 	
 	/**
@@ -247,9 +253,16 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	}
 	
 	@Override
+	public StatesDescription states() {
+		if (this.states == null) {
+			this.states = new StatesDescription(this.observedStates, this.hiddenStates, this.completeStates);
+		}
+		return this.states;
+	}
+	
+	@Override
 	public SequenceSet join(SequenceSet other, SequenceSet... more) {
-		SimpleSequenceSet union = new SimpleSequenceSet(
-				observedStates, hiddenStates, completeStates);
+		SimpleSequenceSet union = new SimpleSequenceSet(this.states());
 
 		union.addSet(this);
 		union.addSet(other);
@@ -259,6 +272,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		return union;
 	}
 
+	@Override
 	public SequenceSet filter(boolean[] selector) {
 		SimpleSequenceSet filtered = new SimpleSequenceSet(
 				observedStates, hiddenStates, completeStates);
@@ -270,6 +284,7 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 		return filtered;
 	}
 
+	@Override
 	public SequenceSet filter(Filter filter) {
 		boolean[] selector = new boolean[this.size()];
 		

@@ -28,6 +28,7 @@ import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.SequenceUtils;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.filters.RandomFilter;
 
 /**
@@ -427,6 +428,47 @@ public class SetTests {
 		SequenceSet filtered = set.filter(selector);
 		SequenceSet filtered2 = set.filter(selector);
 		assertEquals(filtered.hashCode(), filtered2.hashCode());
+	}
+	
+	@Test
+	public void testSetStates() {
+		final SequenceSet set = set1;
+		
+		assertSame(set.states(), set.states());
+		
+		assertEquals("ACGT", set.states().observed());
+		assertEquals('A', set.states().observed(0));
+		assertEquals('C', set.states().observed(1));
+		assertEquals('G', set.states().observed(2));
+		assertEquals('T', set.states().observed(3));
+		assertEquals(4, set.states().nObserved());
+		
+		assertEquals("xi", set.states().hidden());
+		assertEquals('x', set.states().hidden(0));
+		assertEquals('i', set.states().hidden(1));
+		assertEquals(2, set.states().nHidden());
+		
+		assertEquals("ACGTacgt", set.states().complete());
+		assertEquals('A', set.states().complete(0));
+		assertEquals('G', set.states().complete(2));
+		assertEquals('c', set.states().complete(5));
+		assertEquals('t', set.states().complete(7));
+		assertEquals(8, set.states().nComplete());
+	}
+	
+	@Test
+	public void testSetStatesEquals() {
+		assertNotSame(set1.states(), set2.states());
+		assertEquals(set1.states(), set2.states());
+		assertEquals(set1.states(), new StatesDescription("ACGT", "xi", "ACGTacgt"));
+		assertNotEquals(set1.states(), new StatesDescription("ACGT", "xi", null));
+		assertNotEquals(set1.states(), new StatesDescription("ACGT", "ix", "ACGTacgt"));
+		assertNotEquals(set1.states(), new StatesDescription("ACTG", "xi", "ACGTacgt"));
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testStatesDescriptionInit() {
+		new StatesDescription("ACGT", "xi", "ACGTacg");
 	}
 	
 	/**

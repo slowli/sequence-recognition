@@ -24,7 +24,7 @@ import ua.kiev.icyb.bio.filters.RandomFilter;
 import ua.kiev.icyb.bio.filters.ValidGenesFilter;
 
 /**
- * Тесты, сязанные с фильтрами выборок.
+ * Тесты, сязанные с фильтрами и преобразованиями выборок.
  */
 public class FilterTests {
 	

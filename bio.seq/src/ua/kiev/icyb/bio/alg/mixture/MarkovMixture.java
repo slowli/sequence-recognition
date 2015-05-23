@@ -5,6 +5,7 @@ import java.util.Arrays;
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.res.Messages;
 
@@ -38,14 +39,13 @@ public class MarkovMixture extends Mixture<Sequence> implements Representable {
 	 *    число марковских цепей в композиции
 	 * @param order
 	 *    порядок марковских цепей в композиции
-	 * @param set
-	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
-	 *    состояний 
+	 * @param states
+	 *    конфигурация состояний вероятностной модели
 	 */
-	public MarkovMixture(int size, int order, SequenceSet set) {
+	public MarkovMixture(int size, int order, StatesDescription states) {
 		super();
 		for (int i = 0; i < size; i++) {
-			MarkovChain chain = new MarkovChain(1, order, set);
+			MarkovChain chain = new MarkovChain(1, order, states);
 			this.add(chain, 1.0);
 		}
 		

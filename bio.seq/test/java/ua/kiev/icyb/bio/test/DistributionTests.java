@@ -14,6 +14,7 @@ import org.junit.rules.TemporaryFolder;
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.alg.DistributionUtils;
 import ua.kiev.icyb.bio.alg.EmpiricalDistribution;
 import ua.kiev.icyb.bio.alg.Fragment;
@@ -28,6 +29,8 @@ public class DistributionTests {
 private static Env env;
 	
 	private static SequenceSet set1;
+	
+	private static final StatesDescription STATES = new StatesDescription("ACGT", "xi", "ACGTacgt");
 	
 	@BeforeClass
 	public static void setup() throws IOException {
@@ -44,7 +47,7 @@ private static Env env;
 	 */
 	@Test
 	public void testFragmentCreation() {
-		FragmentFactory factory = new FragmentFactory("ACGT", "xi", "ACGTacgt", 5);
+		FragmentFactory factory = new FragmentFactory(STATES, 5);
 		Fragment fragment = factory.fragment(2, 1, 1);
 		assertEquals("g", fragment.toString());
 		assertEquals(6, fragment.index());
@@ -63,7 +66,7 @@ private static Env env;
 	 */
 	@Test
 	public void testFragmentCreationFromArrays() {
-		FragmentFactory factory = new FragmentFactory("ACGT", "xi", "ACGTacgt", 5);
+		FragmentFactory factory = new FragmentFactory(STATES, 5);
 		// TCgaGt
 		byte[] observed = new byte[] { 3, 1, 2, 0, 2, 3 };
 		byte[] hidden   = new byte[] { 0, 0, 1, 1, 0, 1 };
@@ -93,7 +96,7 @@ private static Env env;
 	 */
 	@Test
 	public void testFragmentPrefix() {
-		FragmentFactory factory = new FragmentFactory("ACGT", "xi", "ACGTacgt", 5);
+		FragmentFactory factory = new FragmentFactory(STATES, 5);
 		// TCgaGt
 		byte[] observed = new byte[] { 3, 1, 2, 0, 2, 3 };
 		byte[] hidden   = new byte[] { 0, 0, 1, 1, 0, 1 };
@@ -118,7 +121,7 @@ private static Env env;
 	 */
 	@Test
 	public void testFragmentSuffix() {
-		FragmentFactory factory = new FragmentFactory("ACGT", "xi", "ACGTacgt", 5);
+		FragmentFactory factory = new FragmentFactory(STATES, 5);
 		// TCgaGt
 		byte[] observed = new byte[] { 3, 1, 2, 0, 2, 3 };
 		byte[] hidden   = new byte[] { 0, 0, 1, 1, 0, 1 };
@@ -143,7 +146,7 @@ private static Env env;
 	 */
 	@Test
 	public void testFragmentAppend() {
-		FragmentFactory factory = new FragmentFactory("ACGT", "xi", "ACGTacgt", 10);
+		FragmentFactory factory = new FragmentFactory(STATES, 10);
 		// TCgaGt
 		byte[] observed = new byte[] { 3, 1, 2, 0, 2, 3 };
 		byte[] hidden   = new byte[] { 0, 0, 1, 1, 0, 1 };
@@ -171,7 +174,7 @@ private static Env env;
 	 */
 	@Test
 	public void testMarkovChainTrain() {
-		MarkovChain chain = new MarkovChain(1, 1, "ACGT", "xi", null);
+		MarkovChain chain = new MarkovChain(1, 1, STATES);
 		final FragmentFactory factory = chain.factory();
 		
 		// TCgaGtgt
@@ -220,7 +223,7 @@ private static Env env;
 	public void testMarkovChainTrainOnSet() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovChain chain = new MarkovChain(1, 4, set);
+		MarkovChain chain = new MarkovChain(1, 4, set1.states());
 		chain.train(set);
 		final FragmentFactory factory = chain.factory();
 		
@@ -253,7 +256,7 @@ private static Env env;
 	 */
 	@Test
 	public void testMarkovChainEstimate() {
-		MarkovChain chain = new MarkovChain(1, 1, "ACGT", "xi", null);
+		MarkovChain chain = new MarkovChain(1, 1, STATES);
 		
 		// TCgaGtgt
 		byte[] observed = new byte[] { 3, 1, 2, 0, 2, 3, 2, 3 };
@@ -273,7 +276,7 @@ private static Env env;
 	public void testMarkovChainEstimateOnSet() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovChain chain = new MarkovChain(1, 4, set);
+		MarkovChain chain = new MarkovChain(1, 4, set.states());
 		chain.train(set);
 		
 		for (Sequence sequence : set) {
@@ -293,7 +296,7 @@ private static Env env;
 	public void testMarkovChainSerialization() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovChain chain = new MarkovChain(1, 5, set);
+		MarkovChain chain = new MarkovChain(1, 5, set.states());
 		chain.train(set);
 		
 		File file = tempFolder.newFile();
@@ -314,7 +317,7 @@ private static Env env;
 	public void testMarkovChainClearSerialization() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovChain chain = new MarkovChain(1, 5, set);
+		MarkovChain chain = new MarkovChain(1, 5, set.states());
 		chain.train(set);
 		chain.reset();
 		
@@ -406,7 +409,7 @@ private static Env env;
 	public void testMarkovChainGenerate() throws IOException {
 		final SequenceSet set = set1;
 		
-		MarkovChain chain = new MarkovChain(1, 4, set);
+		MarkovChain chain = new MarkovChain(1, 4, set.states());
 		chain.train(set);
 		
 		Sequence seq = chain.generate();

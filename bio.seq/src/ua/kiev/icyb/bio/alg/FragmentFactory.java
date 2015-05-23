@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ua.kiev.icyb.bio.Sequence;
-import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 
 /**
  * Фабрика для создания и операций над фрагментами строк полных состояний.
@@ -18,15 +18,7 @@ public class FragmentFactory implements Serializable {
 	
 	
 	/** Алфавит наблюдаемых состояний. */
-	private final String observedStates;
-	/** Алфавит скрытых состояний. */
-	private final String hiddenStates;
-	/** Алфавит полных состояний (может быть равен {@code null}). */
-	private final String completeStates;
-	/** Количество наблюдаемых состояний. */
-	private int oSize;
-	/** Количество скрытых состояний. */
-	private int hSize;
+	private final StatesDescription states;
 
 	/*
 	 * Степени oSize, hSize и (oSize * hSize) (для ускорения вычислений).
@@ -38,46 +30,28 @@ public class FragmentFactory implements Serializable {
 	/**
 	 * Создает фабрику с заданной структурой полных состояний.
 	 * 
-	 * @param observedStates
-	 *    строка, каждый символ которой определяет одно из наблюдаемых состояний
-	 * @param hiddenStates
-	 *    строка, каждый символ которой определяет одно из скрытых состояний
-	 * @param completeStates
-	 *    строка, каждый символ которой определяет одно из полных состояний (может равняться {@code null})
+	 * @param states
+	 *    описание структуры состояний
 	 * @param maxLength
 	 *    максимальная длина фрагментов полных состояний, которые будут
 	 *    создаваться этой фабрикой
 	 */
-	public FragmentFactory(String observedStates, String hiddenStates, String completeStates, int maxLength) {
-		if ((completeStates != null) 
-				&& (completeStates.length() != observedStates.length() * hiddenStates.length())) {
-			
-			throw new IllegalArgumentException("Wrong number of complete states");
-		}
-		
-		this.observedStates = observedStates;
-		this.hiddenStates = hiddenStates;
-		this.completeStates = completeStates;
-		this.oSize = observedStates.length();
-		this.hSize = hiddenStates.length();
+	public FragmentFactory(StatesDescription states, int maxLength) {
+		this.states = states;
 
 		maxLength++; // Степени длин алфавитов начинаются с нулевой
 		obsPower = new int[maxLength];
 		obsPower[0] = 1;
 		for (int i = 1; i < maxLength; i++)
-			obsPower[i] = obsPower[i - 1] * oSize;
+			obsPower[i] = obsPower[i - 1] * states.nObserved();
 		hPower = new int[maxLength];
 		hPower[0] = 1;
 		for (int i = 1; i < maxLength; i++)
-			hPower[i] = hPower[i - 1] * hSize;
+			hPower[i] = hPower[i - 1] * states.nHidden();
 		cPower = new int[maxLength];
 		cPower[0] = 1;
 		for (int i = 1; i < maxLength; i++)
-			cPower[i] = cPower[i - 1] * oSize * hSize;
-	}
-	
-	public FragmentFactory(SequenceSet set, int maxLength) {
-		this(set.observedStates(), set.hiddenStates(), set.completeStates(), maxLength);
+			cPower[i] = cPower[i - 1] * states.nComplete();
 	}
 	
 	/**
@@ -345,11 +319,11 @@ public class FragmentFactory implements Serializable {
 		int oIndex = fragment.observed, hIndex = fragment.hidden;
 		
 		for (int pos = fragment.length - 1; pos >= 0; pos--) {
-			sequence.observed[start + pos] = (byte) (oIndex % oSize);
-			sequence.hidden[start + pos] = (byte) (hIndex % hSize);
+			sequence.observed[start + pos] = (byte) (oIndex % this.states.nObserved());
+			sequence.hidden[start + pos] = (byte) (hIndex % this.states.nHidden());
 			
-			oIndex /= oSize;
-			hIndex /= hSize;
+			oIndex /= this.states.nObserved();
+			hIndex /= this.states.nHidden();
 		}
 	}
 	
@@ -372,14 +346,15 @@ public class FragmentFactory implements Serializable {
 	String toString(Fragment fragment) {
 		String result = "";
 		int obsIndex = fragment.observed, hIndex = fragment.hidden;
+		final int oSize = this.states.nObserved(), hSize = this.states.nHidden();
 		
 		for (int i = 0; i < fragment.length; i++) {
 			String symbol;
 			
-			if (completeStates == null) {
-				symbol = "" + observedStates.charAt(obsIndex % oSize) + hiddenStates.charAt(hIndex % hSize);
+			if (this.states.complete() == null) {
+				symbol = "" + this.states.observed(obsIndex % oSize) + this.states.hidden(hIndex % hSize);
 			} else {
-				symbol = "" + completeStates.charAt((obsIndex % oSize) + (hIndex % hSize) * oSize);
+				symbol = "" + this.states.complete((obsIndex % oSize) + (hIndex % hSize) * oSize);
 			}
 			
 			result = symbol + result;

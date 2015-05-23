@@ -10,7 +10,7 @@ import java.util.Map;
 
 import ua.kiev.icyb.bio.Representable;
 import ua.kiev.icyb.bio.Sequence;
-import ua.kiev.icyb.bio.SequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
 
@@ -49,12 +49,8 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	/** Порядок цепи Маркова. */
 	protected int order;
 	
-	/** Алфавит наблюдаемых состояний. */
-	private final String observedStates;
-	/** Алфавит скрытых состояний. */
-	private final String hiddenStates;
-	/** Алфавит полных состояний. */
-	private final String completeStates;
+	/** Описание состояний, с которыми работает цепь. */
+	private final StatesDescription states;
 	
 	/** Фабрика для работы с фрагментами цепочек состояний. */
 	protected transient FragmentFactory factory;
@@ -134,43 +130,14 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	 *    длина зависимой цепочки состояний 
 	 * @param order
 	 *    порядок цепочки
-	 * @param observedStates
-	 *    алфавит наблюдаемых состояний
-	 * @param hiddenStates
-	 *    алфавит скрытых состояний
-	 * @param completeStates
-	 *    алфавит полных состояний (может равняться {@code null})
+	 * @param states
+	 *    описание состояний, с которыми работает цепь
 	 */
-	public MarkovChain(int depLength, int order, String observedStates, 
-			String hiddenStates, String completeStates) {
-		
-		if ((completeStates != null) 
-				&& (completeStates.length() != observedStates.length() * hiddenStates.length())) {
-			
-			throw new IllegalArgumentException("Wrong number of complete states");
-		}
-		
+	public MarkovChain(int depLength, int order, StatesDescription states) {
 		this.depLength = depLength;
 		this.order = order;
-		this.observedStates = observedStates;
-		this.hiddenStates = hiddenStates;
-		this.completeStates = completeStates;
+		this.states = states;
 		initialize();
-	}
-	
-	/**
-	 * Создает марковскую цепь с заданными параметрами.
-	 * 
-	 * @param depLength
-	 *    длина зависимой цепочки состояний 
-	 * @param order
-	 *    порядок цепочки
-	 * @param set
-	 *    образец выборки, используемый для определения алфавитов наблюдаемых и скрытых
-	 *    состояний
-	 */
-	public MarkovChain(int depLength, int order, SequenceSet set) {
-		this(depLength, order, set.observedStates(), set.hiddenStates(), set.completeStates());
 	}
 	
 	/**
@@ -179,40 +146,17 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	 * @param other
 	 */
 	protected MarkovChain(MarkovChain other) {
-		this(other.depLength, other.order, 
-				other.observedStates, other.hiddenStates, other.completeStates);
+		this(other.depLength, other.order, other.states);
 	}
 	
 	/**
-	 * Возвращает алфавит наблюдаемых состояний, используемый в этой вероятностной модели.
+	 * Возвращает описание состояний, используемых в этой вероятностной модели.
 	 * 
 	 * @return 
-	 *    строка, каждый символ которой уникален и обозначает одно из наблюдаемых состояний
+	 *    состояния
 	 */
-	public String observedStates() { 
-		return observedStates; 
-	}
-
-	/**
-	 * Возвращает алфавит скрытых состояний, используемый в этой вероятностной модели.
-	 * 
-	 * @return 
-	 *    строка, каждый символ которой уникален и обозначает одно из скрытых состояний
-	 */
-	public String hiddenStates() { 
-		return hiddenStates; 
-	}
-	
-	/**
-	 * Возвращает алфавит полных состояний, используемый в этой вероятностной модели.
-	 * 
-	 * @return 
-	 *    строка, каждый символ которой уникален и обозначает одно из полных состояний
-	 *    
-	 * @see ua.kiev.icyb.bio.SequenceSet#completeStates()
-	 */
-	public String completeStates() {
-		return completeStates;
+	public StatesDescription states() { 
+		return this.states; 
 	}
 
 	/**
@@ -270,11 +214,11 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 	 */
 	protected void initialize() {
 		headsCount = 1;
-		for (int i = 0; i < depLength; i++)
-			headsCount *= (observedStates.length() * hiddenStates.length());
+		for (int i = 0; i < depLength; i++) {
+			headsCount *= this.states.nComplete();
+		}
 		
-		factory = new FragmentFactory(observedStates, hiddenStates, completeStates,
-				order + depLength);
+		factory = new FragmentFactory(this.states, order + depLength);
 		initial = new HashMap<Fragment, Double>();
 		nSequences = 0;
 		transitions = new HashMap<Fragment, double[]>();
@@ -435,11 +379,10 @@ public class MarkovChain extends AbstractDistribution<Sequence> implements Repre
 		// Initialize transient fields
 		headsCount = 1;
 		for (int i = 0; i < depLength; i++) {
-			headsCount *= (observedStates.length() * hiddenStates.length());
+			headsCount *= this.states.nComplete();
 		}
 		
-		this.factory = new FragmentFactory(observedStates, hiddenStates, completeStates,
-				order + depLength);
+		this.factory = new FragmentFactory(this.states, order + depLength);
 		for (Fragment tail : initial.keySet()) {
 			if (tail.factory == null) tail.factory = this.factory;
 		}

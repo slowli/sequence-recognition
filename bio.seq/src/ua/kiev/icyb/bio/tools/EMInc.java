@@ -47,7 +47,7 @@ public class EMInc {
 			conf.remove("mixture");
 		} else {
 			final int order = Integer.parseInt(conf.get("order"));
-			alg.mixture = new MarkovMixture(1, order, set);
+			alg.mixture = new MarkovMixture(1, order, set.states());
 			alg.mixture.model(0).train(set);
 		}
 		

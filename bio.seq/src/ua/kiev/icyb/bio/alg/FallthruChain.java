@@ -3,6 +3,7 @@ package ua.kiev.icyb.bio.alg;
 import java.util.Arrays;
 
 import ua.kiev.icyb.bio.Sequence;
+import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
 // TODO переписать
@@ -85,8 +86,8 @@ public class FallthruChain extends MarkovChain {
 	 * @param completeStates
 	 *    алфавит полных состояний (может равняться {@code null})
 	 */
-	public FallthruChain(Approximation approx, String observedStates, String hiddenStates, String completeStates) {
-		super(1, approx.order, observedStates, hiddenStates, completeStates);
+	public FallthruChain(Approximation approx, StatesDescription states) {
+		super(1, approx.order, states);
 		this.minOrder = approx.minOrder;
 		this.strategy = approx.strategy;
 		this.iThreshold = approx.initThreshold;
@@ -105,7 +106,7 @@ public class FallthruChain extends MarkovChain {
 	private void initializeSubchains(int maxOrder) {
 		subchains = new MarkovChain[maxOrder + 1];		
 		for (int i = minOrder; i < maxOrder; i++)
-			subchains[i] = new MarkovChain(1, i, observedStates(), hiddenStates(), completeStates());
+			subchains[i] = new MarkovChain(1, i, this.states());
 		subchains[maxOrder] = this;
 	}
 	

@@ -448,7 +448,7 @@ public class AlgorithmTests {
 	@Category(SlowTest.class)
 	public void testViterbiAlogrithmFit() {
 		SeqAlgorithm alg = new ViterbiAlgorithm(1, 6);
-		Distribution<Sequence> distr = new MarkovChain(1, 6, set1);
+		Distribution<Sequence> distr = new MarkovChain(1, 6, set1.states());
 		testAlgorithmFit(alg, distr);
 	}
 	
@@ -468,7 +468,7 @@ public class AlgorithmTests {
 	@Category(SlowTest.class)
 	public void testGeneViterbiAlgorithmFit() {
 		SeqAlgorithm alg = new GeneViterbiAlgorithm(6, true);
-		Distribution<Sequence> distr = new MarkovChain(1, 6, set1);
+		Distribution<Sequence> distr = new MarkovChain(1, 6, set1.states());
 		testAlgorithmFit(alg, distr);
 	}
 	
@@ -487,8 +487,7 @@ public class AlgorithmTests {
 	public void testFallthruAlgorithmFit() {
 		final Approximation approx = new Approximation(6, 3, Approximation.Strategy.FIRST);
 		SeqAlgorithm alg = new FallthruAlgorithm(approx);
-		Distribution<Sequence> distr = new FallthruChain(approx, 
-				set1.observedStates(), set1.hiddenStates(), set1.completeStates());
+		Distribution<Sequence> distr = new FallthruChain(approx, set1.states());
 		testAlgorithmFit(alg, distr);
 	}
 	

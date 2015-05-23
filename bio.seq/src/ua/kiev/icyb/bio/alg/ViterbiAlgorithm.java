@@ -73,7 +73,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	 *    созданная модель
 	 */
 	protected MarkovChain createChain(SequenceSet set) {
-		return new MarkovChain(depLength, order, set);
+		return new MarkovChain(depLength, order, set.states());
 	}
 	
 	@Override
@@ -121,7 +121,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		
 		final int order = chain.order(), 
 			depLength = chain.depLength(),
-			nHiddenStates = chain.hiddenStates().length();
+			nHiddenStates = chain.states().nHidden();
 		int nHiddenHeads = 1;
 		for (int i = 0; i < chain.depLength(); i++) {
 			nHiddenHeads *= nHiddenStates;
@@ -251,7 +251,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	protected Object allocateMemory() {
 		int nHiddenTails = 1;
 		for (int i = 0; i < chain.order(); i++) {
-			nHiddenTails *= chain.hiddenStates().length();
+			nHiddenTails *= chain.states().nHidden();
 		}
 		
 		return new Memory(nHiddenTails);

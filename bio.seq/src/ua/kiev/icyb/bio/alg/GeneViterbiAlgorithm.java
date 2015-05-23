@@ -72,7 +72,7 @@ public class GeneViterbiAlgorithm extends ViterbiAlgorithm {
 		
 		final int order = chain.order(), 
 				depLength = chain.depLength(),
-				nHiddenStates = chain.hiddenStates().length();
+				nHiddenStates = chain.states().nHidden();
 		int nHiddenHeads = 1;
 		for (int i = 0; i < chain.depLength(); i++) {
 			nHiddenHeads *= nHiddenStates;
