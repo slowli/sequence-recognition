@@ -30,7 +30,7 @@ private static Env env;
 	
 	private static SequenceSet set1;
 	
-	private static final StatesDescription STATES = new StatesDescription("ACGT", "xi", "ACGTacgt");
+	private static final StatesDescription STATES = StatesDescription.create("ACGT", "xi", "ACGTacgt");
 	
 	@BeforeClass
 	public static void setup() throws IOException {

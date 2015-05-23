@@ -1,13 +1,6 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -152,8 +145,6 @@ public class SetTests {
 	public void testSequenceCreation() {
 		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", null);
 		Sequence sequence = SequenceUtils.parseSequence(set, "GxAxTiAiGi");
-		assertNull(sequence.id);
-		assertSame(set, sequence.set);
 		assertEquals(5, sequence.length());
 		assertEquals(5, sequence.observed.length);
 		assertEquals(5, sequence.hidden.length);
@@ -165,8 +156,6 @@ public class SetTests {
 		set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
 		
 		sequence = SequenceUtils.parseSequence(set, "AagaTc");
-		assertNull(sequence.id);
-		assertSame(set, sequence.set);
 		assertEquals(6, sequence.length());
 		assertEquals(6, sequence.observed.length);
 		assertEquals(6, sequence.hidden.length);
@@ -431,6 +420,13 @@ public class SetTests {
 	}
 	
 	@Test
+	public void testSetStatesCaching() {
+		StatesDescription states = StatesDescription.create("ABC", "de");
+		assertSame(states, StatesDescription.create("ABC", "de"));
+		assertSame(set1.states(), StatesDescription.create("ACGT", "xi", "ACGTacgt"));
+	}
+	
+	@Test
 	public void testSetStates() {
 		final SequenceSet set = set1;
 		
@@ -458,17 +454,16 @@ public class SetTests {
 	
 	@Test
 	public void testSetStatesEquals() {
-		assertNotSame(set1.states(), set2.states());
 		assertEquals(set1.states(), set2.states());
-		assertEquals(set1.states(), new StatesDescription("ACGT", "xi", "ACGTacgt"));
-		assertNotEquals(set1.states(), new StatesDescription("ACGT", "xi", null));
-		assertNotEquals(set1.states(), new StatesDescription("ACGT", "ix", "ACGTacgt"));
-		assertNotEquals(set1.states(), new StatesDescription("ACTG", "xi", "ACGTacgt"));
+		assertEquals(set1.states(), StatesDescription.create("ACGT", "xi", "ACGTacgt"));
+		assertNotEquals(set1.states(), StatesDescription.create("ACGT", "xi", null));
+		assertNotEquals(set1.states(), StatesDescription.create("ACGT", "ix", "ACGTacgt"));
+		assertNotEquals(set1.states(), StatesDescription.create("ACTG", "xi", "ACGTacgt"));
 	}
 	
 	@Test(expected = IllegalArgumentException.class)
 	public void testStatesDescriptionInit() {
-		new StatesDescription("ACGT", "xi", "ACGTacg");
+		StatesDescription.create("ACGT", "xi", "ACGTacg");
 	}
 	
 	/**

@@ -27,9 +27,11 @@ import ua.kiev.icyb.bio.alg.FallthruAlgorithm;
 import ua.kiev.icyb.bio.alg.FallthruChain;
 import ua.kiev.icyb.bio.alg.GeneViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.MarkovChain;
+import ua.kiev.icyb.bio.alg.TransformAlgorithm;
 import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.tree.PriorityCompAlgorithm;
 import ua.kiev.icyb.bio.filters.RandomFilter;
+import ua.kiev.icyb.bio.filters.TerminalTransform;
 
 /**
  * Тестирование алгоритмов распознавания.
@@ -72,8 +74,7 @@ public class AlgorithmTests {
 	 *    
 	 * @throws IOException
 	 */
-	public static void testAlgorithm(SeqAlgorithm algorithm) {
-		SequenceSet set = set1;
+	public static void testAlgorithm(SequenceSet set, SeqAlgorithm algorithm) {
 		boolean[] selector = new boolean[set.size()];
 		for (int i = 0; i < 1000; i++) {
 			selector[i] = true;
@@ -84,6 +85,7 @@ public class AlgorithmTests {
 		cv.attachAlgorithm(algorithm);
 		cv.run(env);
 		checkSanity(cv.meanControl());
+		//System.out.println(cv.repr());
 	}
 	
 	public static void testAlgorithmFit(SeqAlgorithm algorithm, Distribution<Sequence> distr) {
@@ -438,7 +440,7 @@ public class AlgorithmTests {
 	@Test
 	@Category(SlowTest.class)
 	public void testViterbiAlgorithm() {
-		testAlgorithm(new ViterbiAlgorithm(1, 6));
+		testAlgorithm(set1, new ViterbiAlgorithm(1, 6));
 	}
 	
 	/**
@@ -452,13 +454,27 @@ public class AlgorithmTests {
 		testAlgorithmFit(alg, distr);
 	}
 	
+	@Test
+	public void testTransformAlgorithm() {
+		SeqAlgorithm alg = new TransformAlgorithm(new ViterbiAlgorithm(1, 6), new TerminalTransform());
+		alg.train(set1);
+		for (int i = 0; i < 100; i++) {
+			final Sequence seq = set1.get(i);
+			byte[] hidden = alg.run(seq);
+			if (hidden == null) continue;
+			
+			assertEquals(seq.length(), hidden.length);
+			assertEquals(0, hidden[seq.length() - 1]);
+		}
+	}
+	
 	/**
 	 * Проверка алгоритма Витерби (модификация для генов).
 	 */
 	@Test
 	@Category(SlowTest.class)
 	public void testGeneViterbiAlgorithm() {
-		testAlgorithm(new GeneViterbiAlgorithm(6, true));
+		testAlgorithm(set1, new GeneViterbiAlgorithm(6, true));
 	}
 	
 	/**
@@ -478,8 +494,9 @@ public class AlgorithmTests {
 	@Test
 	@Category(SlowTest.class)
 	public void testFallthruAlgorithm() {
-		testAlgorithm(new FallthruAlgorithm(
-				new Approximation(6, 3, Approximation.Strategy.FIRST)));
+		testAlgorithm(set1,
+				new FallthruAlgorithm(new Approximation(
+						6, 3, Approximation.Strategy.FIRST)));
 	}
 	
 	@Test
@@ -499,6 +516,6 @@ public class AlgorithmTests {
 	@Test
 	@Category(SlowTest.class)
 	public void testPriorityCompAlgorithm() {
-		testAlgorithm(new PriorityCompAlgorithm(3, 6));
+		testAlgorithm(set1, new PriorityCompAlgorithm(3, 6));
 	}
 }

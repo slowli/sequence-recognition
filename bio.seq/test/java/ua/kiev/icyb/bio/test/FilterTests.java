@@ -1,26 +1,35 @@
 package ua.kiev.icyb.bio.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.SequenceUtils;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
+import ua.kiev.icyb.bio.StatesDescription;
+import ua.kiev.icyb.bio.Transform;
+import ua.kiev.icyb.bio.alg.Fragment;
+import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.filters.LabelFilter;
 import ua.kiev.icyb.bio.filters.LengthFilter;
+import ua.kiev.icyb.bio.filters.PeriodicTransform;
 import ua.kiev.icyb.bio.filters.RandomFilter;
+import ua.kiev.icyb.bio.filters.TerminalTransform;
+import ua.kiev.icyb.bio.filters.TransformComposition;
 import ua.kiev.icyb.bio.filters.ValidGenesFilter;
 
 /**
@@ -31,6 +40,9 @@ public class FilterTests {
 	private static Env env;
 	
 	private static SequenceSet set1;
+	
+	@Rule
+	public TemporaryFolder tempFolder = new TemporaryFolder();
 	
 	@BeforeClass
 	public static void setup() throws IOException {
@@ -381,5 +393,258 @@ public class FilterTests {
 		filtered2 = filtered.filter(new ValidGenesFilter(true));
 		filtered = set.filter(new ValidGenesFilter(true));
 		assertEquals(filtered, filtered2);
+	}
+	
+	private static class DummyTransform implements Transform, Serializable {
+
+		private static final long serialVersionUID = 1L;	
+
+		@Override
+		public StatesDescription states(StatesDescription original) {
+			return original;
+		}
+
+		@Override
+		public Sequence sequence(Sequence original) {
+			return new Sequence(original.id + "!", original.observed, original.hidden);
+		}
+
+		@Override
+		public Sequence inverse(Sequence transformed) {
+			return transformed;
+		}
+	}
+	
+	private static byte[] flip(byte[] sequence) {
+		byte[] flipped = new byte[sequence.length];
+		for (int i = 0; i < sequence.length; i++) {
+			flipped[i] = (byte) (1 - sequence[i]);
+		}
+		return flipped;
+	}
+	
+	private static class FlipTransform implements Transform, Serializable {
+
+		private static final long serialVersionUID = 1L;	
+
+		@Override
+		public StatesDescription states(StatesDescription original) {
+			return original;
+		}
+
+		@Override
+		public Sequence sequence(Sequence original) {
+			return new Sequence(original.id + "!", original.observed, flip(original.hidden));
+		}
+		
+		@Override
+		public Sequence inverse(Sequence transformed) {
+			return new Sequence(transformed.observed, flip(transformed.hidden));
+		}
+	}
+	
+	@Test
+	public void testDummyTransform() {
+		final SequenceSet set = set1;
+		SequenceSet transformed = set.transform(new DummyTransform());
+		assertEquals(set.size(), transformed.size());
+		
+		for (int i = 0; i < set.size(); i++) {
+			assertArrayEquals(set.get(i).observed, transformed.get(i).observed);
+			assertArrayEquals(set.get(i).hidden, transformed.get(i).hidden);
+		}
+	}
+	
+	@Test
+	public void testFlipTransform() {
+		final SequenceSet set = set1;
+		SequenceSet transformed = set.transform(new FlipTransform());
+		assertEquals(set.size(), transformed.size());
+		
+		for (int i = 0; i < set.size(); i++) {
+			assertArrayEquals(set.get(i).observed, transformed.get(i).observed);
+			assertArrayEquals(flip(set.get(i).hidden), transformed.get(i).hidden);
+		}
+	}
+	
+	@Test
+	public void testSerializationOnTransform() throws IOException {
+		File file = tempFolder.newFile();
+		final SequenceSet set = set1.transform(new DummyTransform());
+		
+		env.save(set, file.getAbsolutePath());
+		
+		assertTrue(file.isFile());
+		assertTrue(file.length() < 1000);
+		
+		SequenceSet copy = env.load(file.getAbsolutePath());
+		assertEquals(set.size(), copy.size());
+		for (int i = 0; i < set.size(); i++) {
+			assertArrayEquals(set.observed(i), copy.observed(i));
+			assertArrayEquals(set.hidden(i), copy.hidden(i));
+		}
+	}
+	
+	@Test
+	public void testSerializationOnTransform_Flip() throws IOException {
+		File file = tempFolder.newFile();
+		final SequenceSet set = set1.transform(new FlipTransform());
+		
+		env.save(set, file.getAbsolutePath());
+		
+		assertTrue(file.isFile());
+		assertTrue(file.length() < 1000);
+		
+		SequenceSet copy = env.load(file.getAbsolutePath());
+		assertEquals(set.size(), copy.size());
+		for (int i = 0; i < set.size(); i++) {
+			assertArrayEquals(set.observed(i), copy.observed(i));
+			assertArrayEquals(set.hidden(i), copy.hidden(i));
+		}
+	}
+	
+	@Test
+	public void testTailTransform() {
+		Transform transform = new TerminalTransform();
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
+		StatesDescription tStates = transform.states(states);
+		
+		assertEquals("ACGT$", tStates.observed());
+		assertEquals("xi", tStates.hidden());
+		assertEquals("ACGT$acgt$", tStates.complete());
+		
+		SimpleSequenceSet set = new SimpleSequenceSet(states);
+		set.add(SequenceUtils.parseSequence(set, "ACGttt"));
+		Sequence seq = set.get(0);
+		Sequence tSeq = transform.sequence(seq);
+		assertEquals(seq.length() + 1, tSeq.length());
+		assertEquals(seq.length() + 1, tSeq.observed.length);
+		assertEquals(seq.length() + 1, tSeq.hidden.length);
+		for (int i = 0; i < seq.length(); i++) {
+			assertEquals(seq.observed[i], tSeq.observed[i]);
+			assertEquals(seq.hidden[i], tSeq.hidden[i]);
+		}
+		assertEquals(4, tSeq.observed[seq.length()]);
+		assertEquals(0, tSeq.hidden[seq.length()]);
+	}
+	
+	@Test
+	public void testTailTransformOnSet() {
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
+		SimpleSequenceSet set = new SimpleSequenceSet(states);
+		set.add(SequenceUtils.parseSequence(set, "ACGttt"));
+		set.add(SequenceUtils.parseSequence(set, "aaTA"));
+		
+		SequenceSet tSet = set.transform(new TerminalTransform());
+		assertEquals(tSet.size(), set.size());
+		assertTrue(tSet.get(0).toString().contains("ACGttt$"));
+		assertTrue(tSet.get(1).toString().contains("aaTA$"));
+	}
+	
+	@Test
+	public void testTailTransformOnRealData() {
+		final SequenceSet set = set1;
+		SequenceSet tSet = set.transform(new TerminalTransform());
+		assertEquals(tSet.size(), set.size());
+		
+		for (int i = 0; i < set.size(); i++) {
+			assertEquals(set.get(i).length() + 1, tSet.get(i).length());
+			assertEquals(4, tSet.get(i).observed[set.get(i).length()]);
+			assertEquals(0, tSet.get(i).hidden[set.get(i).length()]);
+		}
+	}
+	
+	@Test
+	public void testTailTransformProbabilities() {
+		SequenceSet set = set1;
+		set = set.transform(new TerminalTransform());
+		
+		MarkovChain chain = new MarkovChain(1, 1, set.states());
+		chain.train(set);
+		Fragment terminal = chain.factory().fragment(set.states().nObserved() - 1, 0, 1);
+		for (int obs = 0; obs < set.states().nObserved(); obs++) {
+			Fragment frag = chain.factory().fragment(obs, 0, 1);
+			if ((obs != 0) && (obs != 2)) { // a, g
+				assertEquals(0.0, chain.getTransP(frag, terminal), 1e-6);
+			} else {
+				assertNotEquals(0.0, chain.getTransP(frag, terminal), 1e-6);
+			}
+			frag = chain.factory().fragment(obs, 1, 1);
+			assertEquals(0.0, chain.getTransP(frag, terminal), 1e-6);
+		}
+	}
+	
+	@Test
+	public void testPeriodicTransform() {
+		Transform transform = new PeriodicTransform();
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
+		StatesDescription tStates = transform.states(states);
+		
+		assertEquals("ACGT", tStates.observed());
+		assertEquals("xyzijk", tStates.hidden());
+		assertNull(tStates.complete());
+		
+		SimpleSequenceSet set = new SimpleSequenceSet(states);
+		set.add(SequenceUtils.parseSequence(set, "ACtttGTAG"));
+		Sequence seq = set.get(0);
+		Sequence tSeq = transform.sequence(seq);
+		assertEquals(seq.length(), tSeq.length());
+		assertEquals(seq.length(), tSeq.observed.length);
+		assertEquals(seq.length(), tSeq.hidden.length);
+		for (int i = 0; i < seq.length(); i++) {
+			assertEquals(seq.observed[i], tSeq.observed[i]);
+			assertEquals(seq.hidden[i], tSeq.hidden[i] / 3);
+		}
+		assertEquals(0, tSeq.hidden[0]);
+		assertEquals(2, tSeq.hidden[8]);
+		
+		Sequence invSeq = transform.inverse(tSeq);
+		assertArrayEquals(seq.observed, invSeq.observed);
+		assertArrayEquals(seq.hidden, invSeq.hidden);
+	}
+	
+	@Test
+	public void testPeriodicTransformOnRealData() {
+		SequenceSet set = set1.filter(new ValidGenesFilter(true));
+		Transform transform = new PeriodicTransform();
+		SequenceSet tSet = set.transform(transform);
+		
+		for (int i = 0; i < set.size(); i++) {
+			Sequence seq = set.get(i), tSeq = tSet.get(i);
+			assertEquals(seq.length(), tSeq.length());
+			assertArrayEquals(seq.observed, tSeq.observed);
+			assertEquals(2, tSeq.hidden[tSeq.length() - 1]);
+			assertArrayEquals(seq.hidden, transform.inverse(tSeq).hidden);
+		}
+	}
+	
+	@Test
+	public void testTransformComposition() {
+		Transform transform = new TransformComposition(new PeriodicTransform(), new TerminalTransform());
+		StatesDescription states = StatesDescription.create("ACGT", "xi", "ACGTacgt");
+		StatesDescription tStates = transform.states(states);
+		
+		assertEquals("ACGT$", tStates.observed());
+		assertEquals("xyzijk", tStates.hidden());
+		assertNull(tStates.complete());
+		
+		SimpleSequenceSet set = new SimpleSequenceSet(states);
+		set.add(SequenceUtils.parseSequence(set, "ACtttGTAG"));
+		Sequence seq = set.get(0);
+		Sequence tSeq = transform.sequence(seq);
+		assertEquals(seq.length() + 1, tSeq.length());
+		assertEquals(seq.length() + 1, tSeq.observed.length);
+		assertEquals(seq.length() + 1, tSeq.hidden.length);
+		for (int i = 0; i < seq.length(); i++) {
+			assertEquals(seq.observed[i], tSeq.observed[i]);
+			assertEquals(seq.hidden[i], tSeq.hidden[i] / 3);
+		}
+		assertEquals(0, tSeq.hidden[0]);
+		assertEquals(2, tSeq.hidden[8]);
+		assertEquals(0, tSeq.hidden[9]);
+		
+		Sequence invSeq = transform.inverse(tSeq);
+		assertArrayEquals(seq.observed, invSeq.observed);
+		assertArrayEquals(seq.hidden, invSeq.hidden);
 	}
 }
