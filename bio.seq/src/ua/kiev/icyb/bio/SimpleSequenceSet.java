@@ -288,9 +288,21 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	public SequenceSet filter(Filter filter) {
 		boolean[] selector = new boolean[this.size()];
 		
-		for (int i = 0; i < size(); i++)
+		for (int i = 0; i < this.size(); i++)
 			selector[i] = filter.eval( this.get(i) );
 		return this.filter(selector);
+	}
+	
+	@Override
+	public SequenceSet transform(Transform transform) {
+		SimpleSequenceSet transformed = new SimpleSequenceSet(
+				transform.states( this.states() ));
+		
+		for (int i = 0; i < this.size(); i++) {
+			transformed.doAdd(transform.sequence( this.get(i) ));
+		}
+		
+		return transformed;
 	}
 
 	@Override

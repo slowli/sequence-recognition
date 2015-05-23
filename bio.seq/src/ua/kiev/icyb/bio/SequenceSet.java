@@ -198,6 +198,18 @@ public interface SequenceSet extends Collection<Sequence>, Serializable, Represe
 	SequenceSet filter(Filter filter);
 	
 	/**
+	 * Преобразует набор последовательностей в соответствии с заданным преобразованием.
+	 * Наблюдаемые и скрытые строки в преобразованном наборе располагаются в том же порядке,
+	 * в каком они находились в исходном наборе.
+	 * 
+	 * @param transform
+	 *    преобразование, определяющее состояния и последовательности в новом наборе
+	 * @return
+	 *    преобразованный набор прецедентов
+	 */
+	SequenceSet transform(Transform transform);
+	
+	/**
 	 * Сохраняет набор последовательностей в файл.
 	 * 
 	 * @param filename

@@ -87,7 +87,7 @@ public class SequenceUtils {
 			}
 		}
 		
-		return new Sequence(set, -1, null, observed, hidden);
+		return new Sequence(set, -1, newID(), observed, hidden);
 	}
 	
 	/**
