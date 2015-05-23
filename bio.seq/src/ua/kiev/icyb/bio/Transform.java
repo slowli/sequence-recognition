@@ -24,4 +24,13 @@ public interface Transform {
 	 *    преобразованная строка состояний
 	 */
 	Sequence sequence(Sequence original);
+	
+	/**
+	 * Выполняет обратное преобразование для последовательности из выборки.
+	 * 
+	 * @param transformed
+	 *    преобразованная последовательность, для которой надо найти исходную
+	 * @return
+	 */
+	Sequence inverse(Sequence transformed);
 }
