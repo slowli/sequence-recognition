@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +26,7 @@ import ua.kiev.icyb.bio.alg.Fragment;
 import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.filters.LabelFilter;
 import ua.kiev.icyb.bio.filters.LengthFilter;
+import ua.kiev.icyb.bio.filters.MappingTransform;
 import ua.kiev.icyb.bio.filters.PeriodicTransform;
 import ua.kiev.icyb.bio.filters.RandomFilter;
 import ua.kiev.icyb.bio.filters.TerminalTransform;
@@ -645,5 +647,63 @@ public class FilterTests {
 		Sequence invSeq = transform.inverse(tSeq);
 		assertArrayEquals(seq.observed, invSeq.observed);
 		assertArrayEquals(seq.hidden, invSeq.hidden);
+	}
+	
+	@Test
+	public void testMappingBasics() {
+		Map<Character, Character> map = MappingTransform.map("abcdef:bccaff");
+		assertEquals(6, map.size());
+		assertEquals('b', (char) map.get('a'));
+		assertEquals('c', (char) map.get('b'));
+		assertEquals('c', (char) map.get('c'));
+		assertEquals('a', (char) map.get('d'));
+		assertEquals('f', (char) map.get('e'));
+		assertEquals('f', (char) map.get('f'));
+	}
+	
+	@Test
+	public void testMappingTransform() {
+		Map<Character, Character> map = MappingTransform.map("CGT:ATT");
+		Transform transform = new MappingTransform(map, Collections.<Character, Character> emptyMap());
+		StatesDescription states = StatesDescription.create("ACGTN", "xi", "ACGTNacgtn");
+		StatesDescription tStates = transform.states(states);
+		
+		assertEquals("ATN", tStates.observed());
+		assertEquals("xi", tStates.hidden());
+		assertNull(tStates.complete());
+		
+		Sequence seq = Sequence.parse(states, "ACGTatg");
+		Sequence tSeq = transform.sequence(seq);
+		assertEquals(seq.length(), tSeq.length());
+		assertArrayEquals(seq.hidden, tSeq.hidden);
+		for (int i = 0; i < seq.length(); i++) {
+			if ((seq.observed[i] == 0) || (seq.observed[i] == 1)) {
+				assertEquals(0, tSeq.observed[i]);
+			} else {
+				assertEquals(1, tSeq.observed[i]);
+			}
+		}
+	}
+	
+	@Test
+	public void testMappingTransformOnRealData() throws IOException {
+		SequenceSet proteins = env.loadSet("prot");
+		
+		Map<Character, Character> map = MappingTransform.map("-TSGHIEB:---HHHSS");
+		Transform transform = new MappingTransform(MappingTransform.TRIVIAL_MAP, map);
+		
+		proteins = proteins.transform(transform);
+		int[] stateStats = new int[3];
+		int len = 0;
+		for (Sequence seq : proteins) {
+			for (int pos = 0; pos < seq.length(); pos++) {
+				stateStats[seq.hidden[pos]]++;
+			}
+			len += seq.length();
+		}
+		for (int i = 0; i < 3; i++) {
+			assertTrue(stateStats[i] > 0.1 * len);
+			assertTrue(stateStats[i] < 0.5 * len);
+		}
 	}
 }

@@ -1,16 +1,31 @@
-package ua.kiev.icyb.bio;
+package ua.kiev.icyb.bio.filters;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import ua.kiev.icyb.bio.Sequence;
+import ua.kiev.icyb.bio.StatesDescription;
+import ua.kiev.icyb.bio.Transform;
 import ua.kiev.icyb.bio.res.Messages;
 
 /**
- * Утилиты для обработки коллекций последовательностей.
+ * Преобразование строк на основе заданных отображений множеств наблюдаемых
+ * и скрытых состояний.
+ * 
+ * <p><b>Пример.</b> Преобразование из формата белков в файлах DSSP (7 скрытых состояний)
+ * к стандартному набору из трех скрытых состояний осуществляется с помощью преобразования
+ * <pre>
+ * Map<Character, Character> map = MappingTransform.map("-TSGHIEB:---HHHSS");
+ * Transform transform = new MappingTransform(MappingTransform.TRIVIAL_MAP, map);
+ * </pre>
  */
-public class SequenceUtils {
-	
-	// TODO сделать трансформацию и удалить класс
+public class MappingTransform implements Transform {
+
+	/**
+	 * Тривиальное отображение состояний.
+	 */
+	public static final Map<Character, Character> TRIVIAL_MAP = Collections.emptyMap();
 	
 	/**
 	 * Создает символьное отображение по его текстовому представлению.
@@ -38,7 +53,7 @@ public class SequenceUtils {
 	 * @throws IllegalArgumentException
 	 *    если входная строка не является корректным текстовым представлением отображения
 	 */
-	public static Map<Character, Character> translationMap(String map) {
+	public static Map<Character, Character> map(String map) {
 		String[] parts = map.split(":", 2);
 		if (parts.length != 2) {
 			throw new IllegalArgumentException(Messages.format("set.tr.e_map", map));
@@ -122,48 +137,43 @@ public class SequenceUtils {
 		return translated;
 	}
 	
+	private final Map<Character, Character> observedMap;
+	
+	private final Map<Character, Character> hiddenMap;
+	
 	/**
-	 * Производит отображение наблюдаемых и/или скрытых состояний для заданной выборки.
+	 * Создает преобразование.
 	 * 
-	 * <p>Например, для преобразования выборки белков, полученной из файлов DSSP (т.е. содержащей
-	 * восемь скрытых состояний {@code "-GHIEBTS"}), к формату, соответствующему стандартной
-	 * задаче распознавания (с тремя скрытыми состояниями {@code "-HS"}), следует выполнить код
-	 * <pre>
-	 * SequenceSet proteins = ...;
-	 * Map&lt;Character, Character&gt; map = SequenceUtils.translationMap("-TSGHIEB:---HHHSS");
-	 * SequenceSet translated = SequenceUtils.translateStates(set, null, map);
-	 * </pre>
-	 * 
-	 * @param set
-	 *    выборка, для которой производится отображение
 	 * @param observedMap
-	 *    отображение наблюдаемых состояний выборки; {@code null}, чтобы не отображать
-	 *    наблюдаемые состояния
+	 *    отображение наблюдаемых состояний
 	 * @param hiddenMap
-	 *    отображение скрытых состояний выборки; {@code null}, чтобы не отображать
-	 *    скрытые состояния
-	 * @return
-	 *    преобразованная выборка
+	 *    отображение скрытых состояний
 	 */
-	public static SequenceSet translateStates(SequenceSet set, Map<Character, Character> observedMap, 
-			Map<Character, Character> hiddenMap) {
-		
-		if (observedMap == null) observedMap = new HashMap<Character, Character>();
-		if (hiddenMap == null) hiddenMap = new HashMap<Character, Character>();
-		
-		String trObservedStates = translateAlphabet(set.observedStates(), observedMap);
-		String trHiddenStates = translateAlphabet(set.hiddenStates(), hiddenMap);
-		
-		byte[] observedStateMap = stateMap(set.observedStates(), observedMap);
-		byte[] hiddenStateMap = stateMap(set.hiddenStates(), hiddenMap);
-		
-		SequenceSet trSet = new SimpleSequenceSet(trObservedStates, trHiddenStates, null);
-		for (int i = 0; i < set.size(); i++) {
-			byte[] observed = translate(set.observed(i), observedStateMap);
-			byte[] hidden = translate(set.hidden(i), hiddenStateMap);
-			trSet.add(new Sequence(set.id(i), observed, hidden));
-		}
-		
-		return trSet;
+	public MappingTransform(Map<Character, Character> observedMap, Map<Character, Character> hiddenMap) {
+		this.observedMap = observedMap;
+		this.hiddenMap = hiddenMap;
 	}
+	
+	@Override
+	public StatesDescription states(StatesDescription original) {
+		return StatesDescription.create(
+				translateAlphabet(original.observed(), this.observedMap),
+				translateAlphabet(original.hidden(), this.hiddenMap));
+	}
+
+	@Override
+	public Sequence sequence(Sequence original) {
+		final byte[] oMap = stateMap(original.states().observed(), this.observedMap);
+		final byte[] hMap = stateMap(original.states().hidden(), this.hiddenMap);
+		
+		return new Sequence(original.id, 
+				translate(original.observed, oMap),
+				translate(original.hidden, hMap));
+	}
+
+	@Override
+	public Sequence inverse(Sequence transformed) {
+		throw new UnsupportedOperationException("Transform is irreversible");
+	}
+
 }

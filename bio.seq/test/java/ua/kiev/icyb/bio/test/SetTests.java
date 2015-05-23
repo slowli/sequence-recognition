@@ -19,7 +19,6 @@ import org.junit.rules.TemporaryFolder;
 import ua.kiev.icyb.bio.Env;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
-import ua.kiev.icyb.bio.SequenceUtils;
 import ua.kiev.icyb.bio.SimpleSequenceSet;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.filters.RandomFilter;
