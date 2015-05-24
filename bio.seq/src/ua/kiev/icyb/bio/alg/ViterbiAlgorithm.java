@@ -2,6 +2,8 @@ package ua.kiev.icyb.bio.alg;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.SequenceSet;
@@ -28,11 +30,8 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	private static class Memory {
 		
-		public final short[][] pointer;
-		
-		public Memory(int nHiddenTails) {
-			this.pointer = new short[nHiddenTails][MAX_SEQ_LENGTH];
-		}
+		@SuppressWarnings("unchecked")
+		public final Map<Integer, Integer>[] pointer = new Map[MAX_SEQ_LENGTH];
 	}
 
 	/**
@@ -141,7 +140,7 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		Memory mem = (Memory) getMemory();
 		
 		double[] curProb = new double[nHiddenTails], nextProb = new double[nHiddenTails]; 
-		short[][] pointer = mem.pointer;
+		Map<Integer, Integer>[] pointer = mem.pointer;
 		// Обрезать последовательность
 		int trimmedLength = ((seq.length - order) / depLength) * depLength + order; 
 		
@@ -154,22 +153,29 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		int ptrIdx = 0; // текущая позиция в массиве указателей
 		for (int pos = order; pos <= trimmedLength - depLength; pos += depLength) {
 			Arrays.fill(nextProb, Double.NEGATIVE_INFINITY);
+			if (pointer[ptrIdx] == null) {
+				pointer[ptrIdx] = new HashMap<Integer, Integer>();
+			}
+			pointer[ptrIdx].clear();
 			
 			for (int i = 0; i < nHiddenHeads; i++) {
 				factory.fragment(seq, i, pos, depLength, head);
 				
-				for (short j = 0; j < nHiddenTails; j++) {
-					factory.fragment(seq, j, pos - order, order, tail);
+				for (int j = 0; j < nHiddenTails; j++) {
+					if (curProb[j] == Double.NEGATIVE_INFINITY) continue;
 					
+					factory.fragment(seq, j, pos - order, order, tail);
 					double val = Math.log(Math.max(0, chain.getTransP(tail, head))) 
 							+ curProb[j];
+					if (val == Double.NEGATIVE_INFINITY) continue;
+					
 					tail.append(head, shifted);
 					shifted.suffix(tail.length, shifted);
 					int idx = shifted.hidden;
 					
 					if (nextProb[idx] < val) {
 						nextProb[idx] = val;
-						pointer[idx][ptrIdx] = j;
+						pointer[ptrIdx].put(idx, j);
 					}
 				}
 			}
@@ -193,8 +199,9 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 		byte[] result = new byte[seq.length];
 		for (int pos = trimmedLength; pos > order; pos -= depLength) {
 			// XXX проверить, работает ли для depLength > 1
-			result[pos - 1] = (byte)(maxPtr % nHiddenHeads); 
-			maxPtr = pointer[maxPtr][ptrIdx - 1];			
+			result[pos - 1] = (byte)(maxPtr % nHiddenHeads);
+			maxPtr = pointer[ptrIdx - 1].get(maxPtr);
+			pointer[ptrIdx - 1].clear();
 			ptrIdx--;
 		}
 		insertStates(result, nHiddenStates, maxPtr, 0, order);
@@ -227,7 +234,6 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	@Override
 	public ViterbiAlgorithm clearClone() {
-		// TODO why clearClone() doesn't work here?
 		ViterbiAlgorithm other = (ViterbiAlgorithm) super.clone();
 		if (other.chain != null) {
 			other.chain = (MarkovChain) other.chain.clearClone();
@@ -253,11 +259,6 @@ public class ViterbiAlgorithm extends AbstractSeqAlgorithm {
 	
 	@Override
 	protected Object allocateMemory() {
-		int nHiddenTails = 1;
-		for (int i = 0; i < chain.order(); i++) {
-			nHiddenTails *= chain.states().nHidden();
-		}
-		
-		return new Memory(nHiddenTails);
+		return new Memory();
 	}
 }
