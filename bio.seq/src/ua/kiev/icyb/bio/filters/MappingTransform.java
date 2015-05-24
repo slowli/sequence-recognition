@@ -176,4 +176,8 @@ public class MappingTransform implements Transform {
 		throw new UnsupportedOperationException("Transform is irreversible");
 	}
 
+	@Override
+	public String repr() {
+		return Messages.getString("transform.map");
+	}
 }

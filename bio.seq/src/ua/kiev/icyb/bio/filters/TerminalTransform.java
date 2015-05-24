@@ -1,16 +1,21 @@
 package ua.kiev.icyb.bio.filters;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.Transform;
+import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Преобразование, добавляющее отдельное наблюдаемое состояние {@code '$'} 
  * в конец всех последовательностей.
  */
-public class TerminalTransform implements Transform {
+public class TerminalTransform implements Transform, Serializable {
+
+	private static final long serialVersionUID = 1L;
+	
 
 	private static String insertCompleteStates(String states, int insertions) {
 		if (states == null) return null;
@@ -53,4 +58,8 @@ public class TerminalTransform implements Transform {
 				Arrays.copyOf(transformed.hidden, transformed.length() - 1));
 	}
 
+	@Override
+	public String repr() {
+		return Messages.getString("transform.terminal");
+	}
 }

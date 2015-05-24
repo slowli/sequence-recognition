@@ -5,6 +5,7 @@ import java.io.Serializable;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.Transform;
+import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Преобразование, позволяющее (совместно с {@link TerminalTransform}) ограничить
@@ -68,4 +69,8 @@ public class PeriodicTransform implements Transform, Serializable {
 		return new Sequence(transformed.observed, hidden);
 	}
 
+	@Override
+	public String repr() {
+		return Messages.getString("transform.periodic");
+	}
 }

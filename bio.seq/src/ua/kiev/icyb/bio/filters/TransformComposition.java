@@ -5,6 +5,7 @@ import java.io.Serializable;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.Transform;
+import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Композиция из нескольких преобразований.
@@ -52,5 +53,17 @@ public class TransformComposition implements Transform, Serializable {
 			seq = this.transforms[i].inverse(seq);
 		}
 		return seq;
+	}
+
+	@Override
+	public String repr() {
+		String repr = Messages.getString("transform.comp") + "\n";
+		String list = "";
+		for (int i = 0; i < transforms.length; i++) {
+			if (i > 0) list += "\n";
+			list += Messages.format("transform.comp.part", i + 1, transforms[i].repr());
+		}
+		repr += Messages.format("transform.comp.parts", list);
+		return repr;
 	}
 }

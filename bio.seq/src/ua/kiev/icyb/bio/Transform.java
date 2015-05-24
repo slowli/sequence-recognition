@@ -3,7 +3,7 @@ package ua.kiev.icyb.bio;
 /**
  * Преобразование выборки.
  */
-public interface Transform {
+public interface Transform extends Representable {
 
 	/**
 	 * Преобразует описание состояний выборки.

@@ -414,6 +414,11 @@ public class FilterTests {
 		public Sequence inverse(Sequence transformed) {
 			return transformed;
 		}
+
+		@Override
+		public String repr() {
+			return null;
+		}
 	}
 	
 	private static byte[] flip(byte[] sequence) {
@@ -441,6 +446,11 @@ public class FilterTests {
 		@Override
 		public Sequence inverse(Sequence transformed) {
 			return new Sequence(transformed.observed, flip(transformed.hidden));
+		}
+
+		@Override
+		public String repr() {
+			return null;
 		}
 	}
 	
