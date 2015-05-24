@@ -72,6 +72,13 @@ public interface SequenceSet extends Collection<Sequence>, Serializable, Represe
 	int size();
 	
 	/**
+	 * Возвращает суммарную длину строк в хранилище.
+	 * 
+	 * @return
+	 */
+	int totalLength();
+	
+	/**
 	 * Возвращает строку наблюдаемых состояний с заданным номером.
 	 * 
 	 * @param index

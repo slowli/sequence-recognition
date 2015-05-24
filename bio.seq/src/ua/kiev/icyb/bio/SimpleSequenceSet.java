@@ -217,6 +217,15 @@ public class SimpleSequenceSet extends AbstractCollection<Sequence> implements S
 	public int size() {
 		return this.ids.size();
 	}
+	
+	@Override
+	public int totalLength() {
+		int length = 0;
+		for (Sequence seq : this) {
+			length += seq.length();
+		}
+		return length;
+	}
 
 	@Override
 	public byte[] observed(int index) {

@@ -567,6 +567,16 @@ public class SetTests {
 		checkSubset(union, set2, set1.size());
 	}
 	
+	@Test
+	public void testSetTotalLength() {
+		SequenceSet set = new SimpleSequenceSet("ACGT", "xi", "ACGTacgt");
+		assertEquals(0, set.totalLength());
+		set.add(Sequence.parse(set.states(), "ACGTttAG"));
+		assertEquals(8, set.totalLength());
+		set.add(Sequence.parse(set.states(), "AAG"));
+		assertEquals(11, set.totalLength());
+	}
+	
 	/**
 	 * Проверяет фильтрацию выборок.
 	 */
