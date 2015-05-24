@@ -4,6 +4,7 @@ import ua.kiev.icyb.bio.SeqAlgorithm;
 import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.Transform;
+import ua.kiev.icyb.bio.res.Messages;
 
 /**
  * Алгоритм распознавания, использующий определенное пребразование последовательностей выборки
@@ -21,9 +22,9 @@ public class TransformAlgorithm extends AbstractSeqAlgorithm {
 
 	private static final long serialVersionUID = 1L;
 
-	private final SeqAlgorithm base;
+	private SeqAlgorithm base;
 	
-	private final Transform transform;
+	private Transform transform;
 	
 	/**
 	 * Создает алгоритм распознавания.
@@ -60,5 +61,27 @@ public class TransformAlgorithm extends AbstractSeqAlgorithm {
 	public void train(Sequence sequence) {
 		StatesDescription states = this.transform.states(sequence.states());
 		this.base.train(this.transform.sequence(sequence).setStates(states));
+	}
+	
+	@Override
+	public TransformAlgorithm clone() {
+		TransformAlgorithm other = (TransformAlgorithm) super.clone();
+		other.base = this.base.clone();
+		return other;
+	}
+	
+	@Override
+	public TransformAlgorithm clearClone() {
+		TransformAlgorithm other = (TransformAlgorithm) super.clone();
+		other.base = this.base.clearClone();
+		return other;
+	}
+	
+	@Override
+	public String repr() {
+		String repr = super.repr() + "\n";
+		repr += Messages.format("alg.base", this.base.repr()) + "\n";
+		repr += Messages.format("alg.transform", this.transform.repr());
+		return repr;
 	}
 }
