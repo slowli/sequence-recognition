@@ -25,11 +25,13 @@ import ua.kiev.icyb.bio.alg.Approximation;
 import ua.kiev.icyb.bio.alg.Distribution;
 import ua.kiev.icyb.bio.alg.FallthruAlgorithm;
 import ua.kiev.icyb.bio.alg.FallthruChain;
+import ua.kiev.icyb.bio.alg.GeneTransformAlgorithm;
 import ua.kiev.icyb.bio.alg.GeneViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.MarkovChain;
 import ua.kiev.icyb.bio.alg.TransformAlgorithm;
 import ua.kiev.icyb.bio.alg.ViterbiAlgorithm;
 import ua.kiev.icyb.bio.alg.tree.PriorityCompAlgorithm;
+import ua.kiev.icyb.bio.filters.PeriodicTransform;
 import ua.kiev.icyb.bio.filters.RandomFilter;
 import ua.kiev.icyb.bio.filters.TerminalTransform;
 
@@ -116,8 +118,6 @@ public class AlgorithmTests {
 		assertTrue(trueToEst < 10.0);
 		assertTrue(estToTrue > 0.0);
 		assertTrue(estToTrue < 50.0);
-		
-		//System.out.println(trueToEst + " " + estToTrue);
 	}
 
 	@Rule
@@ -455,7 +455,18 @@ public class AlgorithmTests {
 	}
 	
 	@Test
-	public void testTransformAlgorithm() {
+	public void testTransformAlgorithmClearClone() {
+		SeqAlgorithm alg = new TransformAlgorithm(new ViterbiAlgorithm(1, 6), new TerminalTransform());
+		alg.train(set1);
+		assertNotNull(alg.run(set1.get(0)));
+		
+		SeqAlgorithm clearClone = alg.clearClone();
+		assertNull(clearClone.run(set1.get(0)));
+		assertNotNull(alg.run(set1.get(0)));
+	}
+	
+	@Test
+	public void testTerminalAlgorithmConstraints() {
 		SeqAlgorithm alg = new TransformAlgorithm(new ViterbiAlgorithm(1, 6), new TerminalTransform());
 		alg.train(set1);
 		for (int i = 0; i < 100; i++) {
@@ -468,6 +479,25 @@ public class AlgorithmTests {
 		}
 	}
 	
+	@Test
+	public void testGeneAlgorithmConstraints() {
+		SeqAlgorithm alg = new GeneTransformAlgorithm(5);
+		alg.train(set1);
+		for (int i = 0; i < 20; i++) {
+			final Sequence seq = set1.get(i);
+			byte[] hidden = alg.run(seq);
+			if (hidden == null) continue;
+			
+			assertEquals(seq.length(), hidden.length);
+			assertEquals(0, hidden[seq.length() - 1]);
+			int exCount = 0;
+			for (int pos = 0; pos < hidden.length; pos++) {
+				if (hidden[pos] == 0) exCount++;
+			}
+			assertEquals(0, exCount % 3);
+		}
+	}
+	
 	/**
 	 * Проверка алгоритма Витерби (модификация для генов).
 	 */
@@ -475,6 +505,20 @@ public class AlgorithmTests {
 	@Category(SlowTest.class)
 	public void testGeneViterbiAlgorithm() {
 		testAlgorithm(set1, new GeneViterbiAlgorithm(6, true));
+	}
+	
+	@Test
+	@Category(SlowTest.class)
+	public void testPeriodicViterbiAlgorithm() {
+		SeqAlgorithm alg = new TransformAlgorithm(new ViterbiAlgorithm(1, 5), new PeriodicTransform());
+		testAlgorithm(set1, alg);
+	}
+	
+	@Test
+	@Category(SlowTest.class)
+	public void testGeneTransformAlgorithm() {
+		SeqAlgorithm alg = new GeneTransformAlgorithm(5);
+		testAlgorithm(set1, alg);
 	}
 	
 	/**
