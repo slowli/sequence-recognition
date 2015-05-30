@@ -6,7 +6,7 @@ import ua.kiev.icyb.bio.Sequence;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
-// TODO переписать
+// TODO реализовать теоретически обоснованные методы аппроксимации (?)
 
 /**
  * Модификация марковской цепи с аппроксимацией неизвестных

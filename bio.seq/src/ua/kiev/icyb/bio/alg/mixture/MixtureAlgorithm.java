@@ -174,14 +174,14 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 	 * Выполняет алгоритм с заданными начальными значениями апостериорных вероятностей марковских моделей,
 	 * входящих в смесь.
 	 * 
-	 * @param sequence
+	 * @param observed
 	 * 		последовательность наблюдаемых состояний
 	 * @param initialWeights
 	 * 		массив апостериорных вероятностей; сумма вероятностей должна быть равна единице
 	 * @return
 	 * 		наиболее вероятная последовательность скрытых состояний, соответствующих наблюдаемой цепочке
 	 */
-	public byte[] run(byte[] sequence, double[] initialWeights) {
+	public byte[] run(byte[] observed, double[] initialWeights) {
 		double[] aposterioriP = initialWeights.clone();
 		
 		double[] oldAposterioriP;
@@ -195,14 +195,14 @@ public class MixtureAlgorithm extends GeneViterbiAlgorithm {
 			oldAposterioriP = aposterioriP.clone();
 			chain.setWeights(aposterioriP);
 			
-			hidden = super.run(sequence, chain);
+			hidden = super.run(observed, chain);
 			if (hidden == null) {
 				return null;
 			}
 			
 			double maxLogP = Double.NEGATIVE_INFINITY;
 			for (int k = 0; k < currentMixture.size(); k++) {
-				aposterioriP[k] = currentMixture.model(k).estimate(new Sequence(sequence, hidden)) 
+				aposterioriP[k] = currentMixture.model(k).estimate(new Sequence(observed, hidden)) 
 						+ Math.log(currentMixture.weight(k));
 				if (aposterioriP[k] > maxLogP) {
 					maxLogP = aposterioriP[k];

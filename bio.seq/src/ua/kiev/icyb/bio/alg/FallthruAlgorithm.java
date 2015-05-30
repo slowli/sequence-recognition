@@ -1,6 +1,5 @@
 package ua.kiev.icyb.bio.alg;
 
-import ua.kiev.icyb.bio.SequenceSet;
 import ua.kiev.icyb.bio.StatesDescription;
 import ua.kiev.icyb.bio.res.Messages;
 
