@@ -71,6 +71,8 @@ public class AlgorithmTests {
 	/**
 	 * Тестирует алгоритм распознавания на простой выборке с использованием кросс-валидации.
 	 * 
+	 * @param set
+	 *    выборка, используемая для тестирования
 	 * @param algorithm
 	 *    алгоритм, работу которого надо протестировать
 	 *    
@@ -90,6 +92,14 @@ public class AlgorithmTests {
 		//System.out.println(cv.repr());
 	}
 	
+	/**
+	 * Проверяет эффективность алгоритма распознавания по максимизации правдоподобия.
+	 * 
+	 * @param algorithm
+	 *    алгоритм, работу которого надо протестировать
+	 * @param distr
+	 *    распределение вероятности, относительно которого проверяется работа алгоритма
+	 */
 	public static void testAlgorithmFit(SeqAlgorithm algorithm, Distribution<Sequence> distr) {
 		SequenceSet set = set1;
 		algorithm.reset();
@@ -519,6 +529,14 @@ public class AlgorithmTests {
 	public void testGeneTransformAlgorithm() {
 		SeqAlgorithm alg = new GeneTransformAlgorithm(5);
 		testAlgorithm(set1, alg);
+	}
+	
+	@Test
+	@Category(SlowTest.class)
+	public void testGeneTransformAlgorithmFit() {
+		SeqAlgorithm alg = new GeneTransformAlgorithm(5);
+		Distribution<Sequence> distr = new MarkovChain(1, 5, set1.states());
+		testAlgorithmFit(alg, distr);
 	}
 	
 	/**
